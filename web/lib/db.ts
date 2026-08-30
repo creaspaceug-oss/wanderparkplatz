@@ -352,3 +352,73 @@ export const trailsAmPlatz = cache((parkplatzId: number) =>
     [parkplatzId],
   ),
 );
+
+
+// ------------------------------------------------------- Wanderregionen
+/** Bbox-Vorfilter plus exakte Distanz, als Textbaustein wiederverwendet. */
+const IM_UMKREIS = (lat: string, lon: string, r: string) => `
+  p.aktiv
+  AND p.lat BETWEEN ${lat} - (${r} / 111.32) AND ${lat} + (${r} / 111.32)
+  AND p.lon BETWEEN ${lon} - (${r} / (111.32 * cos(radians(${lat}))))
+                AND ${lon} + (${r} / (111.32 * cos(radians(${lat}))))
+  AND 6371 * acos(LEAST(1, GREATEST(-1,
+        cos(radians(${lat})) * cos(radians(p.lat)) * cos(radians(p.lon) - radians(${lon}))
+        + sin(radians(${lat})) * sin(radians(p.lat))))) <= ${r}`;
+
+export interface RegionBestand {
+  slug: string;
+  n: number;
+  kostenfrei: number;
+}
+
+/**
+ * Bestand aller Regionen in einer Abfrage. Einzeln abgefragt wären das
+ * dreißig Rundläufe zur Datenbank — auf der Startseite spürbar.
+ */
+export function regionBestaende(
+  regionen: { slug: string; lat: number; lon: number; radiusKm: number }[],
+) {
+  const werte = regionen
+    .map((r, i) => `($${i * 4 + 1}, $${i * 4 + 2}::float8, $${i * 4 + 3}::float8, $${i * 4 + 4}::float8)`)
+    .join(",");
+  const params = regionen.flatMap((r) => [r.slug, r.lat, r.lon, r.radiusKm]);
+  return q<RegionBestand>(
+    `WITH g(slug, lat, lon, r) AS (VALUES ${werte})
+     SELECT g.slug,
+            count(p.id)::int                              AS n,
+            count(p.id) FILTER (WHERE p.gebuehr = false)::int AS kostenfrei
+       FROM g
+       LEFT JOIN parkplatz p ON ${IM_UMKREIS("g.lat", "g.lon", "g.r")}
+      GROUP BY g.slug`,
+    params,
+  );
+}
+
+/** Parkplätze einer Region, die am besten belegten zuerst. */
+export const parkplaetzeInRegion = (lat: number, lon: number, radiusKm: number, limit = 120) =>
+  q<Parkplatz>(
+    `${SELECT_PARKPLATZ} WHERE ${IM_UMKREIS("$1", "$2", "$3")}
+     ORDER BY p.daten_score DESC, p.name
+     LIMIT $4`,
+    [lat, lon, radiusKm, limit],
+  );
+
+/** Landkreise mit Bestand innerhalb einer Region — für die Binnenverlinkung. */
+export const kreiseInRegion = (lat: number, lon: number, radiusKm: number, limit = 12) =>
+  q<{ slug: string; name: string; typ: string | null; poi_count: number }>(
+    `SELECT k.slug, k.name, k.typ, count(p.id)::int AS poi_count
+       FROM parkplatz p JOIN kreis k ON k.id = p.kreis_id
+      WHERE ${IM_UMKREIS("$1", "$2", "$3")}
+      GROUP BY k.slug, k.name, k.typ
+      ORDER BY count(p.id) DESC
+      LIMIT $4`,
+    [lat, lon, radiusKm, limit],
+  );
+
+/** Auffälligste Plätze für die Startseite: die größten mit Stellplatzangabe. */
+export const groessteParkplaetze = (limit = 8) =>
+  q<Parkplatz>(
+    `${SELECT_PARKPLATZ} WHERE p.aktiv AND p.stellplaetze IS NOT NULL
+     ORDER BY p.stellplaetze DESC LIMIT $1`,
+    [limit],
+  );

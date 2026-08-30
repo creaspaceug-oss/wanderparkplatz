@@ -42,6 +42,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/suche" className="hover:text-foreground sm:hidden">
                 Suche
               </Link>
+              <Link href="/regionen" className="hover:text-foreground">
+                Regionen
+              </Link>
               <Link href="/bundeslaender" className="hover:text-foreground">
                 Bundesländer
               </Link>

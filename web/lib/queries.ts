@@ -44,19 +44,39 @@ export const gesamtzahl = async () =>
 export interface Kennzahlen {
   gesamt: number;
   kostenfrei: number;
+  mit_gebuehrenangabe: number;
   mit_stellplatzangabe: number;
+  stellplaetze_median: number | null;
+  stellplaetze_summe: number | null;
+  mit_oberflaeche: number;
+  unbefestigt: number;
+  barrierefrei: number;
   orte: number;
   kreise: number;
+  laender: number;
 }
 
+/**
+ * Kennzahlen des Gesamtbestands. Bewusst mit den Nennern: "2.855 kostenfrei"
+ * ist ohne "von 2.935 mit Gebuehrenangabe" eine irrefuehrende Zahl.
+ */
 export const kennzahlen = async (): Promise<Kennzahlen> =>
   (
     await q<Kennzahlen>(
-      `SELECT (SELECT count(*) FROM parkplatz)::int                        AS gesamt,
-              (SELECT count(*) FROM parkplatz WHERE gebuehr = false)::int  AS kostenfrei,
-              (SELECT count(*) FROM parkplatz WHERE stellplaetze IS NOT NULL)::int AS mit_stellplatzangabe,
-              (SELECT count(*) FROM ort   WHERE poi_count > 0)::int        AS orte,
-              (SELECT count(*) FROM kreis WHERE poi_count > 0)::int        AS kreise`,
+      `SELECT (SELECT count(*) FROM parkplatz WHERE aktiv)::int AS gesamt,
+              (SELECT count(*) FROM parkplatz WHERE aktiv AND gebuehr = false)::int AS kostenfrei,
+              (SELECT count(*) FROM parkplatz WHERE aktiv AND gebuehr IS NOT NULL)::int AS mit_gebuehrenangabe,
+              (SELECT count(*) FROM parkplatz WHERE aktiv AND stellplaetze IS NOT NULL)::int AS mit_stellplatzangabe,
+              (SELECT percentile_cont(0.5) WITHIN GROUP (ORDER BY stellplaetze)::int
+                 FROM parkplatz WHERE aktiv AND stellplaetze IS NOT NULL) AS stellplaetze_median,
+              (SELECT sum(stellplaetze)::int FROM parkplatz WHERE aktiv AND stellplaetze IS NOT NULL) AS stellplaetze_summe,
+              (SELECT count(*) FROM parkplatz WHERE aktiv AND oberflaeche IS NOT NULL)::int AS mit_oberflaeche,
+              (SELECT count(*) FROM parkplatz
+                WHERE aktiv AND oberflaeche ~ 'Schotter|Kies|Naturboden|Erde|Wiese|unbefestigt|Sand|Rasengitter|Hackschnitzel')::int AS unbefestigt,
+              (SELECT count(*) FROM parkplatz WHERE aktiv AND barrierefrei)::int AS barrierefrei,
+              (SELECT count(*) FROM ort   WHERE poi_count > 0)::int AS orte,
+              (SELECT count(*) FROM kreis WHERE poi_count > 0)::int AS kreise,
+              (SELECT count(*) FROM bundesland WHERE poi_count > 0)::int AS laender`,
     )
   )[0];
 

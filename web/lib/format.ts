@@ -15,3 +15,9 @@ export const gebuehrText = (g: boolean | null, info: string | null) => {
   if (g === true) return info ? `gebührenpflichtig (${info})` : "gebührenpflichtig";
   return null;
 };
+
+/** Deutsche Aufzählung: "A", "A und B", "A, B und C". */
+export function aufzaehlung(teile: string[]): string {
+  if (teile.length <= 1) return teile[0] ?? "";
+  return `${teile.slice(0, -1).join(", ")} und ${teile.at(-1)}`;
+}
