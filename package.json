@@ -1,0 +1,16 @@
+{
+  "name": "wanderparkplatz",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "pipeline",
+    "web"
+  ],
+  "scripts": {
+    "data:fetch": "npm run -w pipeline fetch",
+    "data:build": "npm run -w pipeline build",
+    "data:load": "npm run -w pipeline load",
+    "dev": "npm run -w web dev",
+    "test": "npm run -w pipeline test"
+  }
+}

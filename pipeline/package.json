@@ -1,0 +1,15 @@
+{
+  "name": "pipeline",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fetch": "node --experimental-strip-types src/fetch.ts",
+    "build": "node --experimental-strip-types src/build.ts",
+    "load": "node --experimental-strip-types src/load.ts",
+    "test": "node --experimental-strip-types --test 'test/*.test.ts'",
+    "moderieren": "node --experimental-strip-types src/moderieren.ts"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}
