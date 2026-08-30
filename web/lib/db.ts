@@ -21,19 +21,28 @@ if (!process.env.DATABASE_URL && process.env.VERCEL) {
   );
 }
 
+const IST_BUILD = process.env.NEXT_PHASE === "phase-production-build";
+
 /**
- * In einer Serverless-Umgebung hat jede Funktionsinstanz einen eigenen Pool.
- * Ein hoher max-Wert je Instanz erschöpft daher schnell das Verbindungslimit
- * der Datenbank — deshalb klein halten und über den gepoolten Endpunkt des
- * Anbieters (z. B. Neon/PgBouncer) verbinden.
+ * Verbindungen sparsam halten.
+ *
+ * Serverless: jede Funktionsinstanz hat einen eigenen Pool, ein hoher max-Wert
+ * erschöpft schnell das Limit der Datenbank.
+ *
+ * Build: Next rendert mit mehreren Worker-Prozessen parallel, jeder mit
+ * eigenem Pool. Bei einer Datenbank, die aus dem Ruhezustand aufwacht (Neon
+ * & Co. pausieren nach kurzer Untätigkeit), treffen dann dutzende
+ * Verbindungsversuche gleichzeitig auf eine noch startende Instanz — das war
+ * die Ursache für "Connection terminated due to connection timeout".
+ * Deshalb: kleiner Pool und großzügige Wartezeit beim Verbindungsaufbau.
  */
 export const pool =
   globalForPg.pgPool ??
   new pg.Pool({
     connectionString: process.env.DATABASE_URL ?? LOKAL,
-    max: Number(process.env.PG_POOL_MAX ?? (process.env.VERCEL ? 3 : 10)),
+    max: Number(process.env.PG_POOL_MAX ?? (IST_BUILD ? 4 : process.env.VERCEL ? 3 : 10)),
     idleTimeoutMillis: 10_000,
-    connectionTimeoutMillis: 10_000,
+    connectionTimeoutMillis: 30_000,
   });
 
 // Ein Verbindungsfehler im Hintergrund darf den Prozess nicht beenden.
@@ -49,30 +58,62 @@ pool.on("connect", (c) => {
 });
 if (process.env.NODE_ENV !== "production") globalForPg.pgPool = pool;
 
+/**
+ * Fehler, die eine kalt startende oder kurz gestörte Datenbank erzeugt und die
+ * ein zweiter Versuch löst.
+ */
+function istVoruebergehend(err: unknown): boolean {
+  const e = err as NodeJS.ErrnoException & { code?: string };
+  if (["ECONNRESET", "ETIMEDOUT", "EPIPE", "57P01", "08006", "08003"].includes(e.code ?? ""))
+    return true;
+  return /Connection terminated|timeout exceeded|Client has encountered a connection error/i.test(
+    e.message ?? "",
+  );
+}
+
+const schlafe = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 export async function q<T = Record<string, unknown>>(
   sql: string,
   params: unknown[] = [],
 ): Promise<T[]> {
-  try {
-    const res = await pool.query(sql, params);
-    return res.rows as T[];
-  } catch (err) {
+  // Nur Lesezugriffe wiederholen: bei einem abgebrochenen Schreibvorgang ist
+  // nicht sicher, ob er die Datenbank erreicht hat.
+  const lesend = /^\s*(select|with)\b/i.test(sql);
+  const versuche = lesend ? 3 : 1;
+
+  for (let i = 1; ; i++) {
+    try {
+      const res = await pool.query(sql, params);
+      return res.rows as T[];
+    } catch (err) {
+      if (i < versuche && istVoruebergehend(err)) {
+        await schlafe(i * 750);
+        continue;
+      }
+      throw uebersetze(err);
+    }
+  }
+}
+
+function uebersetze(err: unknown): Error {
+  {
     const e = err as NodeJS.ErrnoException;
     if (e.code === "ECONNREFUSED" || e.code === "ENOTFOUND") {
-      throw new Error(
+      return new Error(
         `Die Datenbank ist nicht erreichbar (${e.code}). Prüfe DATABASE_URL — ` +
           `bei verwalteten Anbietern den gepoolten Endpunkt verwenden.`,
         { cause: err },
       );
     }
     if (e.code === "42P01") {
-      throw new Error(
+      return new Error(
         "Die Tabellen fehlen. Erst die Dateien aus pipeline/sql/ einspielen, " +
           "dann `npm run data:load` gegen dieselbe Datenbank ausführen.",
         { cause: err },
       );
     }
-    throw err;
+    return err as Error;
   }
 }
 
