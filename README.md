@@ -93,13 +93,18 @@ Vorlage siehe `.env.example`:
 | Variable | Wert |
 | --- | --- |
 | `DATABASE_URL` | gepoolter Verbindungsstring |
-| `NEXT_PUBLIC_SITE_URL` | `https://wanderparkplatz.info` |
+| `NEXT_PUBLIC_SITE_URL` | `https://www.wanderparkplatz.info` (oder weglassen) |
 | `BEWERTUNG_SALT` | `openssl rand -hex 32` |
 | `BEWERTUNG_FREIGABE` | `vor` |
 
-**4. Domain.** `wanderparkplatz.info` im Projekt hinterlegen und `www` per
-Weiterleitung auf die Domain ohne `www` zeigen lassen — sonst konkurrieren zwei
-Adressen um dieselben Inhalte.
+**4. Domain.** Beide Varianten im Projekt hinterlegen und eine davon per
+Weiterleitung auf die andere zeigen lassen — sonst konkurrieren zwei Adressen
+um dieselben Inhalte. Welche Variante gewinnt, ist gleichgültig; entscheidend
+ist, dass `KANONISCH` in `web/lib/site.ts` beziehungsweise
+`NEXT_PUBLIC_SITE_URL` **dieselbe** Variante nennt. Läuft beides auseinander,
+zeigen sämtliche Canonicals, alle Sitemap-URLs und die Vorschaubilder auf eine
+weiterleitende Adresse. Der Build warnt, wenn er eine Abweichung von der
+Produktionsdomain erkennt.
 
 **5. Der Build braucht die Datenbank.** Regions- und Detailseiten werden zur
 Bauzeit vorgerendert. Fehlt `DATABASE_URL`, bricht der Build ab — mit einer
@@ -110,7 +115,9 @@ zählt die unter *Functions → Region* eingestellte Region.
 
 **6. Nach dem ersten Deployment.** Die Domain in der Google Search Console
 bestätigen (per DNS-TXT-Eintrag, dann ist kein Code nötig) und
-`https://wanderparkplatz.info/sitemap.xml` einreichen.
+`https://www.wanderparkplatz.info/sitemap.xml` einreichen. In der Search
+Console beide Varianten als Property anlegen, damit die Weiterleitung
+nachvollziehbar bleibt.
 
 Bei jeder Datenaktualisierung: `npm run data:fetch && npm run data:build`,
 danach `npm run data:load` gegen die Produktionsdatenbank. Ein neues Deployment
