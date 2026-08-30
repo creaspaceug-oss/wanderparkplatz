@@ -11,6 +11,7 @@
     "data:build": "npm run -w pipeline build",
     "data:load": "npm run -w pipeline load",
     "dev": "npm run -w web dev",
-    "test": "npm run -w pipeline test"
+    "test": "npm run -w pipeline test",
+    "db:setup": "npm run -w pipeline setup"
   }
 }

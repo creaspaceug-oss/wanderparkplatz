@@ -3,6 +3,23 @@ import pg from "pg";
 // Ein Pool pro Prozess; im Dev-Modus über Hot Reloads hinweg wiederverwenden.
 const globalForPg = globalThis as unknown as { pgPool?: pg.Pool };
 
+const LOKAL = "postgres://localhost:5432/wanderparkplatz";
+
+/**
+ * Ohne DATABASE_URL fiele die Anwendung auf localhost zurück und der Build
+ * bräche mit "ECONNREFUSED 127.0.0.1:5432" ab — einer Meldung, die die
+ * eigentliche Ursache verschweigt. Deshalb hier früh und deutlich abbrechen.
+ */
+if (!process.env.DATABASE_URL && process.env.VERCEL) {
+  throw new Error(
+    "DATABASE_URL ist nicht gesetzt.\n\n" +
+      "Die Seiten werden zur Bauzeit aus der Datenbank vorgerendert; ohne\n" +
+      "Verbindung kann der Build nicht laufen. In den Projekteinstellungen\n" +
+      "unter Environment Variables setzen — für Production, Preview und\n" +
+      "Development. Vorlage: .env.example im Repository.",
+  );
+}
+
 /**
  * In einer Serverless-Umgebung hat jede Funktionsinstanz einen eigenen Pool.
  * Ein hoher max-Wert je Instanz erschöpft daher schnell das Verbindungslimit
@@ -12,8 +29,7 @@ const globalForPg = globalThis as unknown as { pgPool?: pg.Pool };
 export const pool =
   globalForPg.pgPool ??
   new pg.Pool({
-    connectionString:
-      process.env.DATABASE_URL ?? "postgres://localhost:5432/wanderparkplatz",
+    connectionString: process.env.DATABASE_URL ?? LOKAL,
     max: Number(process.env.PG_POOL_MAX ?? (process.env.VERCEL ? 3 : 10)),
     idleTimeoutMillis: 10_000,
     connectionTimeoutMillis: 10_000,
@@ -36,8 +52,27 @@ export async function q<T = Record<string, unknown>>(
   sql: string,
   params: unknown[] = [],
 ): Promise<T[]> {
-  const res = await pool.query(sql, params);
-  return res.rows as T[];
+  try {
+    const res = await pool.query(sql, params);
+    return res.rows as T[];
+  } catch (err) {
+    const e = err as NodeJS.ErrnoException;
+    if (e.code === "ECONNREFUSED" || e.code === "ENOTFOUND") {
+      throw new Error(
+        `Die Datenbank ist nicht erreichbar (${e.code}). Prüfe DATABASE_URL — ` +
+          `bei verwalteten Anbietern den gepoolten Endpunkt verwenden.`,
+        { cause: err },
+      );
+    }
+    if (e.code === "42P01") {
+      throw new Error(
+        "Die Tabellen fehlen. Erst die Dateien aus pipeline/sql/ einspielen, " +
+          "dann `npm run data:load` gegen dieselbe Datenbank ausführen.",
+        { cause: err },
+      );
+    }
+    throw err;
+  }
 }
 
 export async function one<T = Record<string, unknown>>(

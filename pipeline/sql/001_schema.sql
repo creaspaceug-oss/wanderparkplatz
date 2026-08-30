@@ -1,10 +1,11 @@
--- Wanderparkplatz-Verzeichnis: Schema ohne PostGIS.
--- Umkreissuche läuft über Bounding-Box-Vorfilter (B-Tree auf lat/lon)
--- plus exakte Haversine-Distanz auf der kleinen Restmenge.
+-- Grundschema. Ohne PostGIS: die Umkreissuche grenzt über eine Bounding Box
+-- auf dem B-Tree-Index (lat, lon) vor und rechnet die exakte Haversine-Distanz
+-- nur auf der Restmenge.
+--
+-- Gefahrlos wiederholbar — bewusst ohne DROP: an parkplatz.id hängen
+-- Nutzerbewertungen, die ein erneuter Aufruf sonst mitreißen würde.
 
-DROP TABLE IF EXISTS parkplatz_trail, parkplatz_nearby, parkplatz, ort, kreis, bundesland, trail CASCADE;
-
-CREATE TABLE bundesland (
+CREATE TABLE IF NOT EXISTS bundesland (
   id          serial PRIMARY KEY,
   slug        text NOT NULL UNIQUE,
   name        text NOT NULL,
@@ -14,7 +15,7 @@ CREATE TABLE bundesland (
   poi_count   integer NOT NULL DEFAULT 0
 );
 
-CREATE TABLE kreis (
+CREATE TABLE IF NOT EXISTS kreis (
   id             serial PRIMARY KEY,
   slug           text NOT NULL UNIQUE,
   name           text NOT NULL,
@@ -24,9 +25,9 @@ CREATE TABLE kreis (
   lon            double precision NOT NULL,
   poi_count      integer NOT NULL DEFAULT 0
 );
-CREATE INDEX ON kreis (bundesland_id);
+CREATE INDEX IF NOT EXISTS kreis_bundesland_idx ON kreis (bundesland_id);
 
-CREATE TABLE ort (
+CREATE TABLE IF NOT EXISTS ort (
   id             serial PRIMARY KEY,
   slug           text NOT NULL UNIQUE,
   name           text NOT NULL,
@@ -38,10 +39,10 @@ CREATE TABLE ort (
   lon            double precision NOT NULL,
   poi_count      integer NOT NULL DEFAULT 0
 );
-CREATE INDEX ON ort (kreis_id);
-CREATE INDEX ON ort (bundesland_id);
+CREATE INDEX IF NOT EXISTS ort_kreis_idx ON ort (kreis_id);
+CREATE INDEX IF NOT EXISTS ort_bundesland_idx ON ort (bundesland_id);
 
-CREATE TABLE parkplatz (
+CREATE TABLE IF NOT EXISTS parkplatz (
   id             serial PRIMARY KEY,
   osm_type       text NOT NULL,
   osm_id         bigint NOT NULL,
@@ -54,38 +55,38 @@ CREATE TABLE parkplatz (
   kreis_id       integer REFERENCES kreis(id),
   ort_id         integer REFERENCES ort(id),
   ort_km         double precision,        -- Luftlinie zum nächsten Ort
-  ort_richtung   text,                    -- "nordwestlich von …"
+  ort_richtung   text,                    -- "nordwestlich"
 
   -- aus OSM-Tags normalisiert
-  stellplaetze   integer,
-  gebuehr        boolean,                 -- true = kostenpflichtig
-  gebuehr_info   text,
-  oberflaeche    text,
-  zugang         text,
+  stellplaetze    integer,
+  gebuehr         boolean,                -- true = kostenpflichtig
+  gebuehr_info    text,
+  oberflaeche     text,
+  zugang          text,
   oeffnungszeiten text,
-  beleuchtet     boolean,
-  barrierefrei   boolean,
-  max_hoehe_m    numeric(4,2),
-  wohnmobil      boolean,
-  wc             boolean,
-  betreiber      text,
-  hoehe_m        integer,
+  beleuchtet      boolean,
+  barrierefrei    boolean,
+  max_hoehe_m     numeric(4,2),
+  wohnmobil       boolean,
+  wc              boolean,
+  betreiber       text,
+  hoehe_m         integer,
 
   tier           smallint NOT NULL DEFAULT 1,  -- 1 = ausgewiesener Wanderparkplatz
-  daten_score    smallint NOT NULL DEFAULT 0,  -- 0–100: wie gut belegt der Datensatz ist
+  daten_score    smallint NOT NULL DEFAULT 0,  -- 0–100: Belegtheit des Datensatzes
   tags           jsonb NOT NULL DEFAULT '{}',
   aktualisiert   timestamptz NOT NULL DEFAULT now(),
 
   UNIQUE (osm_type, osm_id)
 );
 -- Bbox-Vorfilter der Umkreissuche
-CREATE INDEX parkplatz_lat_lon_idx ON parkplatz (lat, lon);
-CREATE INDEX ON parkplatz (bundesland_id);
-CREATE INDEX ON parkplatz (kreis_id);
-CREATE INDEX ON parkplatz (ort_id);
-CREATE INDEX ON parkplatz (daten_score DESC);
+CREATE INDEX IF NOT EXISTS parkplatz_lat_lon_idx    ON parkplatz (lat, lon);
+CREATE INDEX IF NOT EXISTS parkplatz_bundesland_idx ON parkplatz (bundesland_id);
+CREATE INDEX IF NOT EXISTS parkplatz_kreis_idx      ON parkplatz (kreis_id);
+CREATE INDEX IF NOT EXISTS parkplatz_ort_idx        ON parkplatz (ort_id);
+CREATE INDEX IF NOT EXISTS parkplatz_score_idx      ON parkplatz (daten_score DESC);
 
-CREATE TABLE trail (
+CREATE TABLE IF NOT EXISTS trail (
   id        serial PRIMARY KEY,
   osm_id    bigint NOT NULL UNIQUE,
   name      text NOT NULL,
@@ -95,7 +96,7 @@ CREATE TABLE trail (
   laenge_km numeric(7,2)
 );
 
-CREATE TABLE parkplatz_trail (
+CREATE TABLE IF NOT EXISTS parkplatz_trail (
   parkplatz_id integer NOT NULL REFERENCES parkplatz(id) ON DELETE CASCADE,
   trail_id     integer NOT NULL REFERENCES trail(id) ON DELETE CASCADE,
   distanz_m    integer NOT NULL,
@@ -103,7 +104,7 @@ CREATE TABLE parkplatz_trail (
 );
 
 -- Gastronomie, ÖPNV, Aussichtspunkte, WC im Umfeld
-CREATE TABLE parkplatz_nearby (
+CREATE TABLE IF NOT EXISTS parkplatz_nearby (
   id           serial PRIMARY KEY,
   parkplatz_id integer NOT NULL REFERENCES parkplatz(id) ON DELETE CASCADE,
   kategorie    text NOT NULL,   -- einkehr | oepnv | aussicht | wc | infotafel | schutzhuette
@@ -112,4 +113,4 @@ CREATE TABLE parkplatz_nearby (
   lat          double precision,
   lon          double precision
 );
-CREATE INDEX ON parkplatz_nearby (parkplatz_id, kategorie);
+CREATE INDEX IF NOT EXISTS parkplatz_nearby_idx ON parkplatz_nearby (parkplatz_id, kategorie);

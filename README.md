@@ -25,7 +25,7 @@ data/         Rohdaten und Zwischenergebnisse (nicht versioniert)
 ```bash
 npm install
 createdb wanderparkplatz
-psql -d wanderparkplatz -f pipeline/sql/schema.sql
+npm run db:setup
 ```
 
 `web/.env.local` setzt `DATABASE_URL` und `NEXT_PUBLIC_SITE_URL`.
@@ -73,12 +73,13 @@ Frankfurt wählen — die Datenschutzerklärung nennt Frankfurt als Ort der
 serverseitigen Verarbeitung. Danach Schema und Daten einspielen:
 
 ```bash
-export DATABASE_URL='postgres://…'          # gepoolter Endpunkt
-psql "$DATABASE_URL" -f pipeline/sql/schema.sql
-psql "$DATABASE_URL" -f pipeline/sql/002_suche_bewertungen.sql
-psql "$DATABASE_URL" -f pipeline/sql/003_standort.sql
-npm run data:load
+export DATABASE_URL='postgres://…'   # gepoolter Endpunkt
+npm run db:setup                     # legt Tabellen und Indizes an
+npm run data:load                    # spielt die aufbereiteten Daten ein
 ```
+
+`db:setup` ist gefahrlos wiederholbar: die Dateien in `pipeline/sql/` legen nur
+an, was fehlt, und lassen Bewertungen unangetastet.
 
 **2. Vercel-Projekt.** Repository verbinden und in den Projekteinstellungen als
 *Root Directory* `web` eintragen — Vercel installiert die npm-Workspaces dann
@@ -100,7 +101,14 @@ Vorlage siehe `.env.example`:
 Weiterleitung auf die Domain ohne `www` zeigen lassen — sonst konkurrieren zwei
 Adressen um dieselben Inhalte.
 
-**5. Nach dem ersten Deployment.** Die Domain in der Google Search Console
+**5. Der Build braucht die Datenbank.** Regions- und Detailseiten werden zur
+Bauzeit vorgerendert. Fehlt `DATABASE_URL`, bricht der Build ab — mit einer
+Meldung, die genau das sagt. Die Datenbank muss vor dem ersten Deployment
+eingerichtet **und** gefüllt sein. Der Build selbst läuft je nach Tarif in einer
+US-Region; das betrifft nur den Bauvorgang, nicht die Auslieferung — für die
+zählt die unter *Functions → Region* eingestellte Region.
+
+**6. Nach dem ersten Deployment.** Die Domain in der Google Search Console
 bestätigen (per DNS-TXT-Eintrag, dann ist kein Code nötig) und
 `https://wanderparkplatz.info/sitemap.xml` einreichen.
 
