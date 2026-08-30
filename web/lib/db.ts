@@ -1,4 +1,5 @@
 import pg from "pg";
+import { cache } from "react";
 
 // Ein Pool pro Prozess; im Dev-Modus über Hot Reloads hinweg wiederverwenden.
 const globalForPg = globalThis as unknown as { pgPool?: pg.Pool };
@@ -160,8 +161,14 @@ export function umkreis(lat: number, lon: number, radiusKm = 25, limit = 24) {
   );
 }
 
-export const parkplatzBySlug = (slug: string) =>
-  one<Parkplatz>(`${SELECT_PARKPLATZ} WHERE p.slug = $1 AND p.aktiv`, [slug]);
+/**
+ * Über React.cache gebündelt: generateMetadata und die Seite selbst brauchen
+ * dieselben Daten. Ohne Bündelung sind das zwei Abfragen je Seitenaufruf — bei
+ * einer Datenbank in einer anderen Region kostet jede rund 90 ms.
+ */
+export const parkplatzBySlug = cache((slug: string) =>
+  one<Parkplatz>(`${SELECT_PARKPLATZ} WHERE p.slug = $1 AND p.aktiv`, [slug]),
+);
 
 export const parkplaetzeIn = (
   spalte: "bundesland_id" | "kreis_id" | "ort_id",
@@ -292,7 +299,7 @@ export interface TrailAmPlatz {
   distanz_m: number;
 }
 
-export const trailsAmPlatz = (parkplatzId: number) =>
+export const trailsAmPlatz = cache((parkplatzId: number) =>
   q<TrailAmPlatz>(
     `SELECT t.name, t.slug, t.netz, t.ref, t.markierung, t.laenge_km, pt.distanz_m
        FROM parkplatz_trail pt JOIN trail t ON t.id = pt.trail_id
@@ -302,4 +309,5 @@ export const trailsAmPlatz = (parkplatzId: number) =>
         pt.distanz_m,
         t.name`,
     [parkplatzId],
-  );
+  ),
+);

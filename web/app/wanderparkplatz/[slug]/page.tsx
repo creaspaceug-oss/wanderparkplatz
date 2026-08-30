@@ -5,6 +5,7 @@ import { parkplatzBySlug, inDerNaehe, alleSlugs, trailsAmPlatz } from "@/lib/db"
 import { beschreibung, metaBeschreibung } from "@/lib/beschreibung";
 import { jsonLd, km, gebuehrText } from "@/lib/format";
 import { titel } from "@/lib/meta";
+import { VORRENDERN } from "@/lib/vorrendern";
 import { bewertungenFuer } from "@/lib/bewertung";
 import BewertungFormular from "@/components/BewertungFormular";
 import Bewertungen from "@/components/Bewertungen";
@@ -25,7 +26,7 @@ export const dynamicParams = true;
 
 /** Nur die datenreichsten Seiten vorab bauen; der Rest entsteht bei Abruf. */
 export async function generateStaticParams() {
-  const rows = await alleSlugs("parkplatz", 500);
+  const rows = await alleSlugs("parkplatz", VORRENDERN.parkplatz);
   return rows.map((r) => ({ slug: r.slug }));
 }
 

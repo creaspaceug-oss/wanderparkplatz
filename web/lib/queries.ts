@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { q } from "./db";
 
 export interface RegionZeile {
@@ -77,23 +78,25 @@ export interface Region {
 
 import { one } from "./db";
 
-export const bundeslandBySlug = (slug: string) =>
+export const bundeslandBySlug = cache((slug: string) =>
   one<Region>(
     `SELECT id, slug, name, NULL::text AS typ, lat, lon, poi_count
      FROM bundesland WHERE slug = $1`,
     [slug],
-  );
+  ),
+);
 
-export const kreisBySlug = (slug: string) =>
+export const kreisBySlug = cache((slug: string) =>
   one<Region>(
     `SELECT k.id, k.slug, k.name, k.typ, k.lat, k.lon, k.poi_count,
             k.bundesland_id, b.name AS bl_name, b.slug AS bl_slug
      FROM kreis k JOIN bundesland b ON b.id = k.bundesland_id
      WHERE k.slug = $1`,
     [slug],
-  );
+  ),
+);
 
-export const ortBySlug = (slug: string) =>
+export const ortBySlug = cache((slug: string) =>
   one<Region>(
     `SELECT o.id, o.slug, o.name, o.typ, o.lat, o.lon, o.poi_count, o.einwohner,
             k.name AS kreis_name, k.slug AS kreis_slug,
@@ -103,7 +106,8 @@ export const ortBySlug = (slug: string) =>
      LEFT JOIN bundesland b ON b.id = o.bundesland_id
      WHERE o.slug = $1`,
     [slug],
-  );
+  ),
+);
 
 /** Nachbarregionen für interne Verlinkung — hält verwaiste Seiten aus dem Index. */
 export const nachbarKreise = (kreisId: number, bundeslandId: number, limit = 8) =>

@@ -8,6 +8,7 @@ import { kreisBySlug, orteIn, nachbarKreise } from "@/lib/queries";
 import { nf } from "@/lib/format";
 import { kreisTitel, kreisDativ, kreisNominativ } from "@/lib/regionen";
 import { titel, beschreibung } from "@/lib/meta";
+import { VORRENDERN } from "@/lib/vorrendern";
 
 /** Obergrenze je Kreisseite; darüber wird auf die Ortsseiten verwiesen. */
 const MAX_LISTE = 400;
@@ -16,7 +17,7 @@ export const revalidate = 604800;
 export const dynamicParams = true;
 
 export async function generateStaticParams() {
-  return (await alleSlugs("kreis", 300)).map((r) => ({ slug: r.slug }));
+  return (await alleSlugs("kreis", VORRENDERN.kreis)).map((r) => ({ slug: r.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps<"/kreis/[slug]">): Promise<Metadata> {

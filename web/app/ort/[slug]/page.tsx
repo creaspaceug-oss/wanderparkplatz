@@ -6,13 +6,14 @@ import { parkplaetzeIn, umkreis, alleSlugs } from "@/lib/db";
 import { ortBySlug } from "@/lib/queries";
 import { nf, km } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
+import { VORRENDERN } from "@/lib/vorrendern";
 import Link from "next/link";
 
 export const revalidate = 604800;
 export const dynamicParams = true;
 
 export async function generateStaticParams() {
-  return (await alleSlugs("ort", 1000)).map((r) => ({ slug: r.slug }));
+  return (await alleSlugs("ort", VORRENDERN.ort)).map((r) => ({ slug: r.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps<"/ort/[slug]">): Promise<Metadata> {
