@@ -31,6 +31,32 @@ async function fetchGeojson(name: string, url: string) {
 }
 
 /**
+ * Haltbarkeit je Datensatz.
+ *
+ * Ein vollständiger Abruf dauert rund acht Stunden und sprengt jedes
+ * CI-Zeitlimit. Deshalb altert jeder Datensatz in seinem eigenen Takt: Die
+ * Parkplätze selbst ändern sich am häufigsten, Postleitzahlen praktisch nie.
+ * Ein wöchentlicher Lauf holt damit jeweils nur den kleinen Teil, der
+ * abgelaufen ist.
+ */
+const HALTBARKEIT: Record<string, number> = {
+  pois: 30,
+  trails: 90,
+  ziele: 90,
+  umfeld: 90,
+  "ziele-wf": 90,
+  places: 180,
+  plz: 365,
+};
+
+/**
+ * Zeitbudget in Minuten. Ist es aufgebraucht, endet der Lauf geordnet und
+ * meldet, was offen blieb — der nächste Lauf setzt dort an, weil fertige
+ * Kacheln im Zwischenspeicher liegen.
+ */
+const BUDGET_MIN = Number(process.env.ABRUF_BUDGET_MIN) || 0;
+
+/**
  * Kacheln abarbeiten. Scheitert eine Kachel (meist Zeitlimit in dicht
  * kartierten Regionen), wird sie geviertelt und erneut eingereiht — bis zu
  * MAX_TIEFE Mal. Ein Worker: die Hauptinstanz quittiert zwei parallele
@@ -41,18 +67,26 @@ const MAX_TIEFE = 3;
 async function tiled(prefix: string, build: (t: Tile) => string, concurrency = 1) {
   const queue: { t: Tile; tiefe: number }[] = tiles().map((t) => ({ t, tiefe: 0 }));
   const gesamt = queue.length;
+  const maxAgeDays = HALTBARKEIT[prefix] ?? 14;
+  const frist = BUDGET_MIN ? Date.now() + BUDGET_MIN * 60_000 : Infinity;
   let done = 0;
   let leer = 0;
   let geteilt = 0;
+  let abgebrochen = false;
   const gescheitert: string[] = [];
 
   const worker = async () => {
     while (queue.length) {
+      if (Date.now() > frist) {
+        abgebrochen = true;
+        return;
+      }
       const { t, tiefe } = queue.shift()!;
       try {
         const els = await overpass(`${prefix}-${t.id}`, build(t), {
           timeoutMs: 330_000,
           versuche: 2,
+          maxAgeDays,
         });
         if (els.length === 0) leer++;
         console.log(`   [${++done}/${gesamt}+${geteilt}] ${prefix} ${t.id}: ${els.length}`);
@@ -75,6 +109,11 @@ async function tiled(prefix: string, build: (t: Tile) => string, concurrency = 1
     `✓ ${prefix}: ${done} Kacheln geladen (${leer} leer, ${geteilt} durch Teilung entstanden, ${gescheitert.length} aufgegeben)`,
   );
   if (gescheitert.length) console.log(`  Aufgegeben: ${gescheitert.join(" ")}`);
+  if (abgebrochen)
+    console.log(
+      `  ⏱ Zeitbudget von ${BUDGET_MIN} Minuten erreicht, ${queue.length} Kacheln offen — ` +
+        `der nächste Lauf setzt dort an.`,
+    );
 }
 
 const jobs: Record<string, () => Promise<unknown>> = {

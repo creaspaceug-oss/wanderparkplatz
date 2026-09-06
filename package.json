@@ -13,6 +13,7 @@
     "dev": "npm run -w web dev",
     "test": "npm run -w pipeline test",
     "db:setup": "npm run -w pipeline setup",
-    "data:bilder": "npm run -w pipeline bilder"
+    "data:bilder": "npm run -w pipeline bilder",
+    "backup": "npm run -w pipeline sicherung"
   }
 }

@@ -126,6 +126,48 @@ Bei jeder Datenaktualisierung: `npm run data:fetch && npm run data:build`,
 danach `npm run data:load` gegen die Produktionsdatenbank. Ein neues Deployment
 ist nötig, damit die vorgerenderten Seiten den neuen Stand übernehmen.
 
+## Automatische Aktualisierung
+
+`.github/workflows/daten-aktualisieren.yml` läuft wöchentlich in der Nacht zum
+Montag und kann unter *Actions* auch von Hand gestartet werden.
+
+Zwei Geheimnisse sind im Repository zu hinterlegen (*Settings → Secrets and
+variables → Actions*):
+
+| Name | Wert |
+|---|---|
+| `DATABASE_URL` | Verbindungszeichenfolge der Produktionsdatenbank |
+| `VERCEL_DEPLOY_HOOK` | Deploy Hook aus den Vercel-Projekteinstellungen |
+
+Der Lauf sichert zuerst die Bewertungen, holt dann abgelaufene Kacheln,
+bereitet auf, importiert, zieht fehlende Bilder nach und stößt ein neues
+Deployment an. Ohne dieses Deployment ändert sich an der ausgelieferten Seite
+nichts — die Seiten sind vorgerendert.
+
+**Warum gestaffelte Haltbarkeit.** Ein vollständiger Abruf dauert rund acht
+Stunden und sprengt jedes CI-Zeitlimit. Deshalb altert jeder Datensatz in
+seinem eigenen Takt: Parkplätze nach 30 Tagen, Wanderwege und Ziele nach 90,
+Orte nach 180, Postleitzahlen nach 365. Ein wöchentlicher Lauf holt damit
+jeweils nur den abgelaufenen Teil. Zusätzlich begrenzt `ABRUF_BUDGET_MIN` die
+Abrufzeit; ist das Budget aufgebraucht, endet der Lauf geordnet und der nächste
+setzt dort an, weil fertige Kacheln im Zwischenspeicher liegen.
+
+## Bewertungen sichern
+
+```bash
+npm run backup                                          # schreibt eine Sicherung
+npm run -w pipeline sicherung -- --einspielen <datei>    # spielt sie zurück
+```
+
+Gesichert wird ausschließlich die Tabelle `bewertung` — alles andere entsteht
+jederzeit neu aus OpenStreetMap. Die Zuordnung läuft über die OSM-Identität des
+Parkplatzes, nicht über dessen laufende Nummer: Die kann sich bei einem
+Neuaufbau ändern, die OSM-Identität nicht. Mehrfaches Einspielen derselben
+Datei verdoppelt nichts.
+
+Der wöchentliche Lauf legt die Sicherung als Artefakt mit 90 Tagen
+Aufbewahrung ab.
+
 ## Entwicklung
 
 ```bash

@@ -9,7 +9,8 @@
     "test": "node --experimental-strip-types --test 'test/*.test.ts'",
     "moderieren": "node --experimental-strip-types src/moderieren.ts",
     "setup": "node --experimental-strip-types src/setup.ts",
-    "bilder": "node --experimental-strip-types src/bilder.ts"
+    "bilder": "node --experimental-strip-types src/bilder.ts",
+    "sicherung": "node --experimental-strip-types src/sicherung.ts"
   },
   "dependencies": {
     "pg": "^8.13.1"

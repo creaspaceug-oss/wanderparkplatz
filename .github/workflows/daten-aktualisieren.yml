@@ -1,0 +1,82 @@
+name: Daten aktualisieren
+
+# Wöchentlich in der Nacht zum Montag, wenn Overpass am wenigsten ausgelastet
+# ist. Der Lauf holt nur, was seine Haltbarkeit überschritten hat — Parkplätze
+# nach 30 Tagen, Wanderwege und Ziele nach 90, Orte nach 180, Postleitzahlen
+# nach 365. Dadurch bleibt jeder einzelne Lauf kurz.
+on:
+  schedule:
+    - cron: "17 2 * * 1"
+  workflow_dispatch:
+    inputs:
+      budget:
+        description: "Zeitbudget für den Abruf in Minuten"
+        default: "240"
+
+permissions:
+  contents: read
+
+jobs:
+  aktualisieren:
+    runs-on: ubuntu-latest
+    # Großzügig über dem Abrufbudget: Aufbereitung und Import brauchen danach
+    # noch einige Minuten.
+    timeout-minutes: 330
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      # Die Kacheln des letzten Laufs weiterverwenden — ohne sie würde jeder
+      # Lauf bei null anfangen und Stunden brauchen.
+      - name: Zwischenspeicher der Kacheln
+        uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: osm-kacheln-${{ github.run_id }}
+          restore-keys: osm-kacheln-
+
+      - name: Bewertungen sichern
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run backup
+
+      # Vor dem Import: Wären die Bewertungen beim Import beschädigt worden,
+      # läge die Sicherung bereits vor.
+      - name: Sicherung ablegen
+        uses: actions/upload-artifact@v4
+        with:
+          name: bewertungen-${{ github.run_number }}
+          path: data/sicherung/*.json
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Daten abrufen
+        env:
+          ABRUF_BUDGET_MIN: ${{ github.event.inputs.budget || '240' }}
+        run: npm run -w pipeline fetch admin pois places plz trails ziele umfeld wasserfaelle
+
+      - name: Aufbereiten
+        run: npm run data:build
+
+      - name: Importieren
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run data:load
+
+      - name: Bilder nachziehen
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run data:bilder
+
+      # Der Import allein ändert die ausgelieferten Seiten nicht — sie sind
+      # vorgerendert und müssen neu gebaut werden.
+      - name: Neu ausliefern
+        run: curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
