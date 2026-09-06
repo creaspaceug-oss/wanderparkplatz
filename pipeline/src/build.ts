@@ -243,6 +243,119 @@ function vergebeSlugs(liste: any[]) {
   }
 }
 
+// ----------------------------------------------------------- Umfeld
+/**
+ * Was in Laufweite liegt. Die Höchstabstände unterscheiden sich je Kategorie:
+ * zu einer Gaststätte geht man einen Kilometer, eine Infotafel muss am Platz
+ * selbst stehen, um überhaupt erwähnenswert zu sein.
+ */
+const UMFELD_MAX_M: Record<string, number> = {
+  einkehr: 1200,
+  oepnv: 1000,
+  wc: 500,
+  aussicht: 1500,
+  infotafel: 300,
+  schutzhuette: 1500,
+};
+
+/** Höchstens so viele Einträge je Kategorie und Parkplatz. */
+const UMFELD_MAX_PRO_KATEGORIE = 3;
+
+function kategorie(t: Record<string, string>): string | null {
+  const a = t.amenity;
+  const to = t.tourism;
+  if (a === "restaurant" || a === "cafe" || a === "biergarten" || a === "pub") return "einkehr";
+  if (a === "toilets") return "wc";
+  if (a === "shelter" || to === "wilderness_hut" || to === "alpine_hut") return "schutzhuette";
+  if (to === "viewpoint") return "aussicht";
+  if (to === "information") return "infotafel";
+  if (t.highway === "bus_stop" || t.railway) return "oepnv";
+  return null;
+}
+
+/** Ein Umfeld-Objekt, bezogen auf den Parkplatz, zu dem es gehört. */
+interface UmfeldEintrag {
+  /** Identität des Parkplatzes — die Verknüpfung beim Import. */
+  platz_osm_type: string;
+  platz_osm_id: number;
+  kategorie: string;
+  name: string | null;
+  distanz_m: number;
+  lat: number;
+  lon: number;
+}
+
+async function verarbeiteUmfeld(parkplaetze: any[]): Promise<UmfeldEintrag[]> {
+  const dateien = await kachelDateien("umfeld");
+  if (!dateien.length) {
+    console.log("Keine Umfeld-Kacheln vorhanden — Schritt übersprungen.");
+    return [];
+  }
+  console.log(`Lese ${dateien.length} Umfeld-Kacheln …`);
+
+  const gitter = new Grid<{ pt: Pt; idx: number }>(0.02);
+  parkplaetze.forEach((p, idx) => gitter.add({ pt: [p.lon, p.lat], idx }));
+
+  // je Parkplatz und Kategorie die nächstgelegenen Einträge sammeln
+  const proPlatz = new Map<string, UmfeldEintrag[]>();
+  const gesehen = new Set<string>();
+  let objekte = 0;
+
+  for (const datei of dateien) {
+    let els: OsmElement[];
+    try {
+      els = (await readJson(raw(datei))).elements;
+    } catch {
+      continue;
+    }
+    for (const el of els) {
+      const schluessel = `${el.type}/${el.id}`;
+      if (gesehen.has(schluessel)) continue;
+      gesehen.add(schluessel);
+
+      const pt = coordOf(el);
+      const kat = el.tags ? kategorie(el.tags) : null;
+      if (!pt || !kat) continue;
+      objekte++;
+
+      const maxKm = UMFELD_MAX_M[kat] / 1000;
+      for (const { item, km } of gitter.within(pt, maxKm)) {
+        const p = parkplaetze[item.idx];
+        const k = `${item.idx}|${kat}`;
+        const liste = proPlatz.get(k) ?? [];
+        liste.push({
+          platz_osm_type: p.osm_type,
+          platz_osm_id: p.osm_id,
+          kategorie: kat,
+          name: el.tags?.name ?? null,
+          distanz_m: Math.round(km * 1000),
+          lat: pt[1],
+          lon: pt[0],
+        });
+        proPlatz.set(k, liste);
+      }
+    }
+  }
+
+  const raus: UmfeldEintrag[] = [];
+  const zaehler: Record<string, number> = {};
+  for (const [, liste] of proPlatz) {
+    liste.sort((a, b) => a.distanz_m - b.distanz_m);
+    for (const e of liste.slice(0, UMFELD_MAX_PRO_KATEGORIE)) {
+      raus.push(e);
+      zaehler[e.kategorie] = (zaehler[e.kategorie] ?? 0) + 1;
+    }
+  }
+  const mitUmfeld = new Set([...proPlatz.keys()].map((k) => k.split("|")[0])).size;
+  console.log(
+    `  ${objekte} Objekte, ${raus.length} Einträge für ${mitUmfeld} von ${parkplaetze.length} Parkplätzen`,
+  );
+  console.log(
+    `  ${Object.entries(zaehler).map(([k, v]) => `${k}: ${v}`).join(", ")}`,
+  );
+  return raus;
+}
+
 // ------------------------------------------------------- Standortsuche
 /**
  * Suchziele für die Standorteingabe: alle Orte (auch ohne Parkplatzbestand)
@@ -622,6 +735,7 @@ async function main() {
     });
 
   const { trails, zuordnung } = await verarbeiteTrails(parkplaetze);
+  const umfeld = await verarbeiteUmfeld(parkplaetze);
   console.log("Baue Standortziele …");
   const standorte = await baueStandorte(bl, kreise);
 
@@ -629,6 +743,7 @@ async function main() {
   await writeFile(out("trails.json"), JSON.stringify(trails));
   await writeFile(out("parkplatz_trail.json"), JSON.stringify(zuordnung));
   await writeFile(out("standorte.json"), JSON.stringify(standorte));
+  await writeFile(out("umfeld.json"), JSON.stringify(umfeld));
   await writeFile(out("bundeslaender.json"), JSON.stringify(bundeslaender));
   await writeFile(out("kreise.json"), JSON.stringify(kreiseOut));
   await writeFile(out("orte.json"), JSON.stringify(orte));

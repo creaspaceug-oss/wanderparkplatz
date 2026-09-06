@@ -422,3 +422,20 @@ export const groessteParkplaetze = (limit = 8) =>
      ORDER BY p.stellplaetze DESC LIMIT $1`,
     [limit],
   );
+
+export interface UmfeldEintrag {
+  kategorie: string;
+  name: string | null;
+  distanz_m: number;
+}
+
+/** Was in Laufweite des Parkplatzes liegt, nach Kategorie gebündelt. */
+export const umfeldAmPlatz = cache((parkplatzId: number) =>
+  q<UmfeldEintrag>(
+    `SELECT kategorie, name, distanz_m
+       FROM parkplatz_nearby
+      WHERE parkplatz_id = $1
+      ORDER BY kategorie, distanz_m`,
+    [parkplatzId],
+  ),
+);

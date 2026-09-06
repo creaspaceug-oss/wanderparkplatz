@@ -100,6 +100,27 @@ export const plzQuery = (t: Tile) => `[out:json][timeout:300][bbox:${bbox(t)}];
 nwr["boundary"="postal_code"]["postal_code"];
 out center tags;`;
 
+/**
+ * Was rund um den Parkplatz liegt: Einkehr, Haltestelle, WC, Aussichtspunkt,
+ * Infotafel, Schutzhütte.
+ *
+ * Wie bei den Wanderwegen entsteht die Zuordnung lokal — Overpass grenzt nur
+ * auf das Umfeld der Parkplätze ein, die Abstände rechnet der Build-Schritt.
+ * Die Ergebnismenge ist klein, deshalb genügt hier `out center`.
+ */
+export const umfeldQuery = (t: Tile) => `[out:json][timeout:300][bbox:${bbox(t)}];
+${POI_SET}
+(
+  nwr(around.pois:1500)["amenity"~"^(restaurant|cafe|biergarten|pub)$"]["name"];
+  nwr(around.pois:1500)["amenity"="toilets"];
+  nwr(around.pois:1500)["amenity"="shelter"];
+  nwr(around.pois:1500)["tourism"~"^(viewpoint|wilderness_hut|alpine_hut)$"];
+  nwr(around.pois:1500)["tourism"="information"]["information"~"^(map|board|guidepost)$"];
+  node(around.pois:1500)["highway"="bus_stop"];
+  nwr(around.pois:1500)["railway"~"^(station|halt|tram_stop)$"];
+);
+out center tags;`;
+
 /** Orte für "X km von <Ort>" und die Ortsseiten. */
 export const placesQuery = (t: Tile) => `[out:json][timeout:300][bbox:${bbox(t)}];
 node["place"~"^(city|town|village)$"]["name"];

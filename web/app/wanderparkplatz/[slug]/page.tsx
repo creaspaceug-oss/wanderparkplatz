@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { parkplatzBySlug, inDerNaehe, alleSlugs, trailsAmPlatz } from "@/lib/db";
+import { parkplatzBySlug, inDerNaehe, alleSlugs, trailsAmPlatz, umfeldAmPlatz } from "@/lib/db";
 import { beschreibung, metaBeschreibung } from "@/lib/beschreibung";
 import { jsonLd, km, gebuehrText } from "@/lib/format";
 import { titel } from "@/lib/meta";
@@ -10,6 +10,7 @@ import { bewertungenFuer } from "@/lib/bewertung";
 import BewertungFormular from "@/components/BewertungFormular";
 import Bewertungen from "@/components/Bewertungen";
 import Sterne from "@/components/Sterne";
+import Umfeld from "@/components/Umfeld";
 import { SITE } from "@/lib/site";
 
 /** OSM-Netzstufe → Einordnung für Leser. */
@@ -65,10 +66,11 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
   const p = await parkplatzBySlug(slug);
   if (!p) notFound();
 
-  const [nahe, bewertungen, trails] = await Promise.all([
+  const [nahe, bewertungen, trails, umfeld] = await Promise.all([
     inDerNaehe(p.id, p.lat, p.lon, 20, 8),
     bewertungenFuer(p.id),
     trailsAmPlatz(p.id),
+    umfeldAmPlatz(p.id),
   ]);
   const schnitt = p.bewertung_schnitt ? Number(p.bewertung_schnitt) : null;
   const absaetze = beschreibung(p, trails);
@@ -243,6 +245,8 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
           </p>
         )}
       </section>
+
+      <Umfeld items={umfeld} />
 
       <section className="mt-10">
         <h2 className="text-xl font-semibold">Anfahrt</h2>

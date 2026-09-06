@@ -218,6 +218,30 @@ if (trails.length) {
   );
 }
 
+// ------------------------------------------------------------ Umfeld
+// Rein abgeleitet — bei jedem Import neu aufgebaut.
+const umfeld = await readJson(out("umfeld.json")).catch(() => []);
+if (umfeld.length) {
+  await client.query("TRUNCATE parkplatz_nearby RESTART IDENTITY");
+  const ppIds2 = new Map<string, number>(
+    (await client.query("SELECT id, osm_type, osm_id FROM parkplatz")).rows.map((r) => [
+      `${r.osm_type}/${r.osm_id}`,
+      r.id,
+    ]),
+  );
+  const zeilen = umfeld
+    .map((u: any) => [
+      ppIds2.get(`${u.platz_osm_type}/${u.platz_osm_id}`),
+      u.kategorie, u.name, u.distanz_m, u.lat, u.lon,
+    ])
+    .filter((r: any[]) => r[0]);
+  await insertMany(
+    "parkplatz_nearby",
+    ["parkplatz_id", "kategorie", "name", "distanz_m", "lat", "lon"],
+    zeilen,
+  );
+}
+
 // --------------------------------------------------- Standortsuche
 const standorte = await readJson(out("standorte.json")).catch(() => []);
 await client.query("TRUNCATE standort RESTART IDENTITY");
@@ -286,7 +310,8 @@ const z = (
             (SELECT count(*) FROM bewertung)::int               AS bewertungen,
             (SELECT count(*) FROM standort)::int                 AS standorte,
             (SELECT count(*) FROM trail)::int                    AS trails,
-            (SELECT count(*) FROM parkplatz_trail)::int          AS wegpaare`,
+            (SELECT count(*) FROM parkplatz_trail)::int          AS wegpaare,
+            (SELECT count(*) FROM parkplatz_nearby)::int         AS umfeld`,
   )
 ).rows[0];
 console.log(`Import fertig.
@@ -296,5 +321,6 @@ console.log(`Import fertig.
   Slug-Kollisionen   ${umbenannt} (Kennung angehängt)
   Standortziele      ${z.standorte}
   Wanderwege         ${z.trails} (${z.wegpaare} Zuordnungen)
+  Umfeld-Einträge    ${z.umfeld}
   Bewertungen erhalten ${z.bewertungen}`);
 await client.end();
