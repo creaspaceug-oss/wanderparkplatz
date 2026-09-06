@@ -167,8 +167,15 @@ export interface ParkplatzMitDistanz extends Parkplatz {
   km: number;
 }
 
-const SELECT_PARKPLATZ = `
-  SELECT p.*,
+/**
+ * Auswahl eines Parkplatzes samt Gebietsnamen.
+ *
+ * `zusatz` nimmt Spalten aus mitverknüpften Tabellen auf — etwa den Abstand
+ * aus parkplatz_ziel. Ohne diesen Weg fehlte die Spalte still im Ergebnis und
+ * tauchte erst als "NaN" auf der Seite auf.
+ */
+const selectParkplatz = (zusatz = "") => `
+  SELECT p.*,${zusatz ? ` ${zusatz},` : ""}
          o.name AS ort_name, o.slug AS ort_slug,
          k.name AS kreis_name, k.slug AS kreis_slug, k.typ AS kreis_typ,
          b.name AS bl_name, b.slug AS bl_slug
@@ -176,6 +183,8 @@ const SELECT_PARKPLATZ = `
   LEFT JOIN ort o        ON o.id = p.ort_id
   LEFT JOIN kreis k      ON k.id = p.kreis_id
   LEFT JOIN bundesland b ON b.id = p.bundesland_id`;
+
+const SELECT_PARKPLATZ = selectParkplatz();
 
 /**
  * Umkreissuche ohne PostGIS: Bounding-Box grenzt über den B-Tree-Index auf
@@ -466,7 +475,7 @@ export const trailBySlug = cache((slug: string) =>
 /** Parkplätze am Weg, die inhaltsreichsten zuerst. */
 export const parkplaetzeAmTrail = (trailId: number, limit = 150) =>
   q<Parkplatz & { distanz_m: number }>(
-    `${SELECT_PARKPLATZ}
+    `${selectParkplatz("pt.distanz_m")}
      JOIN parkplatz_trail pt ON pt.parkplatz_id = p.id
      WHERE pt.trail_id = $1 AND p.aktiv
      ORDER BY p.aussagen DESC, pt.distanz_m, p.name
@@ -539,7 +548,7 @@ export const zielBySlug = cache((slug: string) =>
 /** Parkplätze am Ziel, die nächstgelegenen zuerst. */
 export const parkplaetzeAmZiel = (zielId: number, limit = 40) =>
   q<Parkplatz & { distanz_m: number }>(
-    `${SELECT_PARKPLATZ}
+    `${selectParkplatz("pz.distanz_m")}
      JOIN parkplatz_ziel pz ON pz.parkplatz_id = p.id
      WHERE pz.ziel_id = $1 AND p.aktiv
      ORDER BY pz.distanz_m, p.aussagen DESC

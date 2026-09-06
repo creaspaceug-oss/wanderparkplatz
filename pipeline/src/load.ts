@@ -249,10 +249,10 @@ if (ziele.length) {
   await client.query("TRUNCATE parkplatz_ziel, ziel RESTART IDENTITY CASCADE");
   await insertMany(
     "ziel",
-    ["osm_type", "osm_id", "slug", "name", "art", "hoehe_m", "lat", "lon", "bundesland_id"],
+    ["osm_type", "osm_id", "slug", "name", "art", "hoehe_m", "lat", "lon", "bundesland_id", "bekannt"],
     ziele.map((z: any) => [
       z.osm_type, z.osm_id, z.slug, z.name, z.art, z.hoehe_m, z.lat, z.lon,
-      blIds.get(z.bl_slug) ?? null,
+      blIds.get(z.bl_slug) ?? null, Boolean(z.bekannt),
     ]),
   );
   const zielIds = new Map<string, number>(
@@ -281,9 +281,23 @@ if (ziele.length) {
     "ON CONFLICT (parkplatz_id, ziel_id) DO UPDATE SET distanz_m = EXCLUDED.distanz_m",
   );
 
-  // Ein Ziel mit nur einem Parkplatz ergäbe eine Seite mit einem Listeneintrag.
+  /*
+   * Eine eigene Seite braucht zwei Bedingungen.
+   *
+   * Erstens mindestens zwei Parkplätze — bei einem einzigen wäre es eine Seite
+   * mit einem Listeneintrag.
+   *
+   * Zweitens ein Grund, warum jemand nach diesem Ziel sucht: entweder ein
+   * Wikipedia-/Wikidata-Eintrag, oder eine Art, die für sich genommen ein
+   * Ausflugsziel ist. Ohne diese Bedingung bekäme jeder namenlose Buckel mit
+   * zwei Parkplätzen im Fünf-Kilometer-Umkreis eine Seite — 16.731 Stück, die
+   * das gerade behobene Thin-Content-Problem zurückgebracht hätten.
+   */
   await client.query(`
-    UPDATE ziel z SET parkplatz_count = c.n, eigene_seite = c.n >= 2
+    UPDATE ziel z SET
+      parkplatz_count = c.n,
+      eigene_seite = c.n >= 2
+        AND (z.bekannt OR z.art IN ('burg','wasserfall','hoehle','turm'))
     FROM (SELECT ziel_id, count(*)::int AS n FROM parkplatz_ziel GROUP BY ziel_id) c
     WHERE c.ziel_id = z.id`);
 }

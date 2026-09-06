@@ -20,7 +20,11 @@ async function kachelDateien(prefix: string): Promise<string[]> {
   const alle = await readdir(RAW);
   // Kachel-IDs beginnen mit der Breitengrad-Zahl — so bleiben Altbestände
   // aus früheren Abrufstrategien (z. B. "pois-de-bw.json") außen vor.
-  const muster = new RegExp(`^${prefix}-\\d.*\\.json$`);
+  // "ziele" umfasst auch die nachgereichten Wasserfall-Kacheln (ziele-wf-…)
+  const muster =
+    prefix === "ziele"
+      ? /^ziele-(\d|wf-\d).*\.json$/
+      : new RegExp(`^${prefix}-\\d.*\\.json$`);
   return alle.filter((f) => muster.test(f)).sort();
 }
 
@@ -452,6 +456,8 @@ async function verarbeiteZiele(
         name,
         art,
         hoehe_m: Number.isFinite(hoehe) && hoehe! > -100 && hoehe! < 3000 ? hoehe : null,
+        // Wikipedia- oder Wikidata-Eintrag als Bekanntheitssignal
+        bekannt: Boolean(el.tags?.wikidata || el.tags?.wikipedia),
         lat: pt[1],
         lon: pt[0],
         bl_slug: locate(pt, bl)?.slug ?? null,

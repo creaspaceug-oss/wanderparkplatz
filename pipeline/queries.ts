@@ -131,11 +131,28 @@ out center tags;`;
 export const zieleQuery = (t: Tile) => `[out:json][timeout:300][bbox:${bbox(t)}];
 (
   nwr["natural"="peak"]["name"];
+  nwr["waterway"="waterfall"]["name"];
   nwr["natural"="waterfall"]["name"];
   nwr["natural"="cave_entrance"]["name"];
   nwr["historic"~"^(castle|ruins)$"]["name"];
   nwr["man_made"="tower"]["tower:type"="observation"]["name"];
   nwr["tourism"="viewpoint"]["name"];
+);
+out center tags;`;
+
+/**
+ * Wasserfälle nachträglich.
+ *
+ * In der ersten Fassung stand nur natural=waterfall in der Abfrage — in
+ * OpenStreetMap ist aber waterway=waterfall die gängige Verschlagwortung.
+ * Ergebnis waren vier Wasserfälle in ganz Deutschland. Eigener Job, damit
+ * dafür nicht alle Ziel-Kacheln neu geholt werden müssen; die Abfrage ist
+ * billig, weil das Merkmal selten ist.
+ */
+export const wasserfallQuery = (t: Tile) => `[out:json][timeout:300][bbox:${bbox(t)}];
+(
+  nwr["waterway"="waterfall"]["name"];
+  nwr["natural"="waterfall"]["name"];
 );
 out center tags;`;
 

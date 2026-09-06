@@ -1,7 +1,7 @@
 import { mkdir, writeFile, stat } from "node:fs/promises";
 import { overpass } from "./overpass.ts";
 import {
-  tiles, viertel, poisQuery, placesQuery, trailsQuery, plzQuery, umfeldQuery, zieleQuery, type Tile,
+  tiles, viertel, poisQuery, placesQuery, trailsQuery, plzQuery, umfeldQuery, zieleQuery, wasserfallQuery, type Tile,
 } from "../queries.ts";
 import { RAW, raw } from "./paths.ts";
 
@@ -87,6 +87,7 @@ const jobs: Record<string, () => Promise<unknown>> = {
   plz: () => tiled("plz", plzQuery),
   umfeld: () => tiled("umfeld", umfeldQuery),
   ziele: () => tiled("ziele", zieleQuery),
+  wasserfaelle: () => tiled("ziele-wf", wasserfallQuery),
 };
 
 const requested = process.argv.slice(2).filter((a) => !a.startsWith("-"));

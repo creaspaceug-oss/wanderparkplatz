@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import ParkplatzListe from "@/components/ParkplatzListe";
 import Brotkrumen from "@/components/Brotkrumen";
 import { zielBySlug, parkplaetzeAmZiel, zielSeiten, nahegelegeneZiele } from "@/lib/db";
-import { ZIELART, zielTitel } from "@/lib/zielart";
+import { zielTitel } from "@/lib/zielart";
 import { jsonLd, nf } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
@@ -47,7 +47,6 @@ export default async function ZielSeite({ params }: PageProps<"/ziel/[slug]">) {
   if (!plaetze.length) notFound();
 
   const naechster = plaetze[0];
-  const art = ZIELART[z.art];
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -90,8 +89,10 @@ export default async function ZielSeite({ params }: PageProps<"/ziel/[slug]">) {
       </p>
 
       <p className="mt-4 text-lg leading-relaxed text-muted">
-        {`Für ${art?.artikel === "die" ? "die" : "den"} ${z.name} sind ` +
-          `${nf.format(z.parkplatz_count)} Wanderparkplätze als Ausgangspunkt erfasst. ` +
+        {/* Ohne Artikel formuliert: "für den Großer Waxenstein" wäre falsch,
+            und Eigennamen lassen sich nicht zuverlässig beugen. */}
+        {`Als Ausgangspunkt sind ${nf.format(z.parkplatz_count)} ` +
+          `${z.parkplatz_count === 1 ? "Wanderparkplatz" : "Wanderparkplätze"} erfasst. ` +
           `Der nächstgelegene liegt ${meter(naechster.distanz_m)} entfernt` +
           `${naechster.gebuehr === false ? " und ist kostenfrei" : ""}. ` +
           `Die Entfernungen sind Luftlinie — der tatsächliche Weg ist je nach Gelände ` +
