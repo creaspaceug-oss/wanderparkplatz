@@ -149,6 +149,7 @@ export interface Parkplatz {
   betreiber: string | null;
   hoehe_m: number | null;
   daten_score: number;
+  aussagen: number;
   bewertung_anzahl: number;
   bewertung_schnitt: string | null;
   ort_km: number | null;

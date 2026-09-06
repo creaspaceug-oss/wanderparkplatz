@@ -297,6 +297,22 @@ await insertMany(
   "ON CONFLICT (typ, slug) DO NOTHING",
 );
 
+/*
+ * Inhaltsumfang neu berechnen — erst hier, wenn Wege und Umfeld geladen sind.
+ * Er steuert, welche Seiten indexiert werden; daten_score allein wäre dafür
+ * seit der Anreicherung ein falscher Maßstab.
+ */
+await client.query(`
+  UPDATE parkplatz p SET aussagen =
+      (p.stellplaetze IS NOT NULL)::int + (p.gebuehr IS NOT NULL)::int
+    + (p.oberflaeche IS NOT NULL)::int + (p.zugang IS NOT NULL)::int
+    + (p.oeffnungszeiten IS NOT NULL)::int + (p.beleuchtet IS NOT NULL)::int
+    + (p.barrierefrei IS NOT NULL)::int + (p.max_hoehe_m IS NOT NULL)::int
+    + (p.wohnmobil IS NOT NULL)::int + (p.wc IS NOT NULL)::int
+    + (p.betreiber IS NOT NULL)::int + (p.hoehe_m IS NOT NULL)::int
+    + (SELECT count(*) FROM parkplatz_trail t  WHERE t.parkplatz_id = p.id)
+    + (SELECT count(*) FROM parkplatz_nearby n WHERE n.parkplatz_id = p.id)`);
+
 await client.query("COMMIT");
 await client.query("ANALYZE");
 
@@ -311,7 +327,8 @@ const z = (
             (SELECT count(*) FROM standort)::int                 AS standorte,
             (SELECT count(*) FROM trail)::int                    AS trails,
             (SELECT count(*) FROM parkplatz_trail)::int          AS wegpaare,
-            (SELECT count(*) FROM parkplatz_nearby)::int         AS umfeld`,
+            (SELECT count(*) FROM parkplatz_nearby)::int         AS umfeld,
+            (SELECT count(*) FROM parkplatz WHERE aktiv AND aussagen <= 2)::int AS duenn`,
   )
 ).rows[0];
 console.log(`Import fertig.
@@ -322,5 +339,6 @@ console.log(`Import fertig.
   Standortziele      ${z.standorte}
   Wanderwege         ${z.trails} (${z.wegpaare} Zuordnungen)
   Umfeld-Einträge    ${z.umfeld}
+  zu dünn für Index  ${z.duenn}
   Bewertungen erhalten ${z.bewertungen}`);
 await client.end();

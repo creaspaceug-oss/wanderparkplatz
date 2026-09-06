@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { q, regionBestaende } from "@/lib/db";
 import { SITE } from "@/lib/site";
 import { WANDERREGIONEN } from "@/lib/wanderregionen";
+import { MIN_AUSSAGEN } from "@/lib/inhalt";
 
 export const revalidate = 86400;
 
@@ -23,7 +24,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     q<{ slug: string }>("SELECT slug FROM kreis WHERE poi_count > 0 ORDER BY poi_count DESC"),
     q<{ slug: string }>("SELECT slug FROM ort WHERE poi_count > 0 ORDER BY poi_count DESC"),
     q<{ slug: string; aktualisiert: Date }>(
-      "SELECT slug, aktualisiert FROM parkplatz WHERE aktiv ORDER BY daten_score DESC, id",
+      // Nicht indexierbare Seiten gehören nicht in die Sitemap.
+      `SELECT slug, aktualisiert FROM parkplatz
+        WHERE aktiv AND aussagen >= ${MIN_AUSSAGEN}
+        ORDER BY aussagen DESC, id`,
     ),
     regionBestaende(WANDERREGIONEN),
   ]);

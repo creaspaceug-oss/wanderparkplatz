@@ -5,6 +5,7 @@ import { parkplatzBySlug, inDerNaehe, alleSlugs, trailsAmPlatz, umfeldAmPlatz } 
 import { beschreibung, metaBeschreibung } from "@/lib/beschreibung";
 import { jsonLd, km, gebuehrText } from "@/lib/format";
 import { titel } from "@/lib/meta";
+import { istIndexierbar } from "@/lib/inhalt";
 import { VORRENDERN } from "@/lib/vorrendern";
 import { bewertungenFuer } from "@/lib/bewertung";
 import BewertungFormular from "@/components/BewertungFormular";
@@ -46,6 +47,9 @@ export async function generateMetadata({
     title: titel(basis.length <= 38 ? `${basis} – Parken & Wanderwege` : basis),
     description: metaBeschreibung(p, trails.length),
     alternates: { canonical: `/wanderparkplatz/${p.slug}` },
+    // Seiten mit zu wenig Substanz bleiben erreichbar und verlinkt, aber
+    // außerhalb des Index — sie würden sonst die Bewertung der Domain drücken.
+    ...(istIndexierbar(p.aussagen) ? {} : { robots: { index: false, follow: true } }),
     openGraph: { title: basis, description: metaBeschreibung(p, trails.length), type: "website" },
   };
 }
