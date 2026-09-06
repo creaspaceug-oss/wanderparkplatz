@@ -525,6 +525,8 @@ export const verwandteTrails = (trailId: number, limit = 8) =>
 export interface Ziel {
   id: number;
   wikidata: string | null;
+  kreis_name: string | null;
+  kreis_slug: string | null;
   slug: string;
   name: string;
   art: string;
@@ -539,8 +541,11 @@ export interface Ziel {
 export const zielBySlug = cache((slug: string) =>
   one<Ziel>(
     `SELECT z.id, z.wikidata, z.slug, z.name, z.art, z.hoehe_m, z.lat, z.lon,
-            z.parkplatz_count, b.name AS bl_name, b.slug AS bl_slug
-       FROM ziel z LEFT JOIN bundesland b ON b.id = z.bundesland_id
+            z.parkplatz_count, b.name AS bl_name, b.slug AS bl_slug,
+            k.name AS kreis_name, k.slug AS kreis_slug
+       FROM ziel z
+       LEFT JOIN bundesland b ON b.id = z.bundesland_id
+       LEFT JOIN kreis k      ON k.id = z.kreis_id
       WHERE z.slug = $1 AND z.eigene_seite`,
     [slug],
   ),

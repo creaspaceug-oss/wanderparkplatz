@@ -26,10 +26,11 @@ export async function generateMetadata({ params }: PageProps<"/ziel/[slug]">): P
   const z = await zielBySlug(slug);
   if (!z) return { title: "Ziel nicht gefunden" };
   return {
-    // "Steinberg" gibt es 33-mal, "Galgenberg" 25-mal. Ohne Bundesland im
-    // Titel wären diese Seiten nicht unterscheidbar.
+    // "Steinberg" gibt es 33-mal, "Galgenberg" 25-mal. Der Kreis trennt
+    // schärfer als das Bundesland: 1.875 Namensdubletten sinken damit auf
+    // 405 statt nur auf 1.107.
     title: titel(
-      `Parkplatz ${z.name}${z.bl_name ? ` (${z.bl_name})` : ""}` +
+      `Parkplatz ${z.name}${z.kreis_name ? ` (${z.kreis_name})` : z.bl_name ? ` (${z.bl_name})` : ""}` +
         ` – ${nf.format(z.parkplatz_count)} Wanderparkplätze`,
     ),
     description: beschreibung(

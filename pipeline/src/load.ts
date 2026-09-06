@@ -282,6 +282,21 @@ if (ziele.length) {
   );
 
   /*
+   * Kreis des nächstgelegenen Parkplatzes — macht gleichnamige Zielseiten
+   * im Titel unterscheidbar.
+   */
+  await client.query(`
+    UPDATE ziel z SET kreis_id = k.kreis_id
+    FROM (
+      SELECT DISTINCT ON (pz.ziel_id) pz.ziel_id, p.kreis_id
+        FROM parkplatz_ziel pz
+        JOIN parkplatz p ON p.id = pz.parkplatz_id
+       WHERE p.kreis_id IS NOT NULL
+       ORDER BY pz.ziel_id, pz.distanz_m
+    ) k
+    WHERE k.ziel_id = z.id`);
+
+  /*
    * Eine eigene Seite braucht zwei Bedingungen.
    *
    * Erstens mindestens zwei Parkplätze — bei einem einzigen wäre es eine Seite
