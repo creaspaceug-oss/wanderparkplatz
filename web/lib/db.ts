@@ -334,6 +334,7 @@ export function standorte(begriff: string, limit = 8) {
 export interface TrailAmPlatz {
   name: string;
   slug: string;
+  eigene_seite: boolean;
   netz: string | null;
   ref: string | null;
   markierung: string | null;
@@ -343,7 +344,7 @@ export interface TrailAmPlatz {
 
 export const trailsAmPlatz = cache((parkplatzId: number) =>
   q<TrailAmPlatz>(
-    `SELECT t.name, t.slug, t.netz, t.ref, t.markierung, t.laenge_km, pt.distanz_m
+    `SELECT t.name, t.slug, t.eigene_seite, t.netz, t.ref, t.markierung, t.laenge_km, pt.distanz_m
        FROM parkplatz_trail pt JOIN trail t ON t.id = pt.trail_id
       WHERE pt.parkplatz_id = $1
       ORDER BY
@@ -440,3 +441,73 @@ export const umfeldAmPlatz = cache((parkplatzId: number) =>
     [parkplatzId],
   ),
 );
+
+// -------------------------------------------------------- Wanderwege
+export interface Trail {
+  id: number;
+  osm_id: string;
+  slug: string;
+  name: string;
+  netz: string | null;
+  ref: string | null;
+  markierung: string | null;
+  laenge_km: string | null;
+  parkplatz_count: number;
+}
+
+export const trailBySlug = cache((slug: string) =>
+  one<Trail>(
+    `SELECT id, osm_id, slug, name, netz, ref, markierung, laenge_km, parkplatz_count
+       FROM trail WHERE slug = $1 AND eigene_seite`,
+    [slug],
+  ),
+);
+
+/** Parkplätze am Weg, die inhaltsreichsten zuerst. */
+export const parkplaetzeAmTrail = (trailId: number, limit = 150) =>
+  q<Parkplatz & { distanz_m: number }>(
+    `${SELECT_PARKPLATZ}
+     JOIN parkplatz_trail pt ON pt.parkplatz_id = p.id
+     WHERE pt.trail_id = $1 AND p.aktiv
+     ORDER BY p.aussagen DESC, pt.distanz_m, p.name
+     LIMIT $2`,
+    [trailId, limit],
+  );
+
+/** Landkreise, die der Weg berührt — für die Binnenverlinkung. */
+export const kreiseAmTrail = (trailId: number, limit = 10) =>
+  q<{ slug: string; name: string; typ: string | null; poi_count: number }>(
+    `SELECT k.slug, k.name, k.typ, count(*)::int AS poi_count
+       FROM parkplatz_trail pt
+       JOIN parkplatz p ON p.id = pt.parkplatz_id AND p.aktiv
+       JOIN kreis k ON k.id = p.kreis_id
+      WHERE pt.trail_id = $1
+      GROUP BY k.slug, k.name, k.typ
+      ORDER BY count(*) DESC, k.name
+      LIMIT $2`,
+    [trailId, limit],
+  );
+
+/** Wege mit eigener Seite, für Übersicht, Sitemap und Vorrendern. */
+export const trailSeiten = (limit?: number) =>
+  q<Trail>(
+    `SELECT id, osm_id, slug, name, netz, ref, markierung, laenge_km, parkplatz_count
+       FROM trail WHERE eigene_seite
+      ORDER BY CASE netz WHEN 'iwn' THEN 1 WHEN 'nwn' THEN 2 WHEN 'rwn' THEN 3 ELSE 4 END,
+               parkplatz_count DESC, name
+      ${limit ? `LIMIT ${Number(limit)}` : ""}`,
+  );
+
+/** Weitere Wege an denselben Parkplätzen — thematisch nächstliegende Nachbarn. */
+export const verwandteTrails = (trailId: number, limit = 8) =>
+  q<Trail>(
+    `SELECT DISTINCT t.id, t.osm_id, t.slug, t.name, t.netz, t.ref, t.markierung,
+            t.laenge_km, t.parkplatz_count
+       FROM parkplatz_trail a
+       JOIN parkplatz_trail b ON b.parkplatz_id = a.parkplatz_id AND b.trail_id <> a.trail_id
+       JOIN trail t ON t.id = b.trail_id
+      WHERE a.trail_id = $1 AND t.eigene_seite
+      ORDER BY t.parkplatz_count DESC, t.name
+      LIMIT $2`,
+    [trailId, limit],
+  );

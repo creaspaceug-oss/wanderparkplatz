@@ -298,6 +298,25 @@ await insertMany(
 );
 
 /*
+ * Wanderwege: Zahl der Parkplätze und ob eine eigene Seite gerechtfertigt ist.
+ *
+ * Ein Weg mit nur einem Parkplatz ergäbe eine Seite mit einem Listeneintrag —
+ * 5.330 der 7.441 Wege fallen darunter. Zwei Parkplätze genügen, sofern die
+ * Seite darüber hinaus etwas zu sagen hat: eine Netzstufe oberhalb "örtlich"
+ * oder eine bekannte Weglänge.
+ */
+await client.query(`
+  UPDATE trail t SET
+    parkplatz_count = c.n,
+    -- COALESCE ist nötig: bei netz = NULL liefert IN (...) weder wahr noch
+    -- falsch, sondern NULL, und "true AND NULL" ist NULL.
+    eigene_seite = COALESCE(
+      c.n >= 2 AND (t.netz IN ('iwn','nwn','rwn') OR t.laenge_km IS NOT NULL),
+      false)
+  FROM (SELECT trail_id, count(*)::int AS n FROM parkplatz_trail GROUP BY trail_id) c
+  WHERE c.trail_id = t.id`);
+
+/*
  * Inhaltsumfang neu berechnen — erst hier, wenn Wege und Umfeld geladen sind.
  * Er steuert, welche Seiten indexiert werden; daten_score allein wäre dafür
  * seit der Anreicherung ein falscher Maßstab.
@@ -328,7 +347,8 @@ const z = (
             (SELECT count(*) FROM trail)::int                    AS trails,
             (SELECT count(*) FROM parkplatz_trail)::int          AS wegpaare,
             (SELECT count(*) FROM parkplatz_nearby)::int         AS umfeld,
-            (SELECT count(*) FROM parkplatz WHERE aktiv AND aussagen <= 2)::int AS duenn`,
+            (SELECT count(*) FROM parkplatz WHERE aktiv AND aussagen <= 2)::int AS duenn,
+            (SELECT count(*) FROM trail WHERE eigene_seite)::int AS wegseiten`,
   )
 ).rows[0];
 console.log(`Import fertig.
@@ -340,5 +360,6 @@ console.log(`Import fertig.
   Wanderwege         ${z.trails} (${z.wegpaare} Zuordnungen)
   Umfeld-Einträge    ${z.umfeld}
   zu dünn für Index  ${z.duenn}
+  Wanderweg-Seiten   ${z.wegseiten}
   Bewertungen erhalten ${z.bewertungen}`);
 await client.end();

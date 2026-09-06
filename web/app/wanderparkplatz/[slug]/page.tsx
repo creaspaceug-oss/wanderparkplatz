@@ -213,7 +213,15 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
                       {t.ref}
                     </span>
                   )}
-                  {t.name}
+                  {/* Nur verlinken, wo es auch eine Seite gibt — sonst führte
+                      der Verweis ins Leere. */}
+                  {t.eigene_seite ? (
+                    <Link href={`/wanderweg/${t.slug}`} className="hover:text-accent">
+                      {t.name}
+                    </Link>
+                  ) : (
+                    t.name
+                  )}
                 </span>
                 <span className="text-sm text-muted">
                   {[

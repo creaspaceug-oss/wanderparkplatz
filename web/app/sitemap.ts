@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { q, regionBestaende } from "@/lib/db";
+import { q, regionBestaende, trailSeiten } from "@/lib/db";
 import { SITE } from "@/lib/site";
 import { WANDERREGIONEN } from "@/lib/wanderregionen";
 import { MIN_AUSSAGEN } from "@/lib/inhalt";
@@ -13,12 +13,13 @@ export const revalidate = 86400;
  * und robots.txt braucht eine Sitemap-Index-Datei.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [statisch, laender, kreise, orte, plaetze, bestaende] = await Promise.all([
+  const [statisch, laender, kreise, orte, plaetze, bestaende, wege] = await Promise.all([
     Promise.resolve([
       // Ohne Schrägstrich — so lautet auch das Canonical der Startseite.
       { url: SITE, changeFrequency: "weekly" as const, priority: 1 },
       { url: `${SITE}/bundeslaender`, changeFrequency: "monthly" as const, priority: 0.7 },
       { url: `${SITE}/regionen`, changeFrequency: "monthly" as const, priority: 0.8 },
+      { url: `${SITE}/wanderwege`, changeFrequency: "monthly" as const, priority: 0.8 },
     ]),
     q<{ slug: string }>("SELECT slug FROM bundesland WHERE poi_count > 0 ORDER BY poi_count DESC"),
     q<{ slug: string }>("SELECT slug FROM kreis WHERE poi_count > 0 ORDER BY poi_count DESC"),
@@ -30,6 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         ORDER BY aussagen DESC, id`,
     ),
     regionBestaende(WANDERREGIONEN),
+    trailSeiten(),
   ]);
   const bestandProRegion = new Map(bestaende.map((b) => [b.slug, b.n]));
 
@@ -54,6 +56,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...orte.map((r) => ({
       url: `${SITE}/ort/${r.slug}`,
       changeFrequency: "weekly" as const,
+      priority: 0.6,
+    })),
+    ...wege.map((t) => ({
+      url: `${SITE}/wanderweg/${t.slug}`,
+      changeFrequency: "monthly" as const,
       priority: 0.6,
     })),
     ...plaetze.map((r) => ({
