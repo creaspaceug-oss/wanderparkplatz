@@ -374,6 +374,121 @@ async function verarbeiteUmfeld(parkplaetze: any[]): Promise<UmfeldEintrag[]> {
   return raus;
 }
 
+// ------------------------------------------------------------- Ziele
+/**
+ * Höchstabstand je Zielart. Zu einem Gipfel läuft man deutlich weiter als zu
+ * einer Burgruine; ein Aussichtspunkt fünf Kilometer entfernt hat mit dem
+ * Parkplatz nichts mehr zu tun.
+ */
+const ZIEL_MAX_M: Record<string, number> = {
+  gipfel: 5000,
+  burg: 3000,
+  wasserfall: 3000,
+  hoehle: 3000,
+  turm: 3000,
+  aussicht: 2500,
+};
+
+function zielart(t: Record<string, string>): string | null {
+  if (t.natural === "peak") return "gipfel";
+  if (t.natural === "waterfall") return "wasserfall";
+  if (t.natural === "cave_entrance") return "hoehle";
+  if (t.historic === "castle" || t.historic === "ruins") return "burg";
+  if (t.man_made === "tower") return "turm";
+  if (t.tourism === "viewpoint") return "aussicht";
+  return null;
+}
+
+interface ZielErgebnis {
+  ziele: any[];
+  zuordnung: { osm_type: string; osm_id: number; ziel_osm: string; distanz_m: number }[];
+}
+
+async function verarbeiteZiele(
+  parkplaetze: any[],
+  bl: Area<BlProps>[],
+): Promise<ZielErgebnis> {
+  const dateien = await kachelDateien("ziele");
+  if (!dateien.length) {
+    console.log("Keine Ziel-Kacheln vorhanden — Schritt übersprungen.");
+    return { ziele: [], zuordnung: [] };
+  }
+  console.log(`Lese ${dateien.length} Ziel-Kacheln …`);
+
+  const gitter = new Grid<{ pt: Pt; idx: number }>(0.02);
+  parkplaetze.forEach((p, idx) => gitter.add({ pt: [p.lon, p.lat], idx }));
+
+  const kandidaten = new Map<string, any>();
+  const zuordnung: ZielErgebnis["zuordnung"] = [];
+  const gesehen = new Set<string>();
+
+  for (const datei of dateien) {
+    let els: OsmElement[];
+    try {
+      els = (await readJson(raw(datei))).elements;
+    } catch {
+      continue;
+    }
+    for (const el of els) {
+      const schluessel = `${el.type}/${el.id}`;
+      if (gesehen.has(schluessel)) continue;
+      gesehen.add(schluessel);
+
+      const pt = coordOf(el);
+      const name = el.tags?.name;
+      const art = el.tags ? zielart(el.tags) : null;
+      if (!pt || !name || !art) continue;
+      if (!locate(pt, bl)) continue; // Kacheln greifen über die Grenze
+
+      const treffer = gitter.within(pt, ZIEL_MAX_M[art] / 1000);
+      if (!treffer.length) continue; // ohne Parkplatz in Reichweite belanglos
+
+      const hoeheRoh = el.tags?.ele?.replace(",", ".");
+      const hoehe = hoeheRoh ? Math.round(Number.parseFloat(hoeheRoh)) : null;
+
+      kandidaten.set(schluessel, {
+        osm_type: el.type,
+        osm_id: el.id,
+        name,
+        art,
+        hoehe_m: Number.isFinite(hoehe) && hoehe! > -100 && hoehe! < 3000 ? hoehe : null,
+        lat: pt[1],
+        lon: pt[0],
+        bl_slug: locate(pt, bl)?.slug ?? null,
+      });
+
+      for (const { item, km } of treffer) {
+        const p = parkplaetze[item.idx];
+        zuordnung.push({
+          osm_type: p.osm_type,
+          osm_id: p.osm_id,
+          ziel_osm: schluessel,
+          distanz_m: Math.round(km * 1000),
+        });
+      }
+    }
+  }
+
+  // Slugs: Gipfelnamen wiederholen sich, deshalb bei Kollision die Kennung
+  const slugs = new Set<string>();
+  const ziele = [...kandidaten.values()].map((z) => {
+    let slug = slugify(z.name);
+    if (slugs.has(slug)) slug = `${slug}-${kennung(z.osm_type, z.osm_id)}`;
+    slugs.add(slug);
+    return { ...z, slug };
+  });
+
+  const proArt: Record<string, number> = {};
+  for (const z of ziele) proArt[z.art] = (proArt[z.art] ?? 0) + 1;
+  const mitZiel = new Set(zuordnung.map((z) => `${z.osm_type}/${z.osm_id}`)).size;
+  console.log(
+    `  ${ziele.length} Ziele, ${zuordnung.length} Zuordnungen, ` +
+      `${mitZiel} von ${parkplaetze.length} Parkplätzen mit mindestens einem Ziel`,
+  );
+  console.log(`  ${Object.entries(proArt).map(([k, v]) => `${k}: ${v}`).join(", ")}`);
+  return { ziele, zuordnung };
+}
+
 // ------------------------------------------------------- Standortsuche
 /**
  * Suchziele für die Standorteingabe: alle Orte (auch ohne Parkplatzbestand)
@@ -754,6 +869,7 @@ async function main() {
 
   const { trails, zuordnung } = await verarbeiteTrails(parkplaetze);
   const umfeld = await verarbeiteUmfeld(parkplaetze);
+  const { ziele, zuordnung: zielZuordnung } = await verarbeiteZiele(parkplaetze, bl);
   console.log("Baue Standortziele …");
   const standorte = await baueStandorte(bl, kreise);
 
@@ -762,6 +878,8 @@ async function main() {
   await writeFile(out("parkplatz_trail.json"), JSON.stringify(zuordnung));
   await writeFile(out("standorte.json"), JSON.stringify(standorte));
   await writeFile(out("umfeld.json"), JSON.stringify(umfeld));
+  await writeFile(out("ziele.json"), JSON.stringify(ziele));
+  await writeFile(out("parkplatz_ziel.json"), JSON.stringify(zielZuordnung));
   await writeFile(out("bundeslaender.json"), JSON.stringify(bundeslaender));
   await writeFile(out("kreise.json"), JSON.stringify(kreiseOut));
   await writeFile(out("orte.json"), JSON.stringify(orte));

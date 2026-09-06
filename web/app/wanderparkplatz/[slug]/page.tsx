@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { parkplatzBySlug, inDerNaehe, alleSlugs, trailsAmPlatz, umfeldAmPlatz } from "@/lib/db";
+import { parkplatzBySlug, inDerNaehe, alleSlugs, trailsAmPlatz, umfeldAmPlatz, zieleAmPlatz } from "@/lib/db";
 import { beschreibung, metaBeschreibung } from "@/lib/beschreibung";
 import { jsonLd, km, gebuehrText } from "@/lib/format";
 import { titel } from "@/lib/meta";
@@ -12,6 +12,7 @@ import BewertungFormular from "@/components/BewertungFormular";
 import Bewertungen from "@/components/Bewertungen";
 import Sterne from "@/components/Sterne";
 import Umfeld from "@/components/Umfeld";
+import ZieleAmPlatz from "@/components/ZieleAmPlatz";
 import { SITE } from "@/lib/site";
 
 /** OSM-Netzstufe → Einordnung für Leser. */
@@ -70,11 +71,12 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
   const p = await parkplatzBySlug(slug);
   if (!p) notFound();
 
-  const [nahe, bewertungen, trails, umfeld] = await Promise.all([
+  const [nahe, bewertungen, trails, umfeld, ziele] = await Promise.all([
     inDerNaehe(p.id, p.lat, p.lon, 20, 8),
     bewertungenFuer(p.id),
     trailsAmPlatz(p.id),
     umfeldAmPlatz(p.id),
+    zieleAmPlatz(p.id),
   ]);
   const schnitt = p.bewertung_schnitt ? Number(p.bewertung_schnitt) : null;
   const absaetze = beschreibung(p, trails);
@@ -257,6 +259,8 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
           </p>
         )}
       </section>
+
+      <ZieleAmPlatz items={ziele} />
 
       <Umfeld items={umfeld} />
 

@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { q, regionBestaende, trailSeiten } from "@/lib/db";
+import { q, regionBestaende, trailSeiten, zielSeiten } from "@/lib/db";
 import { SITE } from "@/lib/site";
 import { WANDERREGIONEN } from "@/lib/wanderregionen";
 import { MIN_AUSSAGEN } from "@/lib/inhalt";
@@ -13,13 +13,14 @@ export const revalidate = 86400;
  * und robots.txt braucht eine Sitemap-Index-Datei.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [statisch, laender, kreise, orte, plaetze, bestaende, wege] = await Promise.all([
+  const [statisch, laender, kreise, orte, plaetze, bestaende, wege, zielListe] = await Promise.all([
     Promise.resolve([
       // Ohne Schrägstrich — so lautet auch das Canonical der Startseite.
       { url: SITE, changeFrequency: "weekly" as const, priority: 1 },
       { url: `${SITE}/bundeslaender`, changeFrequency: "monthly" as const, priority: 0.7 },
       { url: `${SITE}/regionen`, changeFrequency: "monthly" as const, priority: 0.8 },
       { url: `${SITE}/wanderwege`, changeFrequency: "monthly" as const, priority: 0.8 },
+      { url: `${SITE}/ziele`, changeFrequency: "monthly" as const, priority: 0.8 },
     ]),
     q<{ slug: string }>("SELECT slug FROM bundesland WHERE poi_count > 0 ORDER BY poi_count DESC"),
     q<{ slug: string }>("SELECT slug FROM kreis WHERE poi_count > 0 ORDER BY poi_count DESC"),
@@ -32,6 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ),
     regionBestaende(WANDERREGIONEN),
     trailSeiten(),
+    zielSeiten(),
   ]);
   const bestandProRegion = new Map(bestaende.map((b) => [b.slug, b.n]));
 
@@ -60,6 +62,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
     ...wege.map((t) => ({
       url: `${SITE}/wanderweg/${t.slug}`,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
+    ...zielListe.map((z) => ({
+      url: `${SITE}/ziel/${z.slug}`,
       changeFrequency: "monthly" as const,
       priority: 0.6,
     })),

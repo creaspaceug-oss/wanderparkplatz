@@ -242,6 +242,52 @@ if (umfeld.length) {
   );
 }
 
+// -------------------------------------------------------------- Ziele
+const ziele = await readJson(out("ziele.json")).catch(() => []);
+const zielZuordnung = await readJson(out("parkplatz_ziel.json")).catch(() => []);
+if (ziele.length) {
+  await client.query("TRUNCATE parkplatz_ziel, ziel RESTART IDENTITY CASCADE");
+  await insertMany(
+    "ziel",
+    ["osm_type", "osm_id", "slug", "name", "art", "hoehe_m", "lat", "lon", "bundesland_id"],
+    ziele.map((z: any) => [
+      z.osm_type, z.osm_id, z.slug, z.name, z.art, z.hoehe_m, z.lat, z.lon,
+      blIds.get(z.bl_slug) ?? null,
+    ]),
+  );
+  const zielIds = new Map<string, number>(
+    (await client.query("SELECT id, osm_type, osm_id FROM ziel")).rows.map((r) => [
+      `${r.osm_type}/${r.osm_id}`,
+      r.id,
+    ]),
+  );
+  const ppIds3 = new Map<string, number>(
+    (await client.query("SELECT id, osm_type, osm_id FROM parkplatz")).rows.map((r) => [
+      `${r.osm_type}/${r.osm_id}`,
+      r.id,
+    ]),
+  );
+  const paare = zielZuordnung
+    .map((z: any) => [
+      ppIds3.get(`${z.osm_type}/${z.osm_id}`),
+      zielIds.get(z.ziel_osm),
+      z.distanz_m,
+    ])
+    .filter((r: any[]) => r[0] && r[1]);
+  await insertMany(
+    "parkplatz_ziel",
+    ["parkplatz_id", "ziel_id", "distanz_m"],
+    paare,
+    "ON CONFLICT (parkplatz_id, ziel_id) DO UPDATE SET distanz_m = EXCLUDED.distanz_m",
+  );
+
+  // Ein Ziel mit nur einem Parkplatz ergäbe eine Seite mit einem Listeneintrag.
+  await client.query(`
+    UPDATE ziel z SET parkplatz_count = c.n, eigene_seite = c.n >= 2
+    FROM (SELECT ziel_id, count(*)::int AS n FROM parkplatz_ziel GROUP BY ziel_id) c
+    WHERE c.ziel_id = z.id`);
+}
+
 // --------------------------------------------------- Standortsuche
 const standorte = await readJson(out("standorte.json")).catch(() => []);
 await client.query("TRUNCATE standort RESTART IDENTITY");
@@ -348,7 +394,9 @@ const z = (
             (SELECT count(*) FROM parkplatz_trail)::int          AS wegpaare,
             (SELECT count(*) FROM parkplatz_nearby)::int         AS umfeld,
             (SELECT count(*) FROM parkplatz WHERE aktiv AND aussagen <= 2)::int AS duenn,
-            (SELECT count(*) FROM trail WHERE eigene_seite)::int AS wegseiten`,
+            (SELECT count(*) FROM trail WHERE eigene_seite)::int AS wegseiten,
+            (SELECT count(*) FROM ziel)::int AS ziele,
+            (SELECT count(*) FROM ziel WHERE eigene_seite)::int AS zielseiten`,
   )
 ).rows[0];
 console.log(`Import fertig.
@@ -361,5 +409,6 @@ console.log(`Import fertig.
   Umfeld-Einträge    ${z.umfeld}
   zu dünn für Index  ${z.duenn}
   Wanderweg-Seiten   ${z.wegseiten}
+  Ziele              ${z.ziele} (${z.zielseiten} mit eigener Seite)
   Bewertungen erhalten ${z.bewertungen}`);
 await client.end();

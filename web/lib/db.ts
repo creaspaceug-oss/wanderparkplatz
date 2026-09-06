@@ -511,3 +511,74 @@ export const verwandteTrails = (trailId: number, limit = 8) =>
       LIMIT $2`,
     [trailId, limit],
   );
+
+// ------------------------------------------------------------- Ziele
+export interface Ziel {
+  id: number;
+  slug: string;
+  name: string;
+  art: string;
+  hoehe_m: number | null;
+  lat: number;
+  lon: number;
+  parkplatz_count: number;
+  bl_name?: string | null;
+  bl_slug?: string | null;
+}
+
+export const zielBySlug = cache((slug: string) =>
+  one<Ziel>(
+    `SELECT z.id, z.slug, z.name, z.art, z.hoehe_m, z.lat, z.lon, z.parkplatz_count,
+            b.name AS bl_name, b.slug AS bl_slug
+       FROM ziel z LEFT JOIN bundesland b ON b.id = z.bundesland_id
+      WHERE z.slug = $1 AND z.eigene_seite`,
+    [slug],
+  ),
+);
+
+/** Parkplätze am Ziel, die nächstgelegenen zuerst. */
+export const parkplaetzeAmZiel = (zielId: number, limit = 40) =>
+  q<Parkplatz & { distanz_m: number }>(
+    `${SELECT_PARKPLATZ}
+     JOIN parkplatz_ziel pz ON pz.parkplatz_id = p.id
+     WHERE pz.ziel_id = $1 AND p.aktiv
+     ORDER BY pz.distanz_m, p.aussagen DESC
+     LIMIT $2`,
+    [zielId, limit],
+  );
+
+/** Ziele in Reichweite eines Parkplatzes — für den Block auf der Detailseite. */
+export const zieleAmPlatz = cache((parkplatzId: number, limit = 8) =>
+  q<Ziel & { distanz_m: number; eigene_seite: boolean }>(
+    `SELECT z.id, z.slug, z.name, z.art, z.hoehe_m, z.lat, z.lon,
+            z.parkplatz_count, z.eigene_seite, pz.distanz_m
+       FROM parkplatz_ziel pz JOIN ziel z ON z.id = pz.ziel_id
+      WHERE pz.parkplatz_id = $1
+      ORDER BY pz.distanz_m
+      LIMIT $2`,
+    [parkplatzId, limit],
+  ),
+);
+
+export const zielSeiten = (limit?: number) =>
+  q<Ziel>(
+    `SELECT z.id, z.slug, z.name, z.art, z.hoehe_m, z.lat, z.lon, z.parkplatz_count,
+            b.name AS bl_name, b.slug AS bl_slug
+       FROM ziel z LEFT JOIN bundesland b ON b.id = z.bundesland_id
+      WHERE z.eigene_seite
+      ORDER BY z.parkplatz_count DESC, z.hoehe_m DESC NULLS LAST, z.name
+      ${limit ? `LIMIT ${Number(limit)}` : ""}`,
+  );
+
+/** Weitere Ziele in der Umgebung — über gemeinsame Parkplätze verknüpft. */
+export const nahegelegeneZiele = (zielId: number, limit = 8) =>
+  q<Ziel>(
+    `SELECT DISTINCT z.id, z.slug, z.name, z.art, z.hoehe_m, z.lat, z.lon, z.parkplatz_count
+       FROM parkplatz_ziel a
+       JOIN parkplatz_ziel b ON b.parkplatz_id = a.parkplatz_id AND b.ziel_id <> a.ziel_id
+       JOIN ziel z ON z.id = b.ziel_id
+      WHERE a.ziel_id = $1 AND z.eigene_seite
+      ORDER BY z.parkplatz_count DESC, z.name
+      LIMIT $2`,
+    [zielId, limit],
+  );

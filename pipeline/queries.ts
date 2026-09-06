@@ -121,6 +121,24 @@ ${POI_SET}
 );
 out center tags;`;
 
+/**
+ * Wanderziele: Gipfel, Burgen, Wasserfälle, Höhlen, Aussichtstürme.
+ *
+ * Anders als beim Umfeld flächendeckend statt im Umkreis der Parkplätze —
+ * diese Objekte sind dünn gesät, und ein Ziel liegt oft mehrere Kilometer vom
+ * Ausgangspunkt entfernt. Die Zuordnung entsteht wieder lokal.
+ */
+export const zieleQuery = (t: Tile) => `[out:json][timeout:300][bbox:${bbox(t)}];
+(
+  nwr["natural"="peak"]["name"];
+  nwr["natural"="waterfall"]["name"];
+  nwr["natural"="cave_entrance"]["name"];
+  nwr["historic"~"^(castle|ruins)$"]["name"];
+  nwr["man_made"="tower"]["tower:type"="observation"]["name"];
+  nwr["tourism"="viewpoint"]["name"];
+);
+out center tags;`;
+
 /** Orte für "X km von <Ort>" und die Ortsseiten. */
 export const placesQuery = (t: Tile) => `[out:json][timeout:300][bbox:${bbox(t)}];
 node["place"~"^(city|town|village)$"]["name"];

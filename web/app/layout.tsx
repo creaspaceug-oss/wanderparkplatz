@@ -48,6 +48,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/wanderwege" className="hidden hover:text-foreground sm:inline">
                 Wanderwege
               </Link>
+              <Link href="/ziele" className="hidden hover:text-foreground sm:inline">
+                Ziele
+              </Link>
               <Link href="/bundeslaender" className="hover:text-foreground">
                 Bundesländer
               </Link>
