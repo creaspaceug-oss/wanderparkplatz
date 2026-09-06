@@ -74,12 +74,15 @@ serverseitigen Verarbeitung. Danach Schema und Daten einspielen:
 
 ```bash
 export DATABASE_URL='postgres://…'   # gepoolter Endpunkt
-npm run db:setup                     # legt Tabellen und Indizes an
-npm run data:load                    # spielt die aufbereiteten Daten ein
+npm run data:load                    # gleicht das Schema ab und spielt Daten ein
 ```
 
-`db:setup` ist gefahrlos wiederholbar: die Dateien in `pipeline/sql/` legen nur
-an, was fehlt, und lassen Bewertungen unangetastet.
+`data:load` ruft `db:setup` selbst auf, gleicht also vor jedem Import das
+Schema ab. Das ist Absicht: Eine Migration, die nur lokal eingespielt wurde,
+führt sonst erst beim nächsten Deployment zum Abbruch — mit einer Meldung wie
+`column z.kreis_id does not exist`, die auf den Build zeigt statt auf die
+vergessene Migration. Beide Schritte sind gefahrlos wiederholbar und lassen
+Bewertungen unangetastet.
 
 **2. Vercel-Projekt.** Repository verbinden und in den Projekteinstellungen als
 *Root Directory* `web` eintragen — Vercel installiert die npm-Workspaces dann

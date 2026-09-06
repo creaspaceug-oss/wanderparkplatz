@@ -33,5 +33,5 @@ const tabellen = (
     "SELECT count(*)::int AS n FROM information_schema.tables WHERE table_schema = 'public'",
   )
 ).rows[0].n;
-console.log(`Fertig — ${tabellen} Tabellen vorhanden. Weiter mit: npm run data:load`);
+console.log(`Schema abgeglichen — ${tabellen} Tabellen vorhanden.`);
 await client.end();

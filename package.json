@@ -9,7 +9,7 @@
   "scripts": {
     "data:fetch": "npm run -w pipeline fetch",
     "data:build": "npm run -w pipeline build",
-    "data:load": "npm run -w pipeline load",
+    "data:load": "npm run db:setup && npm run -w pipeline load",
     "dev": "npm run -w web dev",
     "test": "npm run -w pipeline test",
     "db:setup": "npm run -w pipeline setup",
