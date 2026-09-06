@@ -395,7 +395,9 @@ const ZIEL_MAX_M: Record<string, number> = {
 
 function zielart(t: Record<string, string>): string | null {
   if (t.natural === "peak") return "gipfel";
-  if (t.natural === "waterfall") return "wasserfall";
+  // waterway=waterfall ist die gängige Verschlagwortung, natural=waterfall die
+  // seltene Ausnahme — beide gelten.
+  if (t.waterway === "waterfall" || t.natural === "waterfall") return "wasserfall";
   if (t.natural === "cave_entrance") return "hoehle";
   if (t.historic === "castle" || t.historic === "ruins") return "burg";
   if (t.man_made === "tower") return "turm";
