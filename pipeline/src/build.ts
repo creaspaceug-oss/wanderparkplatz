@@ -109,7 +109,7 @@ async function loadAreas() {
 
 // ------------------------------------------------------------------ Orte
 interface OrtRec {
-  pt: Pt; name: string; typ: string; einwohner: number | null;
+  pt: Pt; name: string; typ: string; einwohner: number | null; wikidata: string | null;
   slug: string; blIso: string; poi_count: number; id: number;
   kreis_slug?: string; bl_slug?: string;
 }
@@ -143,6 +143,7 @@ async function loadPlaces(): Promise<Grid<OrtRec>> {
       if (n > 1) slug = `${slug}-${n}`;
       grid.add({
         pt, name, slug, id: ++id, blIso: "", poi_count: 0,
+        wikidata: el.tags?.wikidata ?? null,
         typ: el.tags?.place ?? "village",
         einwohner: el.tags?.population ? Number(el.tags.population.replace(/\D/g, "")) || null : null,
       });
@@ -460,6 +461,8 @@ async function verarbeiteZiele(
         hoehe_m: Number.isFinite(hoehe) && hoehe! > -100 && hoehe! < 3000 ? hoehe : null,
         // Wikipedia- oder Wikidata-Eintrag als Bekanntheitssignal
         bekannt: Boolean(el.tags?.wikidata || el.tags?.wikipedia),
+        // Für das kuratierte Bild aus Wikidata (Eigenschaft P18)
+        wikidata: el.tags?.wikidata ?? null,
         lat: pt[1],
         lon: pt[0],
         bl_slug: locate(pt, bl)?.slug ?? null,
@@ -838,6 +841,7 @@ async function main() {
           slug: o.slug, name: o.name, typ: o.typ, einwohner: o.einwohner,
           lat: o.pt[1], lon: o.pt[0], poi_count: o.poi_count,
           bl_slug: o.bl_slug ?? null, kreis_slug: o.kreis_slug ?? null,
+          wikidata: o.wikidata,
         });
       }
     }

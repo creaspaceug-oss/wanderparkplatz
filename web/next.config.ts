@@ -3,6 +3,20 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
 
+  images: {
+    // Bilder liegen auf den Wikimedia-Servern; Next lädt sie einmal, rechnet
+    // sie um und liefert sie danach aus dem eigenen Zwischenspeicher aus —
+    // das schont die Wikimedia-Infrastruktur und ist für Besucher schneller.
+    // Commons liefert Vorschaubilder über thumb.wikimedia.org, Originale in
+    // Zielgröße dagegen über upload.wikimedia.org — beide kommen im Bestand vor.
+    remotePatterns: [
+      { protocol: "https", hostname: "thumb.wikimedia.org" },
+      { protocol: "https", hostname: "upload.wikimedia.org" },
+    ],
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 2_592_000, // 30 Tage
+  },
+
   async headers() {
     return [
       {

@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Umkreissuche from "@/components/Umkreissuche";
 import ParkplatzListe from "@/components/ParkplatzListe";
+import RegionKarten from "@/components/RegionKarten";
 import { bundeslaender, topKreise, kennzahlen } from "@/lib/queries";
-import { regionBestaende, groessteParkplaetze } from "@/lib/db";
+import { regionBestaende, groessteParkplaetze, vorzeigeParkplaetze } from "@/lib/db";
 import { WANDERREGIONEN } from "@/lib/wanderregionen";
 import { jsonLd, nf } from "@/lib/format";
 import { SITE, SITE_NAME } from "@/lib/site";
@@ -75,12 +76,13 @@ function Abschnitt({
 }
 
 export default async function Startseite() {
-  const [laender, kreise, zahlen, bestaende, groesste] = await Promise.all([
+  const [laender, kreise, zahlen, bestaende, groesste, vorzeige] = await Promise.all([
     bundeslaender(),
     topKreise(18),
     kennzahlen(),
     regionBestaende(WANDERREGIONEN),
     groessteParkplaetze(6),
+    vorzeigeParkplaetze(24),
   ]);
 
   const proSlug = new Map(bestaende.map((b) => [b.slug, b.n]));
@@ -207,30 +209,26 @@ export default async function Startseite() {
         </div>
       </Abschnitt>
 
+      {/* ------------------------------------------------ Beispiele aus dem Bestand */}
+      <Abschnitt
+        titel="Wanderparkplätze in ganz Deutschland"
+        einleitung="Eine Auswahl aus dem Bestand, über alle Bundesländer verteilt — jeder Eintrag führt zur Seite mit Wanderwegen, Umfeld und Anfahrt."
+      >
+        <ParkplatzListe items={vorzeige} />
+        <p className="mt-4 text-sm text-muted">
+          Das ist ein Ausschnitt. Über die Suche oben, die Wanderregionen oder die
+          Bundesländer kommst du an den vollständigen Bestand von{" "}
+          {nf.format(zahlen.gesamt)} Plätzen.
+        </p>
+      </Abschnitt>
+
       {/* ------------------------------------------------------------- Regionen */}
       {regionen.length > 0 && (
         <Abschnitt
           titel="Wanderparkplätze nach Wanderregion"
           einleitung="Wanderregionen folgen der Landschaft, nicht den Verwaltungsgrenzen — hier der Einstieg über das Gebirge oder die Landschaft, in der du unterwegs sein willst."
         >
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {regionen.slice(0, 12).map((r) => (
-              <li key={r.slug}>
-                <Link
-                  href={`/region/${r.slug}`}
-                  className="flex h-full flex-col rounded-xl border border-line bg-card p-4 transition hover:border-accent"
-                >
-                  <span className="flex items-baseline justify-between gap-2">
-                    <span className="font-semibold">{r.name}</span>
-                    <span className="shrink-0 text-sm tabular-nums text-muted">
-                      {nf.format(r.bestand)}
-                    </span>
-                  </span>
-                  <span className="mt-1 text-sm text-muted">{r.kurz}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <RegionKarten regionen={regionen} max={12} />
           {regionen.length > 12 && (
             <p className="mt-4">
               <Link href="/regionen" className="text-accent underline">

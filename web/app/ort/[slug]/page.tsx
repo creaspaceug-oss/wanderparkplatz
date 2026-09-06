@@ -5,6 +5,8 @@ import Brotkrumen from "@/components/Brotkrumen";
 import { parkplaetzeIn, umkreis, alleSlugs } from "@/lib/db";
 import { ortBySlug } from "@/lib/queries";
 import { nf, km } from "@/lib/format";
+import { bildFuer } from "@/lib/bild";
+import CommonsBild from "@/components/CommonsBild";
 import { titel, beschreibung } from "@/lib/meta";
 import { VORRENDERN } from "@/lib/vorrendern";
 import Link from "next/link";
@@ -40,9 +42,10 @@ export default async function OrtSeite({ params }: PageProps<"/ort/[slug]">) {
   const o = await ortBySlug(slug);
   if (!o) notFound();
 
-  const [zugeordnet, weitere] = await Promise.all([
+  const [zugeordnet, weitere, bild] = await Promise.all([
     parkplaetzeIn("ort_id", o.id, 60),
     umkreis(o.lat, o.lon, 15, 30),
+    bildFuer(o.wikidata ?? null),
   ]);
   const eigene = new Set(zugeordnet.map((p) => p.id));
   const umgebung = weitere.filter((p) => !eigene.has(p.id)).slice(0, 12);
@@ -55,6 +58,16 @@ export default async function OrtSeite({ params }: PageProps<"/ort/[slug]">) {
     <div className="mx-auto max-w-3xl px-4 py-10">
       <Brotkrumen pfad={pfad} aktuell={o.name} />
       <h1 className="mt-3 text-3xl font-bold tracking-tight">Wanderparkplätze in {o.name}</h1>
+      {bild && (
+        <CommonsBild
+          bild={bild}
+          alt={`Ansicht von ${o.name}`}
+          breite={1200}
+          hoehe={675}
+          prioritaet
+          klasse="mt-5"
+        />
+      )}
       <p className="mt-4 text-lg text-muted">
         {/* Als ein String: in JSX getrennte Teile erzeugen ein Leerzeichen
             vor dem Komma. */}

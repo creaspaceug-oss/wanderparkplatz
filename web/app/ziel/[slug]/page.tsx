@@ -8,6 +8,8 @@ import { zielTitel } from "@/lib/zielart";
 import { jsonLd, nf } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
+import { bildFuer } from "@/lib/bild";
+import CommonsBild from "@/components/CommonsBild";
 
 export const revalidate = 604800;
 export const dynamicParams = true;
@@ -45,9 +47,10 @@ export default async function ZielSeite({ params }: PageProps<"/ziel/[slug]">) {
   const z = await zielBySlug(slug);
   if (!z) notFound();
 
-  const [plaetze, nahe] = await Promise.all([
+  const [plaetze, nahe, bild] = await Promise.all([
     parkplaetzeAmZiel(z.id),
     nahegelegeneZiele(z.id),
+    bildFuer(z.wikidata),
   ]);
   if (!plaetze.length) notFound();
 
@@ -83,7 +86,18 @@ export default async function ZielSeite({ params }: PageProps<"/ziel/[slug]">) {
         Wanderparkplätze am {z.name}
       </h1>
 
-      <p className="mt-3 text-muted">
+      {bild && (
+        <CommonsBild
+          bild={bild}
+          alt={`${z.name} — ${zielTitel(z.art)}`}
+          breite={1200}
+          hoehe={675}
+          prioritaet
+          klasse="mt-5"
+        />
+      )}
+
+      <p className="mt-4 text-muted">
         {[
           zielTitel(z.art),
           z.hoehe_m ? `${nf.format(z.hoehe_m)} m über dem Meeresspiegel` : null,

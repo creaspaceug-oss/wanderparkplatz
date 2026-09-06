@@ -94,6 +94,7 @@ export interface Region {
   kreis_slug?: string;
   bundesland_id?: number;
   einwohner?: number | null;
+  wikidata?: string | null;
 }
 
 import { one } from "./db";
@@ -118,7 +119,7 @@ export const kreisBySlug = cache((slug: string) =>
 
 export const ortBySlug = cache((slug: string) =>
   one<Region>(
-    `SELECT o.id, o.slug, o.name, o.typ, o.lat, o.lon, o.poi_count, o.einwohner,
+    `SELECT o.id, o.slug, o.name, o.typ, o.lat, o.lon, o.poi_count, o.einwohner, o.wikidata,
             k.name AS kreis_name, k.slug AS kreis_slug,
             b.name AS bl_name,  b.slug AS bl_slug
      FROM ort o

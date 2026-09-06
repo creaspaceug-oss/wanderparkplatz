@@ -524,6 +524,7 @@ export const verwandteTrails = (trailId: number, limit = 8) =>
 // ------------------------------------------------------------- Ziele
 export interface Ziel {
   id: number;
+  wikidata: string | null;
   slug: string;
   name: string;
   art: string;
@@ -537,8 +538,8 @@ export interface Ziel {
 
 export const zielBySlug = cache((slug: string) =>
   one<Ziel>(
-    `SELECT z.id, z.slug, z.name, z.art, z.hoehe_m, z.lat, z.lon, z.parkplatz_count,
-            b.name AS bl_name, b.slug AS bl_slug
+    `SELECT z.id, z.wikidata, z.slug, z.name, z.art, z.hoehe_m, z.lat, z.lon,
+            z.parkplatz_count, b.name AS bl_name, b.slug AS bl_slug
        FROM ziel z LEFT JOIN bundesland b ON b.id = z.bundesland_id
       WHERE z.slug = $1 AND z.eigene_seite`,
     [slug],
@@ -590,4 +591,24 @@ export const nahegelegeneZiele = (zielId: number, limit = 8) =>
       ORDER BY z.parkplatz_count DESC, z.name
       LIMIT $2`,
     [zielId, limit],
+  );
+
+/**
+ * Auswahl für die Startseite: die inhaltsreichsten Plätze, aber über die
+ * Bundesländer gestreut.
+ *
+ * Ohne Streuung kämen fast alle aus Baden-Württemberg und Nordrhein-Westfalen,
+ * wo der Bestand am dichtesten ist — die Seite sähe dann regional aus, obwohl
+ * sie ganz Deutschland abdeckt.
+ */
+export const vorzeigeParkplaetze = (limit = 24) =>
+  q<Parkplatz>(
+    `SELECT * FROM (
+       ${selectParkplatz("row_number() OVER (PARTITION BY p.bundesland_id ORDER BY p.aussagen DESC, p.id) AS rang")}
+       WHERE p.aktiv AND p.name NOT LIKE 'Wanderparkplatz bei %'
+     ) x
+     WHERE rang <= 2
+     ORDER BY rang, bl_name
+     LIMIT $1`,
+    [limit],
   );

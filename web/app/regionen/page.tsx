@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Brotkrumen from "@/components/Brotkrumen";
+import RegionKarten from "@/components/RegionKarten";
 import { regionBestaende } from "@/lib/db";
 import { WANDERREGIONEN } from "@/lib/wanderregionen";
 import { nf } from "@/lib/format";
@@ -37,25 +38,9 @@ export default async function RegionenSeite() {
         können.
       </p>
 
-      <ul className="mt-8 grid gap-4 sm:grid-cols-2">
-        {regionen.map((r) => (
-          <li key={r.slug}>
-            <Link
-              href={`/region/${r.slug}`}
-              className="flex h-full flex-col rounded-xl border border-line bg-card p-4 transition hover:border-accent"
-            >
-              <span className="flex items-baseline justify-between gap-2">
-                <span className="font-semibold">{r.name}</span>
-                <span className="shrink-0 text-sm tabular-nums text-muted">
-                  {nf.format(r.bestand)}
-                </span>
-              </span>
-              <span className="mt-1 text-sm text-muted">{r.kurz}</span>
-              <span className="mt-2 text-xs text-muted">{r.laender.join(" · ")}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <div className="mt-8">
+        <RegionKarten regionen={regionen} />
+      </div>
 
       <p className="mt-8 text-sm text-muted">
         Regionen ohne erfasste Wanderparkplätze werden nicht aufgeführt. Der Datenbestand

@@ -12,6 +12,7 @@
     "data:load": "npm run -w pipeline load",
     "dev": "npm run -w web dev",
     "test": "npm run -w pipeline test",
-    "db:setup": "npm run -w pipeline setup"
+    "db:setup": "npm run -w pipeline setup",
+    "data:bilder": "npm run -w pipeline bilder"
   }
 }

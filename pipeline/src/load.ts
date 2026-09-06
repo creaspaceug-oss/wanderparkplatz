@@ -89,7 +89,7 @@ const kreisIds = new Map<string, number>(
   (await client.query("SELECT id, slug FROM kreis")).rows.map((r) => [r.slug, r.id]),
 );
 
-const ortCols = ["slug", "name", "typ", "einwohner", "kreis_id", "bundesland_id", "lat", "lon", "poi_count"];
+const ortCols = ["slug", "name", "typ", "einwohner", "kreis_id", "bundesland_id", "lat", "lon", "poi_count", "wikidata"];
 const orte = await readJson(out("orte.json"));
 await insertMany(
   "ort",
@@ -97,7 +97,7 @@ await insertMany(
   orte.map((o: any) => [
     o.slug, o.name, o.typ, o.einwohner,
     kreisIds.get(o.kreis_slug) ?? null, blIds.get(o.bl_slug) ?? null,
-    o.lat, o.lon, o.poi_count,
+    o.lat, o.lon, o.poi_count, o.wikidata ?? null,
   ]),
   upsert(["slug"], ortCols),
 );
@@ -249,10 +249,10 @@ if (ziele.length) {
   await client.query("TRUNCATE parkplatz_ziel, ziel RESTART IDENTITY CASCADE");
   await insertMany(
     "ziel",
-    ["osm_type", "osm_id", "slug", "name", "art", "hoehe_m", "lat", "lon", "bundesland_id", "bekannt"],
+    ["osm_type", "osm_id", "slug", "name", "art", "hoehe_m", "lat", "lon", "bundesland_id", "bekannt", "wikidata"],
     ziele.map((z: any) => [
       z.osm_type, z.osm_id, z.slug, z.name, z.art, z.hoehe_m, z.lat, z.lon,
-      blIds.get(z.bl_slug) ?? null, Boolean(z.bekannt),
+      blIds.get(z.bl_slug) ?? null, Boolean(z.bekannt), z.wikidata ?? null,
     ]),
   );
   const zielIds = new Map<string, number>(

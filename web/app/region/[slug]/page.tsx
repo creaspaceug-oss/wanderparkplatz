@@ -8,6 +8,8 @@ import { WANDERREGIONEN, regionBySlug } from "@/lib/wanderregionen";
 import { jsonLd, nf, aufzaehlung } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
+import { bildFuer } from "@/lib/bild";
+import CommonsBild from "@/components/CommonsBild";
 
 /*
  * Bewusst kürzer als bei Kreis- und Ortsseiten: ob eine Region Bestand hat,
@@ -51,10 +53,11 @@ export default async function RegionSeite({ params }: PageProps<"/region/[slug]"
   const r = regionBySlug(slug);
   if (!r) notFound();
 
-  const [plaetze, kreise, bestaende] = await Promise.all([
+  const [plaetze, kreise, bestaende, bild] = await Promise.all([
     parkplaetzeInRegion(r.lat, r.lon, r.radiusKm, MAX_LISTE),
     kreiseInRegion(r.lat, r.lon, r.radiusKm),
     regionBestaende([r]),
+    bildFuer(r.wikidata),
   ]);
   const bestand = bestaende[0];
 
@@ -97,7 +100,18 @@ export default async function RegionSeite({ params }: PageProps<"/region/[slug]"
         Wanderparkplätze im {r.name}
       </h1>
 
-      <p className="mt-4 text-lg leading-relaxed">{r.text}</p>
+      {bild && (
+        <CommonsBild
+          bild={bild}
+          alt={`Landschaft im ${r.name}`}
+          breite={1200}
+          hoehe={675}
+          prioritaet
+          klasse="mt-5"
+        />
+      )}
+
+      <p className="mt-5 text-lg leading-relaxed">{r.text}</p>
 
       {/* Als ein String zusammengesetzt: in JSX getrennte Teile erzeugen sonst
           Leerzeichen vor Komma und Punkt. */}
