@@ -51,3 +51,13 @@ test("datenScore gewichtet einen eigenen Namen", () => {
   const n = normalize({ capacity: "10" });
   assert.equal(datenScore(n, true) - datenScore(n, false), 25);
 });
+
+test("netzstufe normalisiert OSM-Varianten und verwirft Unbekanntes", async () => {
+  const { netzstufe } = await import("../src/markierung.ts");
+  assert.equal(netzstufe("rwn"), "rwn");
+  assert.equal(netzstufe("regional"), "rwn");
+  assert.equal(netzstufe("LOCAL"), "lwn");
+  assert.equal(netzstufe("lhn"), "lwn");
+  assert.equal(netzstufe("Nationalpark Eifel"), null, "Fließtext ist keine Netzstufe");
+  assert.equal(netzstufe(undefined), null);
+});

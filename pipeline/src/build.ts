@@ -3,7 +3,7 @@ import { raw, out, OUT, RAW } from "./paths.ts";
 
 import { normalize, datenScore } from "./normalize.ts";
 import { kennung } from "./ident.ts";
-import { markierung } from "./markierung.ts";
+import { markierung, netzstufe } from "./markierung.ts";
 import {
   type Pt, type Area, makeArea, geomToPolys, locate, bearingLabel, slugify, Grid,
   suchform,
@@ -546,7 +546,7 @@ async function verarbeiteTrails(parkplaetze: any[]): Promise<TrailErgebnis> {
       osm_id: relId,
       name: t.name,
       slug,
-      netz: t.network ?? null,
+      netz: netzstufe(t.network),
       ref: t.ref ?? null,
       markierung: markierung(t["osmc:symbol"] ?? t.symbol),
       laenge_km: laenge && laenge > 0 && laenge < 20000 ? laenge : null,

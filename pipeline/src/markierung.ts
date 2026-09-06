@@ -79,3 +79,21 @@ export const NETZ: Record<string, string> = {
   rwn: "regionaler Wanderweg",
   lwn: "örtlicher Wanderweg",
 };
+
+/**
+ * Netzstufe normalisieren. Das network-Feld enthält in OpenStreetMap neben den
+ * vier gültigen Werten allerlei Varianten und gelegentlich Fließtext
+ * ("Nationalpark Eifel"). Unbekanntes wird verworfen statt angezeigt — eine
+ * falsche Einordnung ist schlechter als gar keine.
+ */
+const NETZ_VARIANTEN: Record<string, string> = {
+  iwn: "iwn", international: "iwn",
+  nwn: "nwn", national: "nwn",
+  rwn: "rwn", regional: "rwn", rhn: "rwn",
+  lwn: "lwn", local: "lwn", lokal: "lwn", lhn: "lwn", lnw: "lwn", lwm: "lwn",
+};
+
+export function netzstufe(wert?: string): string | null {
+  if (!wert) return null;
+  return NETZ_VARIANTEN[wert.trim().toLowerCase()] ?? null;
+}
