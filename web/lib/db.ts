@@ -665,3 +665,86 @@ export const vorzeigeMitBild = (proLand = 4, limit = 56) =>
      LIMIT $2`,
     [proLand, limit],
   );
+
+// ------------------------------------------------- Anreicherung Ortsseiten
+/**
+ * 73 % der Ortsseiten haben genau einen Parkplatz und trugen damit rund 136
+ * Wörter — sie wiederholten im Kern die Detailseite dieses einen Platzes.
+ * Die folgenden Abfragen holen zusammen, was an den Parkplätzen eines Orts
+ * hängt: Wanderwege, Umfeld und erreichbare Ziele.
+ */
+
+export interface OrtTrail {
+  name: string;
+  slug: string;
+  eigene_seite: boolean;
+  netz: string | null;
+  ref: string | null;
+  markierung: string | null;
+  laenge_km: string | null;
+  distanz_m: number;
+}
+
+/** Wanderwege an allen Parkplätzen des Orts, je Weg der nächste Abstand. */
+export const wanderwegeImOrt = cache((ortId: number, limit = 12) =>
+  q<OrtTrail>(
+    `SELECT t.name, t.slug, t.eigene_seite, t.netz, t.ref, t.markierung, t.laenge_km,
+            min(pt.distanz_m)::int AS distanz_m
+       FROM parkplatz p
+       JOIN parkplatz_trail pt ON pt.parkplatz_id = p.id
+       JOIN trail t            ON t.id = pt.trail_id
+      WHERE p.ort_id = $1 AND p.aktiv
+      GROUP BY t.id, t.name, t.slug, t.eigene_seite, t.netz, t.ref, t.markierung, t.laenge_km
+      ORDER BY CASE t.netz WHEN 'iwn' THEN 1 WHEN 'nwn' THEN 2 WHEN 'rwn' THEN 3 ELSE 4 END,
+               min(pt.distanz_m), t.name
+      LIMIT $2`,
+    [ortId, limit],
+  ),
+);
+
+/** Umfeld aller Parkplätze des Orts, je Kategorie und Name der nächste Eintrag. */
+export const umfeldImOrt = cache((ortId: number, limit = 14) =>
+  q<UmfeldEintrag>(
+    // Spalten qualifizieren: parkplatz und parkplatz_nearby haben beide
+    // eine Spalte "name".
+    `SELECT n.kategorie, n.name, min(n.distanz_m)::int AS distanz_m
+       FROM parkplatz p
+       JOIN parkplatz_nearby n ON n.parkplatz_id = p.id
+      WHERE p.ort_id = $1 AND p.aktiv
+      GROUP BY n.kategorie, n.name
+      ORDER BY n.kategorie, min(n.distanz_m)
+      LIMIT $2`,
+    [ortId, limit],
+  ),
+);
+
+export interface OrtZiel {
+  name: string;
+  slug: string;
+  art: string;
+  hoehe_m: number | null;
+  eigene_seite: boolean;
+  distanz_m: number;
+}
+
+/** Wanderziele, die von den Parkplätzen des Orts aus erreichbar sind. */
+export const zieleImOrt = cache((ortId: number, limit = 10) =>
+  q<OrtZiel>(
+    // Ausgewählt wird nach Bekanntheit, angezeigt nach Entfernung — sonst
+    // springt die Liste von 4,9 km zurück auf 297 m, weil erst die bekannten
+    // und dann die unbekannten Ziele kämen.
+    `SELECT name, slug, art, hoehe_m, eigene_seite, distanz_m FROM (
+       SELECT z.name, z.slug, z.art, z.hoehe_m, z.eigene_seite, z.bekannt,
+              min(pz.distanz_m)::int AS distanz_m
+         FROM parkplatz p
+         JOIN parkplatz_ziel pz ON pz.parkplatz_id = p.id
+         JOIN ziel z            ON z.id = pz.ziel_id
+        WHERE p.ort_id = $1 AND p.aktiv
+        GROUP BY z.id, z.name, z.slug, z.art, z.hoehe_m, z.eigene_seite, z.bekannt
+        ORDER BY z.bekannt DESC, min(pz.distanz_m)
+        LIMIT $2
+     ) x
+     ORDER BY distanz_m`,
+    [ortId, limit],
+  ),
+);
