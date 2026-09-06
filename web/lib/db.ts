@@ -612,3 +612,56 @@ export const vorzeigeParkplaetze = (limit = 24) =>
      LIMIT $1`,
     [limit],
   );
+
+export interface VorzeigePlatz extends Parkplatz {
+  ziel_name: string;
+  ziel_slug: string;
+  ziel_distanz_m: number;
+  bild_url: string;
+  bild_lizenz: string | null;
+  bild_lizenz_url: string | null;
+  bild_urheber: string | null;
+  bild_quelle: string;
+}
+
+/**
+ * Bebilderte Auswahl für die Startseite.
+ *
+ * Von Parkplätzen selbst gibt es keine Fotos — gezeigt wird deshalb das
+ * nächstgelegene Wanderziel mit Bild. Auf der Karte steht ausdrücklich dabei,
+ * dass es das Ziel zeigt und nicht den Platz; alles andere führte in die Irre.
+ *
+ * Die Streuung über die Bundesländer bleibt: ohne sie käme die Auswahl fast
+ * vollständig aus Baden-Württemberg und Nordrhein-Westfalen.
+ */
+export const vorzeigeMitBild = (proLand = 4, limit = 56) =>
+  q<VorzeigePlatz>(
+    `SELECT * FROM (
+       SELECT p.*, o.name AS ort_name, o.slug AS ort_slug,
+              k.name AS kreis_name, k.slug AS kreis_slug, k.typ AS kreis_typ,
+              bl.name AS bl_name, bl.slug AS bl_slug,
+              z.name AS ziel_name, z.slug AS ziel_slug, z.distanz_m AS ziel_distanz_m,
+              z.url AS bild_url, z.lizenz AS bild_lizenz, z.lizenz_url AS bild_lizenz_url,
+              z.urheber AS bild_urheber, z.quelle_url AS bild_quelle,
+              row_number() OVER (PARTITION BY p.bundesland_id ORDER BY p.aussagen DESC, p.id) AS rang
+         FROM parkplatz p
+         LEFT JOIN ort o         ON o.id = p.ort_id
+         LEFT JOIN kreis k       ON k.id = p.kreis_id
+         LEFT JOIN bundesland bl ON bl.id = p.bundesland_id
+         JOIN LATERAL (
+           SELECT zi.name, zi.slug, pz.distanz_m,
+                  b.url, b.lizenz, b.lizenz_url, b.urheber, b.quelle_url
+             FROM parkplatz_ziel pz
+             JOIN ziel zi ON zi.id = pz.ziel_id
+             JOIN bild b  ON b.wikidata = zi.wikidata
+            WHERE pz.parkplatz_id = p.id
+            ORDER BY pz.distanz_m
+            LIMIT 1
+         ) z ON true
+        WHERE p.aktiv AND p.name NOT LIKE 'Wanderparkplatz bei %'
+     ) x
+     WHERE rang <= $1
+     ORDER BY rang, bl_name, name
+     LIMIT $2`,
+    [proLand, limit],
+  );

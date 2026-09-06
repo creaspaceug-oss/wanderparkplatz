@@ -39,7 +39,7 @@ export default async function RegionenSeite() {
       </p>
 
       <div className="mt-8">
-        <RegionKarten regionen={regionen} />
+        <RegionKarten regionen={regionen} obenAufDerSeite />
       </div>
 
       <p className="mt-8 text-sm text-muted">

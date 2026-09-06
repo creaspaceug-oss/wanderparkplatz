@@ -15,9 +15,13 @@ import type { Wanderregion } from "@/lib/wanderregionen";
 export default async function RegionKarten({
   regionen,
   max,
+  // Nur setzen, wo die Kacheln tatsächlich oben auf der Seite stehen.
+  // Auf der Startseite folgen sie weiter unten und dürfen nicht vorladen.
+  obenAufDerSeite = false,
 }: {
   regionen: (Wanderregion & { bestand: number })[];
   max?: number;
+  obenAufDerSeite?: boolean;
 }) {
   const sichtbar = max ? regionen.slice(0, max) : regionen;
   const bilder = await bilderFuer(sichtbar.map((r) => r.wikidata));
@@ -42,7 +46,8 @@ export default async function RegionKarten({
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="object-cover transition duration-300 group-hover:scale-105"
-                      priority={i < 3}
+                      priority={obenAufDerSeite && i < 3}
+                      loading={obenAufDerSeite && i < 3 ? undefined : "lazy"}
                     />
                   </span>
                 )}

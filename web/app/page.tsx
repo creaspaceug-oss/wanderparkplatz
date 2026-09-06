@@ -3,8 +3,9 @@ import Link from "next/link";
 import Umkreissuche from "@/components/Umkreissuche";
 import ParkplatzListe from "@/components/ParkplatzListe";
 import RegionKarten from "@/components/RegionKarten";
+import ParkplatzKarten from "@/components/ParkplatzKarten";
 import { bundeslaender, topKreise, kennzahlen } from "@/lib/queries";
-import { regionBestaende, groessteParkplaetze, vorzeigeParkplaetze } from "@/lib/db";
+import { regionBestaende, groessteParkplaetze, vorzeigeMitBild } from "@/lib/db";
 import { WANDERREGIONEN } from "@/lib/wanderregionen";
 import { jsonLd, nf } from "@/lib/format";
 import { SITE, SITE_NAME } from "@/lib/site";
@@ -82,7 +83,7 @@ export default async function Startseite() {
     kennzahlen(),
     regionBestaende(WANDERREGIONEN),
     groessteParkplaetze(6),
-    vorzeigeParkplaetze(24),
+    vorzeigeMitBild(6, 54),
   ]);
 
   const proSlug = new Map(bestaende.map((b) => [b.slug, b.n]));
@@ -212,13 +213,20 @@ export default async function Startseite() {
       {/* ------------------------------------------------ Beispiele aus dem Bestand */}
       <Abschnitt
         titel="Wanderparkplätze in ganz Deutschland"
-        einleitung="Eine Auswahl aus dem Bestand, über alle Bundesländer verteilt — jeder Eintrag führt zur Seite mit Wanderwegen, Umfeld und Anfahrt."
+        einleitung="Eine Auswahl über alle Bundesländer verteilt. Jeder Eintrag führt zur Seite mit den Wanderwegen ab dem Platz, dem Umfeld und der Anfahrt. Abgebildet ist jeweils ein Wanderziel in der Nähe — von Parkplätzen selbst gibt es keine Fotos."
       >
-        <ParkplatzListe items={vorzeige} />
-        <p className="mt-4 text-sm text-muted">
-          Das ist ein Ausschnitt. Über die Suche oben, die Wanderregionen oder die
-          Bundesländer kommst du an den vollständigen Bestand von{" "}
-          {nf.format(zahlen.gesamt)} Plätzen.
+        <ParkplatzKarten items={vorzeige} />
+        <p className="mt-5 text-sm text-muted">
+          Das ist ein Ausschnitt aus {nf.format(zahlen.gesamt)} erfassten Plätzen. Über die
+          Suche oben, die{" "}
+          <Link href="/regionen" className="text-accent underline">
+            Wanderregionen
+          </Link>{" "}
+          oder die{" "}
+          <Link href="/bundeslaender" className="text-accent underline">
+            Bundesländer
+          </Link>{" "}
+          kommst du an den vollständigen Bestand.
         </p>
       </Abschnitt>
 
