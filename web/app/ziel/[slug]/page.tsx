@@ -24,7 +24,12 @@ export async function generateMetadata({ params }: PageProps<"/ziel/[slug]">): P
   const z = await zielBySlug(slug);
   if (!z) return { title: "Ziel nicht gefunden" };
   return {
-    title: titel(`Parkplatz ${z.name} – ${nf.format(z.parkplatz_count)} Wanderparkplätze`),
+    // "Steinberg" gibt es 33-mal, "Galgenberg" 25-mal. Ohne Bundesland im
+    // Titel wären diese Seiten nicht unterscheidbar.
+    title: titel(
+      `Parkplatz ${z.name}${z.bl_name ? ` (${z.bl_name})` : ""}` +
+        ` – ${nf.format(z.parkplatz_count)} Wanderparkplätze`,
+    ),
     description: beschreibung(
       `Wanderparkplätze am ${z.name}` +
         `${z.hoehe_m ? ` (${nf.format(z.hoehe_m)} m)` : ""}` +

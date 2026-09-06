@@ -21,7 +21,13 @@ export async function generateMetadata({ params }: PageProps<"/ort/[slug]">): Pr
   const o = await ortBySlug(slug);
   if (!o) return { title: "Ort nicht gefunden" };
   return {
-    title: titel(`Wanderparkplatz ${o.name}: ${nf.format(o.poi_count)} Ausgangspunkte`),
+    // Ortsnamen wiederholen sich: 74 Namen kommen mehrfach vor. Ohne den
+    // Kreis im Titel hätten diese Seiten byte-identische Titel und
+    // konkurrierten miteinander um dieselbe Anfrage.
+    title: titel(
+      `Wanderparkplatz ${o.name}${o.kreis_name ? ` (${o.kreis_name})` : ""}` +
+        `: ${nf.format(o.poi_count)} ${o.poi_count === 1 ? "Ausgangspunkt" : "Ausgangspunkte"}`,
+    ),
     description: beschreibung(
       `Wanderparkplätze in und um ${o.name}${o.kreis_name ? ` (${o.kreis_name})` : ""}: Wanderwege ab dem Platz, Stellplätze, Gebühren und Anfahrt.`,
     ),
@@ -50,12 +56,14 @@ export default async function OrtSeite({ params }: PageProps<"/ort/[slug]">) {
       <Brotkrumen pfad={pfad} aktuell={o.name} />
       <h1 className="mt-3 text-3xl font-bold tracking-tight">Wanderparkplätze in {o.name}</h1>
       <p className="mt-4 text-lg text-muted">
-        {nf.format(o.poi_count)}{" "}
-        {o.poi_count === 1 ? "Wanderparkplatz ist" : "Wanderparkplätze sind"} {o.name} direkt
-        zugeordnet
-        {o.kreis_name && `, ${o.kreis_name}`}
-        {o.bl_name && ` in ${o.bl_name}`}. Weiter unten stehen zusätzlich Ausgangspunkte im
-        Umkreis von 15 Kilometern.
+        {/* Als ein String: in JSX getrennte Teile erzeugen ein Leerzeichen
+            vor dem Komma. */}
+        {`${nf.format(o.poi_count)} ` +
+          `${o.poi_count === 1 ? "Wanderparkplatz ist" : "Wanderparkplätze sind"} ` +
+          `${o.name} direkt zugeordnet` +
+          `${o.kreis_name ? `, ${o.kreis_name}` : ""}` +
+          `${o.bl_name ? ` in ${o.bl_name}` : ""}. ` +
+          `Weiter unten stehen zusätzlich Ausgangspunkte im Umkreis von 15 Kilometern.`}
       </p>
 
       <section className="mt-8">
