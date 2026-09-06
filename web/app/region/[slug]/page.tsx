@@ -9,12 +9,27 @@ import { jsonLd, nf, aufzaehlung } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
 
-export const revalidate = 604800;
+/*
+ * Bewusst kürzer als bei Kreis- und Ortsseiten: ob eine Region Bestand hat,
+ * ändert sich mit jedem Datenimport. Eine Region, die neu Parkplätze bekommt,
+ * soll binnen eines Tages erscheinen und nicht erst nach einer Woche.
+ */
+export const revalidate = 86400;
 
 const MAX_LISTE = 120;
 
+/**
+ * Nur Regionen mit Bestand vorrendern.
+ *
+ * Sonst wird für leere Regionen ein notFound() fest ins Build geschrieben und
+ * als 404 zwischengespeichert — auch dann noch, wenn längst Daten vorliegen.
+ * Regionen ohne Bestand entstehen stattdessen bei Abruf und liefern ein 404,
+ * das sich mit der nächsten Revalidierung von selbst korrigiert.
+ */
 export async function generateStaticParams() {
-  return WANDERREGIONEN.map((r) => ({ slug: r.slug }));
+  const bestaende = await regionBestaende(WANDERREGIONEN);
+  const mitBestand = new Set(bestaende.filter((b) => b.n > 0).map((b) => b.slug));
+  return WANDERREGIONEN.filter((r) => mitBestand.has(r.slug)).map((r) => ({ slug: r.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps<"/region/[slug]">): Promise<Metadata> {
