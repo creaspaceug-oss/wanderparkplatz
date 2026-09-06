@@ -6,7 +6,7 @@ import { kennung } from "./ident.ts";
 import { markierung } from "./markierung.ts";
 import {
   type Pt, type Area, makeArea, geomToPolys, locate, bearingLabel, slugify, Grid,
-  distanzZuLinie, suchform,
+  suchform,
 } from "./geo.ts";
 import { coordOf, type OsmElement } from "./overpass.ts";
 
@@ -310,7 +310,13 @@ async function baueStandorte(
       const plz = el.tags?.postal_code;
       const pt = coordOf(el);
       if (!plz || !pt || plzGesehen.has(plz)) continue;
-      if (!locate(pt, bl)) continue;
+      // Der Schwerpunkt eines PLZ-Gebiets liegt an Küsten und Landesgrenzen
+      // gelegentlich knapp außerhalb der vereinfachten Landespolygone. Ein
+      // deutscher Ort in der Nähe genügt daher als Beleg — sonst gingen rund
+      // tausend Postleitzahlen für die Suche verloren.
+      const inDeutschland =
+        locate(pt, bl) !== null || ortGitter.within(pt, 20).length > 0;
+      if (!inDeutschland) continue;
       plzGesehen.add(plz);
       // Größter Ort im Umkreis benennt das Gebiet
       const nah = ortGitter
@@ -353,7 +359,8 @@ async function verarbeiteTrails(parkplaetze: any[]): Promise<TrailErgebnis> {
 
   const routen = new Map<number, Record<string, string>>();
   const wegZuRoute = new Map<number, Set<number>>();
-  const wegGeom = new Map<number, Pt[]>();
+  const wegKnoten = new Map<number, number[]>();
+  const knotenOrt = new Map<number, Pt>();
 
   for (const datei of dateien) {
     let els: OsmElement[];
@@ -371,37 +378,42 @@ async function verarbeiteTrails(parkplaetze: any[]): Promise<TrailErgebnis> {
           set.add(el.id);
           wegZuRoute.set(m.ref, set);
         }
-      } else if (el.type === "way" && el.geometry?.length) {
-        wegGeom.set(el.id, el.geometry.map((g) => [g.lon, g.lat] as Pt));
+      } else if (el.type === "way" && el.nodes?.length) {
+        wegKnoten.set(el.id, el.nodes);
+      } else if (el.type === "node" && el.lat != null && el.lon != null) {
+        knotenOrt.set(el.id, [el.lon, el.lat]);
       }
     }
   }
-  console.log(`  ${routen.size} Routen, ${wegGeom.size} Wegstücke mit Geometrie`);
+  console.log(
+    `  ${routen.size} Routen, ${wegKnoten.size} Wegstücke, ${knotenOrt.size} verortete Knoten`,
+  );
 
   const gitter = new Grid<{ pt: Pt; idx: number }>(0.02);
   parkplaetze.forEach((p, idx) => gitter.add({ pt: [p.lon, p.lat], idx }));
 
-  // Kürzester Abstand je (Parkplatz, Route)
+  /*
+   * Gemessen wird der Abstand zu den Wegknoten, nicht zu den Strecken
+   * dazwischen. Overpass liefert genau die Knoten, die im Suchradius liegen —
+   * fehlende Zwischenknoten würden bei einer Streckenrechnung scheinbare
+   * Abkürzungen erzeugen und den Abstand unterschätzen. Der Knotenabstand
+   * liegt dagegen nie unter dem wahren Abstand.
+   */
   const beste = new Map<string, number>();
-  const suchradius = TRAIL_MAX_M / 1000 + 0.15;
-  for (const [wegId, geom] of wegGeom) {
+  const suchradius = TRAIL_MAX_M / 1000;
+  for (const [wegId, knoten] of wegKnoten) {
     const rels = wegZuRoute.get(wegId);
     if (!rels?.size) continue;
-
-    const kandidaten = new Set<number>();
-    for (const knoten of geom)
-      for (const { item } of gitter.within(knoten, suchradius)) kandidaten.add(item.idx);
-    if (!kandidaten.size) continue;
-
-    for (const idx of kandidaten) {
-      const p = parkplaetze[idx];
-      const km = distanzZuLinie([p.lon, p.lat], geom);
-      if (km * 1000 > TRAIL_MAX_M) continue;
-      for (const relId of rels) {
-        if (!routen.has(relId)) continue;
-        const schluessel = `${idx}|${relId}`;
-        const alt = beste.get(schluessel);
-        if (alt === undefined || km < alt) beste.set(schluessel, km);
+    for (const knotenId of knoten) {
+      const pt = knotenOrt.get(knotenId);
+      if (!pt) continue;
+      for (const { item, km } of gitter.within(pt, suchradius)) {
+        for (const relId of rels) {
+          if (!routen.has(relId)) continue;
+          const schluessel = `${item.idx}|${relId}`;
+          const alt = beste.get(schluessel);
+          if (alt === undefined || km < alt) beste.set(schluessel, km);
+        }
       }
     }
   }

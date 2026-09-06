@@ -50,6 +50,7 @@ export interface OsmElement {
   center?: { lat: number; lon: number };
   tags?: Record<string, string>;
   geometry?: { lat: number; lon: number }[];
+  nodes?: number[];
   members?: { type: string; ref: number; role: string }[];
 }
 

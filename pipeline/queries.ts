@@ -71,17 +71,24 @@ const POI_SET = `(
 /**
  * Wanderwege, die an einem Parkplatz vorbeiführen.
  *
- * Die Zuordnung Parkplatz↔Weg entsteht lokal: Overpass liefert die Geometrie
- * der nahen Wege und die Mitgliederlisten der Routen, den Abstand rechnet der
- * Build-Schritt aus. Ein `way(r.routen)` würde stattdessen die Mitglieder
- * aller Routen materialisieren — bei Fernwanderwegen zehntausende Wege.
+ * Der Einstieg über Knoten statt über Wege ist der entscheidende Punkt:
+ * `way(around.pois:150)` gemessen 4:28 je Kachel, `node(around.pois:150)`
+ * mit anschließender Rückwärtssuche 1:37 — bei gleichem Ergebnis. Die
+ * Umkreissuche über Knoten ist die billigste Zugriffsart in Overpass.
+ *
+ * Ausgegeben werden nur die Knoten, die zu einem Wanderweg gehören und im
+ * Umkreis liegen. Das genügt für die Zuordnung und spart gegenüber der
+ * Ausgabe aller Knoten ein Vielfaches an Datenmenge.
  */
 export const trailsQuery = (t: Tile) => `[out:json][timeout:400][bbox:${bbox(t)}];
 ${POI_SET}
-way(around.pois:150)["highway"]->.nahe;
-rel(bw.nahe)["route"="hiking"]->.routen;
-way.nahe(r.routen)->.tw;
-.tw out geom;
+node(around.pois:150)->.nn;
+way(bn.nn)["highway"]->.nw;
+rel(bw.nw)["route"="hiking"]->.routen;
+way.nw(r.routen)->.tw;
+node.nn(w.tw)->.tn;
+.tw out;
+.tn out skel;
 .routen out body;`;
 
 /**
