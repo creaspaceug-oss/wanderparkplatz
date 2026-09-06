@@ -341,7 +341,25 @@ async function verarbeiteUmfeld(parkplaetze: any[]): Promise<UmfeldEintrag[]> {
   const zaehler: Record<string, number> = {};
   for (const [, liste] of proPlatz) {
     liste.sort((a, b) => a.distanz_m - b.distanz_m);
-    for (const e of liste.slice(0, UMFELD_MAX_PRO_KATEGORIE)) {
+
+    /*
+     * Entdoppeln vor dem Kürzen. Eine Haltestelle ist in OpenStreetMap
+     * häufig mehrfach erfasst — als Mast, als Bahnsteig, als Haltepunkt —,
+     * was sonst dreimal "Hörschel" ergibt. Namenlose Objekte werden auf einen
+     * Eintrag zusammengefasst: "(ohne Namen) 188 m" zweimal untereinander ist
+     * keine Information.
+     */
+    const gesehen = new Set<string>();
+    const gekuerzt: UmfeldEintrag[] = [];
+    for (const e of liste) {
+      const kennung = e.name ? e.name.toLowerCase() : "\u0000ohne-namen";
+      if (gesehen.has(kennung)) continue;
+      gesehen.add(kennung);
+      gekuerzt.push(e);
+      if (gekuerzt.length >= UMFELD_MAX_PRO_KATEGORIE) break;
+    }
+
+    for (const e of gekuerzt) {
       raus.push(e);
       zaehler[e.kategorie] = (zaehler[e.kategorie] ?? 0) + 1;
     }
