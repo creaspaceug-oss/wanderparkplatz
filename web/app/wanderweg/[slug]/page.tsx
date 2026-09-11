@@ -5,10 +5,13 @@ import ParkplatzListe from "@/components/ParkplatzListe";
 import Brotkrumen from "@/components/Brotkrumen";
 import {
   trailBySlug, parkplaetzeAmTrail, kreiseAmTrail, trailSeiten, verwandteTrails,
+  zieleAmTrail, orteAmTrail,
 } from "@/lib/db";
-import { jsonLd, nf, aufzaehlung } from "@/lib/format";
+import { jsonLd, nf } from "@/lib/format";
 import { titelVariante, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
+import ZieleListe from "@/components/ZieleListe";
+import { wegtext } from "@/lib/detailtext";
 
 export const revalidate = 604800;
 export const dynamicParams = true;
@@ -56,15 +59,16 @@ export default async function WanderwegSeite({ params }: PageProps<"/wanderweg/[
   const t = await trailBySlug(slug);
   if (!t) notFound();
 
-  const [plaetze, kreise, verwandt] = await Promise.all([
+  const [plaetze, kreise, verwandt, ziele, orte] = await Promise.all([
     parkplaetzeAmTrail(t.id),
     kreiseAmTrail(t.id),
     verwandteTrails(t.id),
+    zieleAmTrail(t.id),
+    orteAmTrail(t.id),
   ]);
   if (!plaetze.length) notFound();
 
   const laender = [...new Set(plaetze.map((p) => p.bl_name).filter(Boolean))] as string[];
-  const kostenfrei = plaetze.filter((p) => p.gebuehr === false).length;
 
   const merkmale = [
     t.netz ? NETZ[t.netz] : null,
@@ -120,14 +124,11 @@ export default async function WanderwegSeite({ params }: PageProps<"/wanderweg/[
         </p>
       )}
 
-      <p className="mt-4 text-lg leading-relaxed text-muted">
-        {`Am ${t.name} sind ${nf.format(t.parkplatz_count)} ` +
-          `${t.parkplatz_count === 1 ? "Wanderparkplatz" : "Wanderparkplätze"} erfasst` +
-          `${kostenfrei > 0 ? `, davon ${nf.format(kostenfrei)} nachweislich kostenfrei` : ""}.` +
-          `${laender.length ? ` Der Weg berührt ${aufzaehlung(laender)}.` : ""}` +
-          ` Alle Plätze liegen höchstens 200 Meter vom Wegverlauf entfernt — sie eignen sich` +
-          ` als Ausgangspunkt für eine Runde oder als Ein- und Ausstieg einer Etappe.`}
-      </p>
+      <div className="mt-4 space-y-4 text-lg leading-relaxed text-muted">
+        {wegtext(t, plaetze, ziele, orte, laender).map((a) => (
+          <p key={a.slice(0, 40)}>{a}</p>
+        ))}
+      </div>
 
       <section className="mt-10">
         <h2 className="text-xl font-semibold">Parkplätze am Weg</h2>
@@ -139,6 +140,35 @@ export default async function WanderwegSeite({ params }: PageProps<"/wanderweg/[
           Weges selbst ist hier nicht abgebildet — maßgeblich ist die Markierung vor Ort.
         </p>
       </section>
+
+      {ziele.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-xl font-semibold">Wanderziele am Weg</h2>
+          <ZieleListe items={ziele} />
+          <p className="mt-3 text-sm text-muted">
+            Luftlinie ab dem nächstgelegenen Parkplatz am Weg, nicht ab dem Wegverlauf.
+          </p>
+        </section>
+      )}
+
+      {orte.length > 1 && (
+        <section className="mt-10">
+          <h2 className="text-xl font-semibold">Orte am Weg</h2>
+          <ul className="mt-4 grid gap-x-6 sm:grid-cols-2">
+            {orte.map((o) => (
+              <li
+                key={o.slug}
+                className="flex items-baseline justify-between gap-2 border-b border-line py-2"
+              >
+                <Link href={`/ort/${o.slug}`} className="truncate hover:text-accent">
+                  {o.name}
+                </Link>
+                <span className="shrink-0 text-sm tabular-nums text-muted">{o.poi_count}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {kreise.length > 0 && (
         <section className="mt-10">

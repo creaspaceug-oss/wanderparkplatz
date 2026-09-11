@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import ParkplatzListe from "@/components/ParkplatzListe";
 import Brotkrumen from "@/components/Brotkrumen";
-import { zielBySlug, parkplaetzeAmZiel, zielSeiten, nahegelegeneZiele } from "@/lib/db";
+import {
+  zielBySlug, parkplaetzeAmZiel, zielSeiten, nahegelegeneZiele, wegeZumZiel, umfeldAmZiel,
+} from "@/lib/db";
 import { zielTitel } from "@/lib/zielart";
 import { jsonLd, nf } from "@/lib/format";
 import { titelVariante, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
 import { bildFuer } from "@/lib/bild";
 import CommonsBild from "@/components/CommonsBild";
+import WegeListe from "@/components/WegeListe";
+import Umfeld from "@/components/Umfeld";
+import { zieltext } from "@/lib/detailtext";
 
 export const revalidate = 604800;
 export const dynamicParams = true;
@@ -63,14 +67,14 @@ export default async function ZielSeite({ params }: PageProps<"/ziel/[slug]">) {
   const z = await zielBySlug(slug);
   if (!z) notFound();
 
-  const [plaetze, nahe, bild] = await Promise.all([
+  const [plaetze, nahe, bild, wege, umfeld] = await Promise.all([
     parkplaetzeAmZiel(z.id),
     nahegelegeneZiele(z.id),
     bildFuer(z.wikidata),
+    wegeZumZiel(z.id),
+    umfeldAmZiel(z.id),
   ]);
   if (!plaetze.length) notFound();
-
-  const naechster = plaetze[0];
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -123,16 +127,13 @@ export default async function ZielSeite({ params }: PageProps<"/ziel/[slug]">) {
           .join(" · ")}
       </p>
 
-      <p className="mt-4 text-lg leading-relaxed text-muted">
-        {/* Ohne Artikel formuliert: "für den Großer Waxenstein" wäre falsch,
-            und Eigennamen lassen sich nicht zuverlässig beugen. */}
-        {`Als Ausgangspunkt sind ${nf.format(z.parkplatz_count)} ` +
-          `${z.parkplatz_count === 1 ? "Wanderparkplatz" : "Wanderparkplätze"} erfasst. ` +
-          `Der nächstgelegene liegt ${meter(naechster.distanz_m)} entfernt` +
-          `${naechster.gebuehr === false ? " und ist kostenfrei" : ""}. ` +
-          `Die Entfernungen sind Luftlinie — der tatsächliche Weg ist je nach Gelände ` +
-          `deutlich länger.`}
-      </p>
+      {/* Ohne Artikel formuliert: "für den Großer Waxenstein" wäre falsch,
+          und Eigennamen lassen sich nicht zuverlässig beugen. */}
+      <div className="mt-4 space-y-4 text-lg leading-relaxed text-muted">
+        {zieltext(z, plaetze, wege, umfeld).map((a) => (
+          <p key={a.slice(0, 40)}>{a}</p>
+        ))}
+      </div>
 
       <section className="mt-10">
         <h2 className="text-xl font-semibold">Parkplätze, nach Entfernung</h2>
@@ -168,6 +169,18 @@ export default async function ZielSeite({ params }: PageProps<"/ziel/[slug]">) {
           ))}
         </ul>
       </section>
+
+      {wege.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-xl font-semibold">Wanderwege ab diesen Parkplätzen</h2>
+          <WegeListe items={wege} />
+          <p className="mt-3 text-sm text-muted">
+            Markierte Wege, die höchstens 200 Meter an einem der Parkplätze vorbeiführen.
+          </p>
+        </section>
+      )}
+
+      <Umfeld items={umfeld} />
 
       {nahe.length > 0 && (
         <section className="mt-10">

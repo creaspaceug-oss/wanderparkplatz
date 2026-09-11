@@ -753,3 +753,83 @@ export const zieleImOrt = cache((ortId: number, limit = 10) =>
     [ortId, limit],
   ),
 );
+
+// ------------------------------ Ziel ↔ Wanderweg, über gemeinsame Parkplätze
+//
+// Beide Seitentypen sind für sich dünn: eine Zielseite kam auf 177 Wörter,
+// eine Wegseite auf 192. Die Substanz lag längst in der Datenbank, nur nicht
+// auf der Seite — wer an einem Gipfel parkt, steht meist auch an einem
+// markierten Weg, und umgekehrt. Die Verknüpfung läuft über den Parkplatz,
+// der beide kennt. Kein zusätzlicher Abruf nötig.
+
+/** Markierte Wege, die an den Parkplätzen dieses Ziels vorbeiführen. */
+export const wegeZumZiel = cache((zielId: number, limit = 12) =>
+  q<OrtTrail>(
+    `SELECT t.name, t.slug, t.eigene_seite, t.netz, t.ref, t.markierung, t.laenge_km,
+            min(pt.distanz_m)::int AS distanz_m
+       FROM parkplatz_ziel pz
+       JOIN parkplatz p        ON p.id = pz.parkplatz_id AND p.aktiv
+       JOIN parkplatz_trail pt ON pt.parkplatz_id = p.id
+       JOIN trail t            ON t.id = pt.trail_id
+      WHERE pz.ziel_id = $1
+      GROUP BY t.id, t.name, t.slug, t.eigene_seite, t.netz, t.ref, t.markierung, t.laenge_km
+      ORDER BY CASE t.netz WHEN 'iwn' THEN 1 WHEN 'nwn' THEN 2 WHEN 'rwn' THEN 3 ELSE 4 END,
+               min(pt.distanz_m), t.name
+      LIMIT $2`,
+    [zielId, limit],
+  ),
+);
+
+/** Umfeld aller Parkplätze am Ziel, je Kategorie und Name der nächste Eintrag. */
+export const umfeldAmZiel = cache((zielId: number, limit = 14) =>
+  q<UmfeldEintrag>(
+    // Spalten qualifizieren: parkplatz und parkplatz_nearby haben beide
+    // eine Spalte "name".
+    `SELECT n.kategorie, n.name, min(n.distanz_m)::int AS distanz_m
+       FROM parkplatz_ziel pz
+       JOIN parkplatz p        ON p.id = pz.parkplatz_id AND p.aktiv
+       JOIN parkplatz_nearby n ON n.parkplatz_id = p.id
+      WHERE pz.ziel_id = $1
+      GROUP BY n.kategorie, n.name
+      ORDER BY n.kategorie, min(n.distanz_m)
+      LIMIT $2`,
+    [zielId, limit],
+  ),
+);
+
+/** Wanderziele, die von den Parkplätzen am Weg aus erreichbar sind. */
+export const zieleAmTrail = cache((trailId: number, limit = 12) =>
+  q<OrtZiel>(
+    // Ausgewählt wird nach Bekanntheit, angezeigt nach Entfernung — sonst
+    // stünden erst die bekannten und dann die nahen Ziele, und die Liste
+    // spränge in der Entfernung hin und her.
+    `SELECT name, slug, art, hoehe_m, eigene_seite, distanz_m FROM (
+       SELECT z.name, z.slug, z.art, z.hoehe_m, z.eigene_seite, z.bekannt,
+              min(pz.distanz_m)::int AS distanz_m
+         FROM parkplatz_trail pt
+         JOIN parkplatz p       ON p.id = pt.parkplatz_id AND p.aktiv
+         JOIN parkplatz_ziel pz ON pz.parkplatz_id = p.id
+         JOIN ziel z            ON z.id = pz.ziel_id
+        WHERE pt.trail_id = $1
+        GROUP BY z.id, z.name, z.slug, z.art, z.hoehe_m, z.eigene_seite, z.bekannt
+        ORDER BY z.bekannt DESC, min(pz.distanz_m)
+        LIMIT $2
+     ) x
+     ORDER BY distanz_m`,
+    [trailId, limit],
+  ),
+);
+
+/** Orte, in denen Parkplätze dieses Wegs liegen. */
+export const orteAmTrail = (trailId: number, limit = 12) =>
+  q<{ slug: string; name: string; poi_count: number }>(
+    `SELECT o.slug, o.name, count(*)::int AS poi_count
+       FROM parkplatz_trail pt
+       JOIN parkplatz p ON p.id = pt.parkplatz_id AND p.aktiv
+       JOIN ort o       ON o.id = p.ort_id
+      WHERE pt.trail_id = $1
+      GROUP BY o.slug, o.name
+      ORDER BY count(*) DESC, o.name
+      LIMIT $2`,
+    [trailId, limit],
+  );

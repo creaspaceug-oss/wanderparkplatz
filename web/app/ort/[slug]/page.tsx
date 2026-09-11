@@ -10,22 +10,15 @@ import { nf, km } from "@/lib/format";
 import { bildFuer } from "@/lib/bild";
 import CommonsBild from "@/components/CommonsBild";
 import Umfeld from "@/components/Umfeld";
+import WegeListe from "@/components/WegeListe";
+import ZieleListe from "@/components/ZieleListe";
 import { ortstext } from "@/lib/ortstext";
-import { zielTitel } from "@/lib/zielart";
 import { titel, beschreibung } from "@/lib/meta";
 import { VORRENDERN } from "@/lib/vorrendern";
 import Link from "next/link";
 
 export const revalidate = 604800;
 export const dynamicParams = true;
-
-/** OSM-Netzstufe → Einordnung für Leser. */
-const NETZ: Record<string, string> = {
-  iwn: "internationaler Fernwanderweg",
-  nwn: "nationaler Fernwanderweg",
-  rwn: "regionaler Wanderweg",
-  lwn: "örtlicher Wanderweg",
-};
 
 export async function generateStaticParams() {
   return (await alleSlugs("ort", VORRENDERN.ort)).map((r) => ({ slug: r.slug }));
@@ -100,66 +93,14 @@ export default async function OrtSeite({ params }: PageProps<"/ort/[slug]">) {
       {wege.length > 0 && (
         <section className="mt-10">
           <h2 className="text-xl font-semibold">Wanderwege ab {o.name}</h2>
-          <ul className="mt-4 divide-y divide-line">
-            {wege.map((w) => (
-              <li key={w.slug} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-3">
-                <span className="font-medium">
-                  {w.ref && (
-                    <span className="mr-2 rounded border border-line px-1.5 py-0.5 text-xs tabular-nums text-muted">
-                      {w.ref}
-                    </span>
-                  )}
-                  {w.eigene_seite ? (
-                    <Link href={`/wanderweg/${w.slug}`} className="hover:text-accent">
-                      {w.name}
-                    </Link>
-                  ) : (
-                    w.name
-                  )}
-                </span>
-                <span className="text-sm text-muted">
-                  {[
-                    NETZ[w.netz ?? ""] ?? null,
-                    w.markierung,
-                    w.laenge_km ? `${Number(w.laenge_km).toLocaleString("de-DE")} km` : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <WegeListe items={wege} />
         </section>
       )}
 
       {ziele.length > 0 && (
         <section className="mt-10">
           <h2 className="text-xl font-semibold">Wanderziele in Reichweite</h2>
-          <ul className="mt-4 divide-y divide-line">
-            {ziele.map((z) => (
-              <li key={z.slug} className="flex items-baseline gap-3 py-2.5">
-                <span className="w-20 shrink-0 tabular-nums text-sm text-muted">
-                  {z.distanz_m < 1000
-                    ? `${z.distanz_m} m`
-                    : `${(z.distanz_m / 1000).toFixed(1).replace(".", ",")} km`}
-                </span>
-                <span className="min-w-0">
-                  {z.eigene_seite ? (
-                    <Link href={`/ziel/${z.slug}`} className="font-medium hover:text-accent">
-                      {z.name}
-                    </Link>
-                  ) : (
-                    <span className="font-medium">{z.name}</span>
-                  )}
-                  <span className="block text-sm text-muted">
-                    {[zielTitel(z.art), z.hoehe_m ? `${nf.format(z.hoehe_m)} m` : null]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ul>
+          <ZieleListe items={ziele} />
           <p className="mt-3 text-sm text-muted">
             Luftlinie ab dem nächstgelegenen Parkplatz.
           </p>
