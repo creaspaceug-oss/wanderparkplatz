@@ -63,6 +63,11 @@ const upsertMitStand = (konflikt: string[], cols: string[], inhalt: string[], ta
 
 await client.query("BEGIN");
 
+// Vor allen Änderungen: der Bestand, an dem die Sicherung unten misst.
+const { rows: [bestandVorher] } = await client.query<{ n: number }>(
+  "SELECT count(*)::int AS n FROM parkplatz WHERE aktiv",
+);
+
 // ------------------------------------------------------------ Regionen
 const blCols = ["slug", "name", "iso", "lat", "lon", "poi_count"];
 const bundeslaender = await readJson(out("bundeslaender.json"));
@@ -172,6 +177,31 @@ await insertMany(
   ["osm_type", "osm_id"],
   parkplaetze.map((p: any) => [p.osm_type, p.osm_id]),
 );
+// Notbremse. Ein unvollständiger Abruf sieht für den Import aus wie ein
+// Bestand, aus dem massenhaft Plätze verschwunden sind — er würde sie
+// stilllegen und damit halbe Landstriche von der Seite nehmen. In einer
+// normalen Woche ändert sich in OpenStreetMap ein Bruchteil davon.
+const ANTEIL_MAX = Number(process.env.STILLLEGEN_MAX_ANTEIL) || 0.1;
+const { rows: [{ n: wuerdenWegfallen }] } = await client.query<{ n: number }>(
+  `SELECT count(*)::int AS n FROM parkplatz p
+    WHERE p.aktiv
+      AND NOT EXISTS (
+        SELECT 1 FROM importiert i
+         WHERE i.osm_type = p.osm_type AND i.osm_id = p.osm_id)`,
+);
+const grenze = Math.max(50, Math.round(bestandVorher.n * ANTEIL_MAX));
+if (wuerdenWegfallen > grenze) {
+  await client.query("ROLLBACK");
+  console.error(
+    `\nImport abgebrochen: ${wuerdenWegfallen} von ${bestandVorher.n} aktiven Parkplätzen` +
+      `\nwürden stillgelegt, erlaubt sind ${grenze} (${Math.round(ANTEIL_MAX * 100)} %).` +
+      `\n\nFast immer heißt das, dass der Abruf unvollständig war. Es wurde nichts` +
+      `\ngeändert. Den Abruf vervollständigen und erneut importieren.` +
+      `\n\nIst der Rückgang echt: STILLLEGEN_MAX_ANTEIL=0.5 npm run data:load`,
+  );
+  process.exit(1);
+}
+
 const { rowCount: stillgelegt } = await client.query(
   `UPDATE parkplatz p SET aktiv = false
     WHERE p.aktiv

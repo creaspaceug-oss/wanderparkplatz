@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir, readdir } from "node:fs/promises";
+import { readFile, writeFile, appendFile, mkdir, readdir } from "node:fs/promises";
 import { raw, out, OUT, RAW } from "./paths.ts";
 
 import { normalize, datenScore } from "./normalize.ts";
@@ -716,8 +716,59 @@ async function verarbeiteTrails(parkplaetze: any[]): Promise<TrailErgebnis> {
   return { trails, zuordnung };
 }
 
+/**
+ * Ist der Abruf vollständig genug für einen Import?
+ *
+ * Der Import legt jeden Parkplatz still, den er in den frischen Daten nicht
+ * findet, und baut Wanderwege und Ziele von Grund auf neu. Bei einem halb
+ * abgerufenen Datenbestand verschwände damit die halbe Seite. Der Abruf
+ * hinterlegt deshalb je Datensatz, ob er durchgelaufen ist.
+ *
+ * Fehlt die Datei ganz, bleibt es bei einer Warnung: Lokal liegen oft
+ * Kacheln aus früheren Abrufen, für die es noch keinen Stand gibt. Den
+ * gefährlichen Fall — Zeitbudget mitten im Abruf abgelaufen — deckt der
+ * Stand ab, und den Fall "gar keine Kacheln" fängt der Import selbst.
+ */
+async function abrufVollstaendig(): Promise<boolean> {
+  let stand: Record<string, { vollstaendig: boolean; offen: number; aufgegeben: string[] }>;
+  try {
+    stand = JSON.parse(await readFile(raw("_status.json"), "utf8"));
+  } catch {
+    console.warn("  ! Kein Abrufstand hinterlegt — Vollständigkeit nicht prüfbar.");
+    return true;
+  }
+
+  const luecken = Object.entries(stand).filter(([, s]) => !s.vollstaendig);
+  if (!luecken.length) return true;
+
+  console.error("\nAbruf unvollständig — es wird nichts aufbereitet und nichts importiert.\n");
+  for (const [name, s] of luecken)
+    console.error(
+      `  ${name}: ${s.offen} Kacheln offen` +
+        (s.aufgegeben.length ? `, ${s.aufgegeben.length} aufgegeben` : ""),
+    );
+  console.error(
+    "\nDie bereits geholten Kacheln bleiben erhalten. Ein weiterer Lauf setzt dort an," +
+      "\nund sobald alle Datensätze durch sind, läuft der Import von selbst durch." +
+      "\nBewusst überspringen: UNVOLLSTAENDIG_OK=ja",
+  );
+  return false;
+}
+
+/** Ergebnis für den Workflow hinterlegen, damit er den Import überspringen kann. */
+async function melde(vollstaendig: boolean) {
+  const datei = process.env.GITHUB_OUTPUT;
+  if (datei) await appendFile(datei, `vollstaendig=${vollstaendig ? "ja" : "nein"}\n`);
+}
+
 // ------------------------------------------------------------- Parkplätze
 async function main() {
+  if (!(await abrufVollstaendig()) && process.env.UNVOLLSTAENDIG_OK !== "ja") {
+    await melde(false);
+    return;
+  }
+  await melde(true);
+
   console.log("Lade Verwaltungsgrenzen …");
   const { bl, kreise } = await loadAreas();
   console.log(`  ${bl.length} Bundesländer, ${kreise.length} Kreise`);

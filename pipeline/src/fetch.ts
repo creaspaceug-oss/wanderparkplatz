@@ -1,4 +1,4 @@
-import { mkdir, writeFile, stat } from "node:fs/promises";
+import { mkdir, writeFile, readFile, stat } from "node:fs/promises";
 import { overpass } from "./overpass.ts";
 import {
   tiles, viertel, poisQuery, placesQuery, trailsQuery, plzQuery, umfeldQuery, zieleQuery, wasserfallQuery, type Tile,
@@ -74,6 +74,35 @@ const FRIST = BUDGET_MIN ? Date.now() + BUDGET_MIN * 60_000 : Infinity;
  */
 const MAX_TIEFE = 3;
 
+/**
+ * Abrufstand je Datensatz, abgelegt in data/raw/_status.json.
+ *
+ * Ohne diese Datei kann die Aufbereitung nicht wissen, ob ein Datensatz
+ * vollständig ist oder ob das Zeitbudget mittendrin abgelaufen war — die
+ * Kacheln im Verzeichnis sehen in beiden Fällen gleich aus. Der Import legt
+ * aber alles still, was er nicht sieht. Ein halber Abruf würde damit die
+ * halbe Seite abschalten.
+ */
+interface Abrufstand {
+  vollstaendig: boolean;
+  kacheln: number;
+  offen: number;
+  aufgegeben: string[];
+  stand: string;
+}
+
+const STATUS = raw("_status.json");
+
+async function merkeStand(prefix: string, stand: Abrufstand) {
+  let alle: Record<string, Abrufstand> = {};
+  try {
+    alle = JSON.parse(await readFile(STATUS, "utf8"));
+  } catch {}
+  alle[prefix] = stand;
+  await mkdir(RAW, { recursive: true });
+  await writeFile(STATUS, JSON.stringify(alle, null, 1));
+}
+
 async function tiled(prefix: string, build: (t: Tile) => string, concurrency = 1) {
   const queue: { t: Tile; tiefe: number }[] = tiles().map((t) => ({ t, tiefe: 0 }));
   const gesamt = queue.length;
@@ -118,6 +147,13 @@ async function tiled(prefix: string, build: (t: Tile) => string, concurrency = 1
     `✓ ${prefix}: ${done} Kacheln geladen (${leer} leer, ${geteilt} durch Teilung entstanden, ${gescheitert.length} aufgegeben)`,
   );
   if (gescheitert.length) console.log(`  Aufgegeben: ${gescheitert.join(" ")}`);
+  await merkeStand(prefix, {
+    vollstaendig: !abgebrochen && gescheitert.length === 0,
+    kacheln: done,
+    offen: queue.length,
+    aufgegeben: gescheitert,
+    stand: new Date().toISOString(),
+  });
   if (abgebrochen)
     console.log(
       `  ⏱ Zeitbudget von ${BUDGET_MIN} Minuten erreicht, ${queue.length} Kacheln offen — ` +

@@ -83,22 +83,34 @@ jobs:
           ABRUF_BUDGET_MIN: ${{ github.event.inputs.budget || '240' }}
         run: npm run -w pipeline fetch admin pois places plz trails ziele umfeld wasserfaelle
 
+      # Setzt die Ausgabe "vollstaendig". Steht sie auf "nein", war der Abruf
+      # unvollständig; dann wird nichts aufbereitet und nichts importiert.
+      # Der Lauf bleibt trotzdem grün, damit der Zwischenspeicher die bereits
+      # geholten Kacheln behält und der nächste Lauf dort ansetzt.
       - name: Aufbereiten
+        id: aufbereiten
         run: npm run data:build
 
       - name: Importieren
+        if: steps.aufbereiten.outputs.vollstaendig == 'ja'
         run: npm run data:load
 
       - name: Bilder nachziehen
+        if: steps.aufbereiten.outputs.vollstaendig == 'ja'
         run: npm run data:bilder
+
+      - name: Hinweis unvollständiger Abruf
+        if: steps.aufbereiten.outputs.vollstaendig != 'ja'
+        run: |
+          echo "::warning::Abruf noch nicht vollständig — nicht importiert. Die geholten Kacheln liegen im Zwischenspeicher, der nächste Lauf setzt dort an."
 
       # Ein Deployment holt die neuen Daten sofort auf alle Seiten. Ohne den
       # Hook geschieht dasselbe von selbst, nur verteilt über die
       # Revalidierungsfristen der Seitentypen — bis zu sieben Tage.
       - name: Neu ausliefern
-        if: env.VERCEL_DEPLOY_HOOK != ''
+        if: steps.aufbereiten.outputs.vollstaendig == 'ja' && env.VERCEL_DEPLOY_HOOK != ''
         run: curl -fsS -X POST "$VERCEL_DEPLOY_HOOK"
 
       - name: Hinweis ohne Deploy Hook
-        if: env.VERCEL_DEPLOY_HOOK == ''
+        if: steps.aufbereiten.outputs.vollstaendig == 'ja' && env.VERCEL_DEPLOY_HOOK == ''
         run: echo "Kein Deploy Hook hinterlegt — die Daten sind importiert, die Seiten ziehen mit ihrer nächsten Revalidierung nach."
