@@ -43,6 +43,7 @@ export async function eintraege(typ: SitemapTyp): Promise<SitemapEintrag[]> {
         { pfad: "/wanderwege", frequenz: "monthly", gewicht: "0.8" },
         { pfad: "/ziele", frequenz: "monthly", gewicht: "0.8" },
         { pfad: "/bundeslaender", frequenz: "monthly", gewicht: "0.7" },
+        { pfad: "/ueber-uns", frequenz: "yearly", gewicht: "0.5" },
       ];
     case "regionen": {
       const bestaende = await regionBestaende(WANDERREGIONEN);

@@ -138,3 +138,27 @@ export const nachbarKreise = (kreisId: number, bundeslandId: number, limit = 8) 
      ORDER BY poi_count DESC LIMIT $3`,
     [bundeslandId, kreisId, limit],
   );
+
+export interface Bestand {
+  ziele: number;
+  wanderwege: number;
+  bewertungen: number;
+  stand: string | null;
+}
+
+/**
+ * Umfang des Bestands für die Seite "Über uns". Gezählt werden nur Ziele und
+ * Wege mit eigener Seite — die übrigen sind erfasst, aber zu dünn belegt, um
+ * eine eigene Seite zu tragen.
+ */
+export const bestand = cache(
+  async (): Promise<Bestand> =>
+    (
+      await q<Bestand>(
+        `SELECT (SELECT count(*) FROM ziel  WHERE eigene_seite)::int   AS ziele,
+                (SELECT count(*) FROM trail WHERE eigene_seite)::int   AS wanderwege,
+                (SELECT count(*) FROM bewertung WHERE status = 'frei')::int AS bewertungen,
+                (SELECT max(aktualisiert)::date::text FROM parkplatz)   AS stand`,
+      )
+    )[0],
+);
