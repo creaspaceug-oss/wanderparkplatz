@@ -65,6 +65,26 @@ jobs:
           key: osm-kacheln-${{ github.run_id }}
           restore-keys: osm-kacheln-
 
+      # Der Zwischenspeicher ist nicht verlässlich: Beim allerersten Lauf fehlt
+      # er, und GitHub verwirft ihn nach sieben Tagen ohne Zugriff — bei einem
+      # Wochenlauf also regelmäßig. Ohne Kacheln bräuchte der Abruf rund neun
+      # Stunden, denn jede Kachel einzeln kostet zwischen 40 und 130 Sekunden.
+      # Das Archiv bringt den Grundbestand in Sekunden zurück; die
+      # Zeitstempel darin entscheiden, was der Abruf danach erneuert.
+      - name: Kachel-Grundbestand holen, falls nötig
+        run: |
+          if [ -f data/raw/_status.json ] && ! grep -q '"vollstaendig": false' data/raw/_status.json; then
+            echo "Zwischenspeicher vollständig — Archiv nicht nötig."
+            exit 0
+          fi
+          echo "Kein vollständiger Zwischenspeicher — hole den Grundbestand."
+          curl -fsSL -o /tmp/kacheln.tar.gz \
+            https://github.com/${{ github.repository }}/releases/download/kacheln/osm-kacheln.tar.gz
+          mkdir -p data
+          # -k: vorhandene Kacheln gewinnen, sie sind neuer als das Archiv.
+          tar -xzkf /tmp/kacheln.tar.gz -C data 2>/dev/null || true
+          echo "$(ls data/raw | wc -l) Kacheln liegen jetzt bereit."
+
       - name: Bewertungen sichern
         run: npm run backup
 
