@@ -56,7 +56,8 @@ export function ortstext(
           `${fern.length === 1 ? "ein Fernwanderweg" : "Fernwanderwege"}, hier lässt sich also auch eine Etappe beginnen.`,
       );
     const markiert = wege.find((w) => w.markierung);
-    if (markiert) teile.push(`Der ${markiert.name} trägt als Markierung ${markiert.markierung}.`);
+    // Ohne Artikel: "Der" vor einem Eigennamen rät dessen Geschlecht.
+    if (markiert) teile.push(`${markiert.name} trägt als Markierung ${markiert.markierung}.`);
     absaetze.push(teile.join(" "));
   }
 

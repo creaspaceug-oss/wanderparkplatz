@@ -14,6 +14,20 @@ import { aufzaehlung, nf } from "./format";
 const meter = (m: number) =>
   m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1).replace(".", ",")} km`;
 
+/**
+ * Ortsangabe zu einem Wegnamen, ohne den Namen zu beugen.
+ *
+ * "Am Rechter Neckarrandweg" ist falsch, richtig wäre "Am Rechten". Ein
+ * vorangestelltes Gattungswort nimmt die Beugung auf und lässt den Namen
+ * unangetastet. Nötig ist das nur, wenn der Name mit einem Adjektiv beginnt
+ * — 247 der 1.634 Wegnamen. Die Erkennung greift bewusst zu weit: Bei einem
+ * ungebeugten Namen wie "Bucher Hufeisen" ist die längere Form zwar
+ * unnötig, aber richtig; umgekehrt wäre sie falsch.
+ */
+const BEGINNT_MIT_ADJEKTIV = /^[A-ZÄÖÜ][a-zäöüß]+(er|e|es)\s+\S/;
+const amWeg = (name: string) =>
+  BEGINNT_MIT_ADJEKTIV.test(name) ? `Am Wanderweg ${name}` : `Am ${name}`;
+
 /** Fernwanderwege zuerst nennen — sie sind der stärkste Grund, hier zu starten. */
 const fernwege = (wege: OrtTrail[]) => wege.filter((w) => w.netz === "iwn" || w.netz === "nwn");
 
@@ -80,7 +94,8 @@ export function zieltext(
           `${fern.length === 1 ? "ein Fernwanderweg" : "Fernwanderwege"}, hier lässt sich also auch eine Etappe beginnen.`,
       );
     const markiert = wege.find((w) => w.markierung);
-    if (markiert) teile.push(`Der ${markiert.name} trägt als Markierung ${markiert.markierung}.`);
+    // Ohne Artikel: "Der" vor einem Eigennamen rät dessen Geschlecht.
+    if (markiert) teile.push(`${markiert.name} trägt als Markierung ${markiert.markierung}.`);
     absaetze.push(teile.join(" "));
   }
 
@@ -105,7 +120,7 @@ export function wegtext(
   const absaetze: string[] = [];
 
   absaetze.push(
-    `Am ${weg.name} ${weg.parkplatz_count === 1 ? "ist" : "sind"} ${nf.format(weg.parkplatz_count)} ` +
+    `${amWeg(weg.name)} ${weg.parkplatz_count === 1 ? "ist" : "sind"} ${nf.format(weg.parkplatz_count)} ` +
       `${weg.parkplatz_count === 1 ? "Wanderparkplatz" : "Wanderparkplätze"} erfasst.` +
       gebuehrensatz(plaetze) +
       (laender.length ? ` Der Weg berührt ${aufzaehlung(laender)}.` : "") +
