@@ -57,6 +57,16 @@ const HALTBARKEIT: Record<string, number> = {
 const BUDGET_MIN = Number(process.env.ABRUF_BUDGET_MIN) || 0;
 
 /**
+ * Einmal beim Start berechnet, nicht je Datensatz.
+ *
+ * Vorher stand die Frist in tiled(), und da der Lauf sieben Datensätze
+ * nacheinander abarbeitet, bekam jeder ein volles Budget — aus 20 Minuten
+ * wurden bis zu 140. Die Beschreibung im Workflow meint das Budget für den
+ * ganzen Abruf, also gilt es jetzt auch dafür.
+ */
+const FRIST = BUDGET_MIN ? Date.now() + BUDGET_MIN * 60_000 : Infinity;
+
+/**
  * Kacheln abarbeiten. Scheitert eine Kachel (meist Zeitlimit in dicht
  * kartierten Regionen), wird sie geviertelt und erneut eingereiht — bis zu
  * MAX_TIEFE Mal. Ein Worker: die Hauptinstanz quittiert zwei parallele
@@ -68,7 +78,6 @@ async function tiled(prefix: string, build: (t: Tile) => string, concurrency = 1
   const queue: { t: Tile; tiefe: number }[] = tiles().map((t) => ({ t, tiefe: 0 }));
   const gesamt = queue.length;
   const maxAgeDays = HALTBARKEIT[prefix] ?? 14;
-  const frist = BUDGET_MIN ? Date.now() + BUDGET_MIN * 60_000 : Infinity;
   let done = 0;
   let leer = 0;
   let geteilt = 0;
@@ -77,7 +86,7 @@ async function tiled(prefix: string, build: (t: Tile) => string, concurrency = 1
 
   const worker = async () => {
     while (queue.length) {
-      if (Date.now() > frist) {
+      if (Date.now() > FRIST) {
         abgebrochen = true;
         return;
       }
