@@ -1,4 +1,5 @@
 import pg from "pg";
+import { datenbankUrl } from "./db-url.ts";
 
 /**
  * Bilder für Ziele und Orte beschaffen.
@@ -11,7 +12,7 @@ import pg from "pg";
  * Beide Schnittstellen nehmen 50 Objekte je Anfrage; bei rund 7.000 Objekten
  * sind das etwa 280 Anfragen.
  */
-const DB = process.env.DATABASE_URL ?? "postgres://localhost:5432/wanderparkplatz";
+const DB = datenbankUrl();
 const AGENT = "wanderparkplatz.info/1.0 (Bildrecherche; info@wu-socialmedia.de)";
 const BLOCK = 50;
 

@@ -1,10 +1,11 @@
 import { readFile } from "node:fs/promises";
 import pg from "pg";
+import { datenbankUrl } from "./db-url.ts";
 import { out } from "./paths.ts";
 import { suchform } from "./geo.ts";
 import { kennung } from "./ident.ts";
 
-const DB = process.env.DATABASE_URL ?? "postgres://localhost:5432/wanderparkplatz";
+const DB = datenbankUrl();
 const readJson = async (p: string) => JSON.parse(await readFile(p, "utf8"));
 
 const client = new pg.Client({ connectionString: DB });

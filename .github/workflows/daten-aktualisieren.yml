@@ -31,6 +31,25 @@ jobs:
           node-version: "22"
           cache: npm
 
+      # Zuerst prüfen, sonst scheitert der Lauf erst Minuten später an einer
+      # Meldung, die auf das Skript zeigt statt auf das fehlende Geheimnis.
+      - name: Geheimnisse vorhanden?
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          # Bewusst mit if statt "[ … ] && …": GitHub führt diesen Block mit
+          # "bash -e" aus, wo eine fehlschlagende Bedingung am Zeilenanfang den
+          # Schritt abbrechen kann — ausgerechnet dann, wenn alles vorhanden ist.
+          fehlt=""
+          if [ -z "$DATABASE_URL" ]; then fehlt="$fehlt DATABASE_URL"; fi
+          if [ -z "$VERCEL_DEPLOY_HOOK" ]; then fehlt="$fehlt VERCEL_DEPLOY_HOOK"; fi
+          if [ -n "$fehlt" ]; then
+            echo "::error::Fehlende Geheimnisse:$fehlt — anzulegen unter Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          echo "Beide Geheimnisse vorhanden."
+
       - name: Abhängigkeiten installieren
         run: npm ci
 

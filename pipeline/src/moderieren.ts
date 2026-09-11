@@ -1,4 +1,5 @@
 import pg from "pg";
+import { datenbankUrl } from "./db-url.ts";
 
 /**
  * Moderation offener Bewertungen.
@@ -8,7 +9,7 @@ import pg from "pg";
  *   npm run -w pipeline moderieren -- ablehnen 14
  *   npm run -w pipeline moderieren -- frei-alle
  */
-const DB = process.env.DATABASE_URL ?? "postgres://localhost:5432/wanderparkplatz";
+const DB = datenbankUrl();
 const client = new pg.Client({ connectionString: DB });
 await client.connect();
 

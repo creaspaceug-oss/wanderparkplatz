@@ -1,6 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import pg from "pg";
+import { datenbankUrl } from "./db-url.ts";
 import { ROOT } from "./paths.ts";
 
 /**
@@ -8,11 +9,7 @@ import { ROOT } from "./paths.ts";
  * Gefahrlos wiederholbar: die Dateien legen nur an, was fehlt, und lassen
  * Nutzerdaten unangetastet.
  */
-const DB = process.env.DATABASE_URL;
-if (!DB) {
-  console.error("DATABASE_URL ist nicht gesetzt.");
-  process.exit(1);
-}
+const DB = datenbankUrl();
 
 const verzeichnis = join(ROOT, "pipeline", "sql");
 const dateien = (await readdir(verzeichnis)).filter((f) => f.endsWith(".sql")).sort();

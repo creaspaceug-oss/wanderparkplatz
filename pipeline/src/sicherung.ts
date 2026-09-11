@@ -1,6 +1,7 @@
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { join, isAbsolute, resolve } from "node:path";
 import pg from "pg";
+import { datenbankUrl } from "./db-url.ts";
 import { ROOT } from "./paths.ts";
 
 /**
@@ -17,7 +18,7 @@ import { ROOT } from "./paths.ts";
  * dessen laufende Nummer: Die kann sich bei einem Neuaufbau der Datenbank
  * ändern, die OSM-Identität nicht.
  */
-const DB = process.env.DATABASE_URL ?? "postgres://localhost:5432/wanderparkplatz";
+const DB = datenbankUrl();
 const VERZEICHNIS = join(ROOT, "data", "sicherung");
 
 interface GesicherteBewertung {
