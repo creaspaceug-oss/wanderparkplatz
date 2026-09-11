@@ -39,9 +39,11 @@ function umfeldsatz(umfeld: UmfeldEintrag[]): string {
     teile.push(
       `Wer ohne Auto anreist, steigt an der Haltestelle ${halt.name} aus, ${meter(halt.distanz_m)} von einem der Parkplätze entfernt.`,
     );
+  // Ohne Präposition vor dem Namen: "in Umoya Restaurant" wäre schief, und
+  // ein Eigenname lässt sich nicht zuverlässig beugen.
   const einkehr = naechster("einkehr");
   if (einkehr)
-    teile.push(`Einkehren lässt sich danach in ${einkehr.name}, ${meter(einkehr.distanz_m)} entfernt.`);
+    teile.push(`Die nächste Einkehr ist ${einkehr.name}, ${meter(einkehr.distanz_m)} entfernt.`);
   const huette = naechster("schutzhuette");
   if (!einkehr && huette)
     teile.push(`Als Unterstand steht ${huette.name} bereit, ${meter(huette.distanz_m)} entfernt.`);
