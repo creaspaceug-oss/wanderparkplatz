@@ -63,6 +63,34 @@ const upsertMitStand = (konflikt: string[], cols: string[], inhalt: string[], ta
 
 await client.query("BEGIN");
 
+// Alle Sperren auf einmal, bevor irgendetwas geschrieben wird.
+//
+// Der Import leert und füllt ein Dutzend Tabellen und nimmt dabei sonst eine
+// Sperre nach der anderen. Läuft gleichzeitig ein Vercel-Build, der dieselben
+// Tabellen in anderer Reihenfolge liest, halten sich beide gegenseitig fest:
+// Genau das ist passiert, zwischen parkplatz_trail und parkplatz_ziel.
+//
+// Ein einzelnes LOCK TABLE nimmt alle Sperren atomar — danach kann sich
+// nichts mehr verhaken, Leser warten schlicht. Das lock_timeout sorgt dafür,
+// dass ein laufender Build den Import nicht endlos aufhält, sondern ihn mit
+// einer verständlichen Meldung scheitern lässt.
+await client.query("SET lock_timeout = '180s'");
+try {
+  await client.query(`LOCK TABLE
+    bundesland, kreis, ort, parkplatz, parkplatz_trail, parkplatz_ziel,
+    parkplatz_nearby, trail, ziel, standort, suchindex
+    IN ACCESS EXCLUSIVE MODE`);
+} catch (err) {
+  await client.query("ROLLBACK");
+  console.error(
+    `\nImport abgebrochen: Die Tabellen ließen sich nicht sperren.` +
+      `\n${(err as Error).message}` +
+      `\n\nFast immer läuft gerade ein Deployment, das die Datenbank liest.` +
+      `\nEs wurde nichts geändert — den Import nach dem Deployment wiederholen.`,
+  );
+  process.exit(1);
+}
+
 // Vor allen Änderungen: der Bestand, an dem die Sicherung unten misst.
 const { rows: [bestandVorher] } = await client.query<{ n: number }>(
   "SELECT count(*)::int AS n FROM parkplatz WHERE aktiv",
