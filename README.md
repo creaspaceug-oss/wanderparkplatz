@@ -137,12 +137,17 @@ variables → Actions*):
 | Name | Wert |
 |---|---|
 | `DATABASE_URL` | Verbindungszeichenfolge der Produktionsdatenbank |
-| `VERCEL_DEPLOY_HOOK` | Deploy Hook aus den Vercel-Projekteinstellungen |
+| `VERCEL_DEPLOY_HOOK` | *optional* — Deploy Hook, anzulegen unter Projekt → Settings → Git → Deploy Hooks |
 
 Der Lauf sichert zuerst die Bewertungen, holt dann abgelaufene Kacheln,
 bereitet auf, importiert, zieht fehlende Bilder nach und stößt ein neues
-Deployment an. Ohne dieses Deployment ändert sich an der ausgelieferten Seite
-nichts — die Seiten sind vorgerendert.
+Deployment an.
+
+Der Deploy Hook ist bequem, aber nicht nötig: Die Seiten sind mit
+Revalidierungsfristen versehen und holen sich die neuen Daten ohnehin — die
+Startseite, Parkplatz- und Regionsseiten binnen eines Tages, die übrigen
+binnen einer Woche. Das Deployment beschleunigt das nur und macht den Stand
+über alle Seitentypen hinweg einheitlich.
 
 **Warum gestaffelte Haltbarkeit.** Ein vollständiger Abruf dauert rund acht
 Stunden und sprengt jedes CI-Zeitlimit. Deshalb altert jeder Datensatz in

@@ -41,14 +41,14 @@ jobs:
           # Bewusst mit if statt "[ … ] && …": GitHub führt diesen Block mit
           # "bash -e" aus, wo eine fehlschlagende Bedingung am Zeilenanfang den
           # Schritt abbrechen kann — ausgerechnet dann, wenn alles vorhanden ist.
-          fehlt=""
-          if [ -z "$DATABASE_URL" ]; then fehlt="$fehlt DATABASE_URL"; fi
-          if [ -z "$VERCEL_DEPLOY_HOOK" ]; then fehlt="$fehlt VERCEL_DEPLOY_HOOK"; fi
-          if [ -n "$fehlt" ]; then
-            echo "::error::Fehlende Geheimnisse:$fehlt — anzulegen unter Settings → Secrets and variables → Actions"
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL fehlt — anzulegen unter Settings → Secrets and variables → Actions"
             exit 1
           fi
-          echo "Beide Geheimnisse vorhanden."
+          if [ -z "$VERCEL_DEPLOY_HOOK" ]; then
+            echo "::warning::VERCEL_DEPLOY_HOOK fehlt — der Lauf importiert die Daten, stößt aber kein Deployment an. Die Seiten übernehmen die Änderungen dann erst mit ihrer nächsten Revalidierung (bis zu sieben Tage)."
+          fi
+          echo "Voraussetzungen geprüft."
 
       - name: Abhängigkeiten installieren
         run: npm ci
@@ -95,7 +95,13 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npm run data:bilder
 
-      # Der Import allein ändert die ausgelieferten Seiten nicht — sie sind
-      # vorgerendert und müssen neu gebaut werden.
+      # Ein Deployment holt die neuen Daten sofort auf alle Seiten. Ohne den
+      # Hook geschieht dasselbe von selbst, nur verteilt über die
+      # Revalidierungsfristen der Seitentypen — bis zu sieben Tage.
       - name: Neu ausliefern
+        if: ${{ secrets.VERCEL_DEPLOY_HOOK != '' }}
         run: curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
+
+      - name: Hinweis ohne Deploy Hook
+        if: ${{ secrets.VERCEL_DEPLOY_HOOK == '' }}
+        run: echo "Kein Deploy Hook hinterlegt — die Daten sind importiert, die Seiten ziehen mit ihrer nächsten Revalidierung nach."
