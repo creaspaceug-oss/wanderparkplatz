@@ -17,16 +17,25 @@ const meter = (m: number) =>
 /**
  * Ortsangabe zu einem Wegnamen, ohne den Namen zu beugen.
  *
- * "Am Rechter Neckarrandweg" ist falsch, richtig wäre "Am Rechten". Ein
- * vorangestelltes Gattungswort nimmt die Beugung auf und lässt den Namen
- * unangetastet. Nötig ist das nur, wenn der Name mit einem Adjektiv beginnt
- * — 247 der 1.634 Wegnamen. Die Erkennung greift bewusst zu weit: Bei einem
- * ungebeugten Namen wie "Bucher Hufeisen" ist die längere Form zwar
- * unnötig, aber richtig; umgekehrt wäre sie falsch.
+ * "Am Rechter Neckarrandweg" ist falsch, richtig wäre "Am Rechten". Statt
+ * den Eigennamen zu beugen — für beliebige Namen nicht zuverlässig lösbar —
+ * nimmt ein vorangestelltes Gattungswort die Beugung auf.
+ *
+ * Entscheidend ist, das eng zu fassen. Von Ortsnamen abgeleitete Adjektive
+ * auf -er werden im Deutschen gar nicht gebeugt: "Am Bucher Hufeisen" und
+ * "Am Vogelsanger Weg" sind schon richtig. Eine grobe Regel über alle
+ * Endungen auf -er, -e, -es griff bei 247 von 1.634 Wegen, nötig war sie bei
+ * 78 — sie hätte 169 Seiten ohne Grund umständlicher gemacht.
+ *
+ * Erkannt werden deshalb nur Ableitungssilben echter Adjektive und eine
+ * Liste häufiger Grundwörter. Die Liste ist nicht vollständig; ein nicht
+ * erkannter Name bleibt bei der bisherigen Form.
  */
-const BEGINNT_MIT_ADJEKTIV = /^[A-ZÄÖÜ][a-zäöüß]+(er|e|es)\s+\S/;
+const ADJEKTIV_VORNE =
+  /^(?:[A-ZÄÖÜ][a-zäöüß]*(?:isch|lich|ig|sam|bar)|Groß|Gross|Klein|Hoh|Nieder|Ober|Unter|Mittler|Vorder|Hinter|Äußer|Inner|Recht|Link|Alt|Neu|Lang|Kurz|Weiß|Schwarz|Rot|Blau|Grün|Gelb|Breit|Schmal|Tief|Flach|Steil|Spitz|Rund|Krumm|Dick|Schön|Wild|Still|Finster|Dunkel|Hell|Nass|Trocken|Voralpin)(?:er|e|es)\s+\S/;
+
 const amWeg = (name: string) =>
-  BEGINNT_MIT_ADJEKTIV.test(name) ? `Am Wanderweg ${name}` : `Am ${name}`;
+  ADJEKTIV_VORNE.test(name) ? `Am Wanderweg ${name}` : `Am ${name}`;
 
 /** Fernwanderwege zuerst nennen — sie sind der stärkste Grund, hier zu starten. */
 const fernwege = (wege: OrtTrail[]) => wege.filter((w) => w.netz === "iwn" || w.netz === "nwn");
