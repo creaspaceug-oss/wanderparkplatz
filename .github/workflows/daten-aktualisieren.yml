@@ -23,6 +23,12 @@ jobs:
     # noch einige Minuten.
     timeout-minutes: 330
 
+    # Einmal zentral: der secrets-Kontext steht in if-Bedingungen nicht zur
+    # Verfügung, der env-Kontext dagegen schon.
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -34,9 +40,6 @@ jobs:
       # Zuerst prüfen, sonst scheitert der Lauf erst Minuten später an einer
       # Meldung, die auf das Skript zeigt statt auf das fehlende Geheimnis.
       - name: Geheimnisse vorhanden?
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
         run: |
           # Bewusst mit if statt "[ … ] && …": GitHub führt diesen Block mit
           # "bash -e" aus, wo eine fehlschlagende Bedingung am Zeilenanfang den
@@ -63,8 +66,6 @@ jobs:
           restore-keys: osm-kacheln-
 
       - name: Bewertungen sichern
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npm run backup
 
       # Vor dem Import: Wären die Bewertungen beim Import beschädigt worden,
@@ -86,22 +87,18 @@ jobs:
         run: npm run data:build
 
       - name: Importieren
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npm run data:load
 
       - name: Bilder nachziehen
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npm run data:bilder
 
       # Ein Deployment holt die neuen Daten sofort auf alle Seiten. Ohne den
       # Hook geschieht dasselbe von selbst, nur verteilt über die
       # Revalidierungsfristen der Seitentypen — bis zu sieben Tage.
       - name: Neu ausliefern
-        if: ${{ secrets.VERCEL_DEPLOY_HOOK != '' }}
-        run: curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
+        if: env.VERCEL_DEPLOY_HOOK != ''
+        run: curl -fsS -X POST "$VERCEL_DEPLOY_HOOK"
 
       - name: Hinweis ohne Deploy Hook
-        if: ${{ secrets.VERCEL_DEPLOY_HOOK == '' }}
+        if: env.VERCEL_DEPLOY_HOOK == ''
         run: echo "Kein Deploy Hook hinterlegt — die Daten sind importiert, die Seiten ziehen mit ihrer nächsten Revalidierung nach."
