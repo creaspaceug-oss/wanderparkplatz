@@ -103,6 +103,33 @@ async function merkeStand(prefix: string, stand: Abrufstand) {
   await writeFile(STATUS, JSON.stringify(alle, null, 1));
 }
 
+/** Liegt eine Kachel frisch im Zwischenspeicher? */
+async function frisch(datei: string, maxAgeDays: number): Promise<boolean> {
+  try {
+    const s = await stat(raw(datei));
+    return (Date.now() - s.mtimeMs) / 86_400_000 < maxAgeDays;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Ist diese Kachel abgedeckt — entweder selbst oder durch ihre Viertel?
+ *
+ * Geteilte Kacheln hinterlassen keine eigene Datei, nur ihre vier Viertel,
+ * und ein Viertel kann wieder geteilt sein. Ohne diese Prüfung versucht jeder
+ * Lauf erneut, die zu dichte Elternkachel zu holen, läuft wieder in die
+ * Zeitüberschreitung und teilt sie wieder — 55 solcher Kacheln kosten so
+ * ein bis zwei Stunden, in denen kein einziges neues Objekt geholt wird.
+ */
+async function abgedeckt(prefix: string, t: Tile, maxAgeDays: number, tiefe = 0): Promise<boolean> {
+  if (await frisch(`${prefix}-${t.id}.json`, maxAgeDays)) return true;
+  if (tiefe >= MAX_TIEFE) return false;
+  for (const v of viertel(t))
+    if (!(await abgedeckt(prefix, v, maxAgeDays, tiefe + 1))) return false;
+  return true;
+}
+
 async function tiled(prefix: string, build: (t: Tile) => string, concurrency = 1) {
   const queue: { t: Tile; tiefe: number }[] = tiles().map((t) => ({ t, tiefe: 0 }));
   const gesamt = queue.length;
@@ -120,6 +147,20 @@ async function tiled(prefix: string, build: (t: Tile) => string, concurrency = 1
         return;
       }
       const { t, tiefe } = queue.shift()!;
+
+      // Schon einmal geteilt: direkt auf die Viertel gehen, ohne es erneut
+      // mit der zu dichten Elternkachel zu versuchen.
+      if (
+        tiefe < MAX_TIEFE &&
+        !(await frisch(`${prefix}-${t.id}.json`, maxAgeDays)) &&
+        (await abgedeckt(prefix, t, maxAgeDays, tiefe))
+      ) {
+        const teile = viertel(t);
+        queue.unshift(...teile.map((x) => ({ t: x, tiefe: tiefe + 1 })));
+        geteilt += teile.length;
+        continue;
+      }
+
       try {
         const els = await overpass(`${prefix}-${t.id}`, build(t), {
           timeoutMs: 330_000,
