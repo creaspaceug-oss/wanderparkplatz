@@ -14,6 +14,7 @@
     "test": "npm run -w pipeline test",
     "db:setup": "npm run -w pipeline setup",
     "data:bilder": "npm run -w pipeline bilder",
-    "backup": "npm run -w pipeline sicherung"
+    "backup": "npm run -w pipeline sicherung",
+    "data:aktualisieren": "npm run backup && npm run -w pipeline fetch admin pois places plz trails ziele umfeld wasserfaelle && npm run data:build && npm run data:load && npm run data:bilder"
   }
 }
