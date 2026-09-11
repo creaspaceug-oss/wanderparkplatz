@@ -6,7 +6,7 @@ import Brotkrumen from "@/components/Brotkrumen";
 import { zielBySlug, parkplaetzeAmZiel, zielSeiten, nahegelegeneZiele } from "@/lib/db";
 import { zielTitel } from "@/lib/zielart";
 import { jsonLd, nf } from "@/lib/format";
-import { titel, beschreibung } from "@/lib/meta";
+import { titelVariante, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
 import { bildFuer } from "@/lib/bild";
 import CommonsBild from "@/components/CommonsBild";
@@ -25,18 +25,33 @@ export async function generateMetadata({ params }: PageProps<"/ziel/[slug]">): P
   const { slug } = await params;
   const z = await zielBySlug(slug);
   if (!z) return { title: "Ziel nicht gefunden" };
+  // "Steinberg" gibt es 33-mal, "Galgenberg" 25-mal. Der Kreis trennt
+  // schärfer als das Bundesland: 1.875 Namensdubletten sinken damit auf
+  // 405 statt nur auf 1.107.
+  const kreis = z.kreis_name ? ` (${z.kreis_name})` : "";
+  const land = z.bl_name ? ` (${z.bl_name})` : "";
+  const zusatz = kreis || land;
+  const anzahl = nf.format(z.parkplatz_count);
+  const punkte = `${anzahl} ${z.parkplatz_count === 1 ? "Ausgangspunkt" : "Ausgangspunkte"}`;
   return {
-    // "Steinberg" gibt es 33-mal, "Galgenberg" 25-mal. Der Kreis trennt
-    // schärfer als das Bundesland: 1.875 Namensdubletten sinken damit auf
-    // 405 statt nur auf 1.107.
-    title: titel(
-      `Parkplatz ${z.name}${z.kreis_name ? ` (${z.kreis_name})` : z.bl_name ? ` (${z.bl_name})` : ""}` +
-        ` – ${nf.format(z.parkplatz_count)} Wanderparkplätze`,
+    // Gesucht wird "Wanderparkplatz <Name>", nicht "Parkplatz <Name>" — die
+    // Wortwahl im Titel folgt deshalb der Suchanfrage.
+    //
+    // Die Staffelung kostet nichts und bringt viel: Sie drückt die Zahl der
+    // abgeschnittenen Titel von 2.464 auf 26, ohne die Zahl der Dubletten
+    // nennenswert zu erhöhen (242 vorher, 258 nachher). Vor dem Kreis fällt
+    // die Angabe der Plätze weg, erst danach der Kreis selbst.
+    title: titelVariante(
+      `Wanderparkplatz ${z.name}${zusatz} – ${punkte}`,
+      `Wanderparkplatz ${z.name}${zusatz} – ${anzahl} Plätze`,
+      `Wanderparkplatz ${z.name}${zusatz}`,
+      `Wanderparkplatz ${z.name}${land}`,
+      `Wanderparkplatz ${z.name}`,
     ),
     description: beschreibung(
       `Wanderparkplätze am ${z.name}` +
         `${z.hoehe_m ? ` (${nf.format(z.hoehe_m)} m)` : ""}` +
-        `${z.bl_name ? ` in ${z.bl_name}` : ""}: ${nf.format(z.parkplatz_count)} Ausgangspunkte` +
+        `${z.bl_name ? ` in ${z.bl_name}` : ""}: ${punkte}` +
         ` mit Stellplätzen, Gebühren und Entfernung zum Ziel.`,
     ),
     alternates: { canonical: `/ziel/${z.slug}` },

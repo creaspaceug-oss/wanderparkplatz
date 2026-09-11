@@ -16,7 +16,7 @@ export const revalidate = 86400;
 export const metadata: Metadata = {
   title: "Wanderparkplatz in meiner Nähe – Verzeichnis für Deutschland",
   description:
-    "Wanderparkplatz in der Nähe finden: Ort oder Postleitzahl eingeben oder Standort freigeben — mit Wanderwegen ab dem Platz, Stellplätzen und Gebühren.",
+    "Wanderparkplatz oder Waldparkplatz in der Nähe finden: Ort oder Postleitzahl eingeben oder Standort freigeben — mit Wanderwegen, Stellplätzen und Gebühren.",
   alternates: { canonical: "/" },
 };
 
@@ -30,6 +30,14 @@ const FAQ = [
     frage: "Was unterscheidet einen Wanderparkplatz von einem normalen Parkplatz?",
     antwort:
       "Ein Wanderparkplatz ist ein ausgewiesener Ausgangspunkt für Wanderungen: Er liegt an einem markierten Wanderweg, trägt oft eine Infotafel oder Wanderkarte und ist meist unbefestigt. In diesem Verzeichnis sind ausschließlich Parkplätze erfasst, die in OpenStreetMap ausdrücklich als Wanderparkplatz ausgewiesen oder als Ausgangspunkt für Wanderungen gekennzeichnet sind — nicht jeder Waldparkplatz taucht hier auf.",
+  },
+  {
+    // "waldparkplatz in der nähe" und Varianten sind ein eigener, spürbarer
+    // Suchstrom. Gemeint ist dieselbe Sache, also gehört die Gleichsetzung
+    // auf die Seite statt in ein eigenes, dünnes Verzeichnis.
+    frage: "Ist ein Waldparkplatz dasselbe wie ein Wanderparkplatz?",
+    antwort:
+      "Im Alltag meinen beide Wörter denselben Platz. „Waldparkplatz“ beschreibt die Lage — eine Fläche am Waldrand oder an einer Forststraße —, „Wanderparkplatz“ die Funktion als ausgewiesener Ausgangspunkt. Die meisten Plätze in diesem Verzeichnis sind beides: Sie liegen im Wald und sind zugleich als Startpunkt beschildert. Wer einen Waldparkplatz in der Nähe sucht, bekommt hier dieselben Ergebnisse. Geläufig sind außerdem Wanderer-Parkplatz und Parkplatz für Wanderer.",
   },
   {
     frage: "Welche Wanderwege starten an einem Wanderparkplatz?",
@@ -146,9 +154,9 @@ export default async function Startseite() {
           Wanderparkplatz in meiner Nähe
         </h1>
         <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
-          {nf.format(zahlen.gesamt)} ausgewiesene Wanderparkplätze in Deutschland — mit den
-          markierten Wanderwegen, die dort vorbeiführen, mit Stellplatzzahl, Gebühren und
-          Untergrund. Standort freigeben oder einfach den Zielort eingeben.
+          {nf.format(zahlen.gesamt)} ausgewiesene Wander- und Waldparkplätze in Deutschland
+          — mit den markierten Wanderwegen, die dort vorbeiführen, mit Stellplatzzahl,
+          Gebühren und Untergrund. Standort freigeben oder einfach den Zielort eingeben.
         </p>
 
         <div className="mt-8">

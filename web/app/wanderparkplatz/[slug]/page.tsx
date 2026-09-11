@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { parkplatzBySlug, inDerNaehe, alleSlugs, trailsAmPlatz, umfeldAmPlatz, zieleAmPlatz } from "@/lib/db";
 import { beschreibung, metaBeschreibung } from "@/lib/beschreibung";
 import { jsonLd, km, gebuehrText } from "@/lib/format";
-import { titel } from "@/lib/meta";
+import { titelVariante } from "@/lib/meta";
 import { istIndexierbar } from "@/lib/inhalt";
 import { VORRENDERN } from "@/lib/vorrendern";
 import { bewertungenFuer } from "@/lib/bewertung";
@@ -33,19 +33,26 @@ export async function generateStaticParams() {
   return rows.map((r) => ({ slug: r.slug }));
 }
 
+/** Namen, die das Wort schon führen — "P+R", "Stellplatz" und Co. eingeschlossen. */
+const NENNT_PARKPLATZ = /parkplatz|parkplätze|parkbucht|stellplatz|p\s*[+&]\s*r/i;
+
 export async function generateMetadata({
   params,
 }: PageProps<"/wanderparkplatz/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const p = await parkplatzBySlug(slug);
   if (!p) return { title: "Wanderparkplatz nicht gefunden" };
+  // 399 Plätze (9 %) tragen in OpenStreetMap nur einen Flurnamen wie "Rauhe
+  // Buche" oder "Steinrinne". Gesucht wird aber nach "Wanderparkplatz <Name>",
+  // und ohne das Wort im Titel fehlte diesen Seiten genau diese Phrase.
+  const name = NENNT_PARKPLATZ.test(p.name) ? p.name : `Wanderparkplatz ${p.name}`;
   // Ortsname nur anhängen, wenn er nicht schon im Namen steckt; der Zusatz
   // "Parken & Wanderwege" nur, solange er ins Titelbudget passt.
-  const ort = p.ort_name && !p.name.includes(p.ort_name) ? ` bei ${p.ort_name}` : "";
-  const basis = `${p.name}${ort}`;
+  const ort = p.ort_name && !name.includes(p.ort_name) ? ` bei ${p.ort_name}` : "";
+  const basis = `${name}${ort}`;
   const trails = await trailsAmPlatz(p.id);
   return {
-    title: titel(basis.length <= 38 ? `${basis} – Parken & Wanderwege` : basis),
+    title: titelVariante(`${basis} – Parken & Wanderwege`, basis),
     description: metaBeschreibung(p, trails.length),
     alternates: { canonical: `/wanderparkplatz/${p.slug}` },
     // Seiten mit zu wenig Substanz bleiben erreichbar und verlinkt, aber

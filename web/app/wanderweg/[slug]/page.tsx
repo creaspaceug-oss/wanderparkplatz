@@ -7,7 +7,7 @@ import {
   trailBySlug, parkplaetzeAmTrail, kreiseAmTrail, trailSeiten, verwandteTrails,
 } from "@/lib/db";
 import { jsonLd, nf, aufzaehlung } from "@/lib/format";
-import { titel, beschreibung } from "@/lib/meta";
+import { titelVariante, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
 
 export const revalidate = 604800;
@@ -34,10 +34,16 @@ export async function generateMetadata({
   const { slug } = await params;
   const t = await trailBySlug(slug);
   if (!t) return { title: "Wanderweg nicht gefunden" };
+  const punkte = `${nf.format(t.parkplatz_count)} ${t.parkplatz_count === 1 ? "Ausgangspunkt" : "Ausgangspunkte"}`;
   return {
-    title: titel(`${t.name} – Wanderparkplätze am Weg`),
+    // Gesucht wird "Wanderparkplatz <Wegname>" — der Wegname allein vorn
+    // ließ die Seite bei dieser Formulierung auf Position 21 stehen.
+    title: titelVariante(
+      `Wanderparkplatz ${t.name} – ${punkte}`,
+      `Wanderparkplatz ${t.name}`,
+    ),
     description: beschreibung(
-      `${nf.format(t.parkplatz_count)} Wanderparkplätze am ${t.name}` +
+      `${nf.format(t.parkplatz_count)} ${t.parkplatz_count === 1 ? "Wanderparkplatz" : "Wanderparkplätze"} am ${t.name}` +
         `${km(t.laenge_km) ? `, ${km(t.laenge_km)} lang` : ""}` +
         `${t.markierung ? `, Markierung ${t.markierung}` : ""}. Stellplätze, Gebühren und Anfahrt.`,
     ),
