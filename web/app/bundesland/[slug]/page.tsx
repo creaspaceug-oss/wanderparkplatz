@@ -15,6 +15,7 @@ import {
 import { bundeslandBySlug, kreiseIn } from "@/lib/queries";
 import { nf } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
+import { landDativ, landDativGross } from "@/lib/regionen";
 
 export const revalidate = 604800;
 
@@ -29,9 +30,9 @@ export async function generateMetadata({
   const bl = await bundeslandBySlug(slug);
   if (!bl) return { title: "Bundesland nicht gefunden" };
   return {
-    title: titel(`Wanderparkplätze in ${bl.name} (${nf.format(bl.poi_count)})`),
+    title: titel(`Wanderparkplätze ${landDativ(bl.name)} (${nf.format(bl.poi_count)})`),
     description: beschreibung(
-      `Alle ${nf.format(bl.poi_count)} Wanderparkplätze in ${bl.name}: Wanderwege ab dem Platz, Stellplätze, Gebühren und Untergrund — nach Landkreisen geordnet.`,
+      `Alle ${nf.format(bl.poi_count)} Wanderparkplätze ${landDativ(bl.name)}: Wanderwege ab dem Platz, Stellplätze, Gebühren und Untergrund — nach Landkreisen geordnet.`,
     ),
     alternates: { canonical: `/bundesland/${bl.slug}` },
   };
@@ -55,7 +56,7 @@ export default async function BundeslandSeite({ params }: PageProps<"/bundesland
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <SammlungLd
-        name={`Wanderparkplätze in ${bl.name}`}
+        name={`Wanderparkplätze ${landDativ(bl.name)}`}
         pfad={`/bundesland/${bl.slug}`}
         art="AdministrativeArea"
         ueber={bl.name}
@@ -64,12 +65,12 @@ export default async function BundeslandSeite({ params }: PageProps<"/bundesland
 
       <Brotkrumen pfad={[{ name: "Startseite", url: "/" }]} aktuell={bl.name} />
       <h1 className="mt-3 text-3xl font-bold tracking-tight">
-        Wanderparkplätze in {bl.name}
+        Wanderparkplätze {landDativ(bl.name)}
       </h1>
 
       <div className="mt-4 space-y-4 text-lg text-muted">
         <p>
-          {`In ${bl.name} ${bl.poi_count === 1 ? "ist ein Wanderparkplatz" : `sind ${nf.format(bl.poi_count)} Wanderparkplätze`} verzeichnet` +
+          {`${landDativGross(bl.name)} ${bl.poi_count === 1 ? "ist ein Wanderparkplatz" : `sind ${nf.format(bl.poi_count)} Wanderparkplätze`} verzeichnet` +
             (kreise.length
               ? `, verteilt auf ${nf.format(kreise.length)} ${kreise.length === 1 ? "Landkreis beziehungsweise kreisfreie Stadt" : "Landkreise und kreisfreie Städte"}`
               : "") +
@@ -102,26 +103,26 @@ export default async function BundeslandSeite({ params }: PageProps<"/bundesland
           />
 
           {kreise.length > 0 && (
-            <Block titel={`Landkreise in ${bl.name}`}>
+            <Block titel={`Landkreise ${landDativ(bl.name)}`}>
               <RegionListe items={kreise} basis="kreis" spalten={1} />
             </Block>
           )}
         </aside>
 
         <div className="order-2 space-y-6 lg:order-1">
-          <Block titel={`Ausführlich erfasste Wanderparkplätze in ${bl.name}`}>
+          <Block titel={`Ausführlich erfasste Wanderparkplätze ${landDativ(bl.name)}`}>
             <ParkplatzListe items={top} />
           </Block>
 
           {wege.length > 0 && (
-            <Block titel={`Wanderwege in ${bl.name}`}>
+            <Block titel={`Wanderwege ${landDativ(bl.name)}`}>
               <WegeListe items={wege} maxSichtbar={10} />
             </Block>
           )}
 
           {ziele.length > 0 && (
             <Block
-              titel={`Wanderziele in ${bl.name}`}
+              titel={`Wanderziele ${landDativ(bl.name)}`}
               fussnote="Luftlinie ab dem nächstgelegenen Parkplatz."
             >
               <ZieleListe items={ziele} />
