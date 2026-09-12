@@ -34,7 +34,7 @@ function Zeile({ w }: { w: OrtTrail }) {
             <span className="mr-2 rounded border border-line px-1.5 py-0.5 align-[0.1em] text-xs font-normal tabular-nums text-muted">
               {w.ref}
             </span>
-          )}
+          )}{" "}
           {/* Nur verlinken, wo es auch eine Seite gibt — sonst führte der
               Verweis ins Leere. */}
           {w.eigene_seite ? (
@@ -44,7 +44,7 @@ function Zeile({ w }: { w: OrtTrail }) {
           ) : (
             w.name
           )}
-        </p>
+        </p>{" "}
         <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
           {netz && (
             <span
@@ -55,10 +55,10 @@ function Zeile({ w }: { w: OrtTrail }) {
             >
               {netz.text}
             </span>
-          )}
+          )}{" "}
           {unten && <span>{unten}</span>}
         </div>
-      </div>
+      </div>{" "}
       <span className="shrink-0 pt-0.5 text-sm tabular-nums text-muted">
         {meter(w.distanz_m)}
       </span>

@@ -60,12 +60,12 @@ export default async function WanderwegeSeite() {
                         <span className="mr-2 rounded border border-line px-1.5 py-0.5 text-xs tabular-nums text-muted">
                           {t.ref}
                         </span>
-                      )}
-                      <span className="font-medium">{t.name}</span>
+                      )}{" "}
+                      <span className="font-medium">{t.name}</span>{" "}
                       <span className="block text-sm text-muted">
                         {[km(t.laenge_km), t.markierung].filter(Boolean).join(" · ")}
                       </span>
-                    </Link>
+                    </Link>{" "}
                     <span className="shrink-0 text-sm tabular-nums text-muted">
                       {t.parkplatz_count}
                     </span>
@@ -106,6 +106,16 @@ export default async function WanderwegeSeite() {
           </ul>
         </section>
       )}
+
+      {/* Ohne diesen Weg hingen 1.170 Wegseiten intern in der Luft: Die
+          Gruppen zeigen je nur die stärksten Einträge. */}
+      <p className="mt-10 text-muted">
+        Alle {nf.format(alle.length)} Wege nach Namen geordnet stehen im{" "}
+        <Link href="/wanderwege/seite/1" className="underline hover:text-accent">
+          vollständigen Verzeichnis
+        </Link>
+        .
+      </p>
     </div>
   );
 }

@@ -36,7 +36,7 @@ export default function RegionListe({
         >
           <Link href={`/${basis}/${r.slug}`} className="truncate hover:text-accent">
             {r.name}
-          </Link>
+          </Link>{" "}
           <span className="shrink-0 text-sm tabular-nums text-muted">
             {nf.format(r.poi_count)}
           </span>

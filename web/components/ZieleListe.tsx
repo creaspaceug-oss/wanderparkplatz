@@ -28,14 +28,14 @@ export default function ZieleListe({ items }: { items: OrtZiel[] }) {
               </Link>
             ) : (
               <span className="font-medium">{z.name}</span>
-            )}
+            )}{" "}
             <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
               <span className="rounded-full border border-line px-2 py-0.5 text-xs">
                 {zielTitel(z.art)}
-              </span>
+              </span>{" "}
               {z.hoehe_m != null && <span>{nf.format(z.hoehe_m)} m</span>}
             </div>
-          </div>
+          </div>{" "}
           <span className="shrink-0 pt-0.5 text-sm tabular-nums text-muted">
             {meter(z.distanz_m)}
           </span>

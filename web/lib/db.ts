@@ -887,3 +887,44 @@ export const bildZumPlatz = cache((parkplatzId: number) =>
     [parkplatzId],
   ),
 );
+
+/**
+ * Blätterbare Vollverzeichnisse für Ziele und Wege.
+ *
+ * Die Übersichtsseiten zeigen je Gruppe nur die stärksten Einträge — /ziele
+ * verlinkte so 767 von 7.062 Zielen, /wanderwege 464 von 1.634. Der Rest war
+ * intern überhaupt nicht verlinkt und nur über die Sitemap auffindbar.
+ *
+ * Sortiert wird nach Namen, nicht nach Bestand: Eine blätterbare Liste muss
+ * stabil bleiben, sonst wandern Einträge bei jedem Import zwischen den
+ * Seiten hin und her.
+ */
+export const zieleBlatt = cache((versatz: number, anzahl: number) =>
+  q<Ziel & { bl_name: string | null }>(
+    `SELECT z.id, z.slug, z.name, z.art, z.hoehe_m, z.lat, z.lon, z.parkplatz_count,
+            b.name AS bl_name
+       FROM ziel z LEFT JOIN bundesland b ON b.id = z.bundesland_id
+      WHERE z.eigene_seite
+      ORDER BY z.name, z.id
+      LIMIT $2 OFFSET $1`,
+    [versatz, anzahl],
+  ),
+);
+
+export const wegeBlatt = cache((versatz: number, anzahl: number) =>
+  q<Trail>(
+    `SELECT id, osm_id, slug, name, netz, ref, markierung, laenge_km, parkplatz_count
+       FROM trail WHERE eigene_seite
+      ORDER BY name, id
+      LIMIT $2 OFFSET $1`,
+    [versatz, anzahl],
+  ),
+);
+
+export const anzahlZiele = cache(async () =>
+  (await q<{ n: number }>("SELECT count(*)::int AS n FROM ziel WHERE eigene_seite"))[0].n,
+);
+
+export const anzahlWege = cache(async () =>
+  (await q<{ n: number }>("SELECT count(*)::int AS n FROM trail WHERE eigene_seite"))[0].n,
+);

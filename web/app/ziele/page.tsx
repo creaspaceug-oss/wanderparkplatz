@@ -42,13 +42,13 @@ export default async function ZieleSeite() {
               {gruppe.slice(0, 150).map((z) => (
                 <li key={z.slug} className="flex items-baseline justify-between gap-3 py-2.5">
                   <Link href={`/ziel/${z.slug}`} className="min-w-0 hover:text-accent">
-                    <span className="font-medium">{z.name}</span>
+                    <span className="font-medium">{z.name}</span>{" "}
                     <span className="block text-sm text-muted">
                       {[z.hoehe_m ? `${nf.format(z.hoehe_m)} m` : null, z.bl_name]
                         .filter(Boolean)
                         .join(" · ")}
                     </span>
-                  </Link>
+                  </Link>{" "}
                   <span className="shrink-0 text-sm tabular-nums text-muted">
                     {z.parkplatz_count}
                   </span>
@@ -57,12 +57,27 @@ export default async function ZieleSeite() {
             </ul>
             {gruppe.length > 150 && (
               <p className="mt-3 text-sm text-muted">
-                Angezeigt sind die 150 Ziele mit den meisten Parkplätzen.
+                Angezeigt sind die 150 Ziele mit den meisten Parkplätzen. Alle{" "}
+                {nf.format(gruppe.length)} stehen im{" "}
+                <Link href="/ziele/seite/1" className="underline hover:text-accent">
+                  vollständigen Verzeichnis
+                </Link>
+                .
               </p>
             )}
           </section>
         );
       })}
+
+      {/* Ohne diesen Weg hingen 6.295 Zielseiten intern in der Luft: Die
+          Gruppen zeigen je nur die stärksten 150 Einträge. */}
+      <p className="mt-10 text-muted">
+        Alle {nf.format(alle.length)} Ziele nach Namen geordnet stehen im{" "}
+        <Link href="/ziele/seite/1" className="underline hover:text-accent">
+          vollständigen Verzeichnis
+        </Link>
+        .
+      </p>
     </div>
   );
 }

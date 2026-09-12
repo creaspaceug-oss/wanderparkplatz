@@ -47,7 +47,7 @@ export default function Umfeld({ items }: { items: UmfeldEintrag[] }) {
               >
                 <span className={e.name ? "" : "text-muted"}>
                   {e.name ?? "ohne Namen erfasst"}
-                </span>
+                </span>{" "}
                 <span className="shrink-0 tabular-nums text-muted">{meter(e.distanz_m)}</span>
               </li>
             ))}
