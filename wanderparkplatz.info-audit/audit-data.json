@@ -1,0 +1,248 @@
+{
+  "summary": {
+    "health_score": 69,
+    "business_type": "Datenverzeichnis (Information), OpenStreetMap-basiert, bundesweit",
+    "top_findings": [
+      "Kartenfenster lädt auf 14.450 Seiten sofort 360 kB von einem Dritten",
+      "16 Gruppen doppelter Titel auf Wegseiten",
+      "Übersichtsseiten verlinken nur einen Bruchteil der Detailseiten",
+      "Zwei Schema-Eigenschaften für den falschen Zweck verwendet",
+      "Listen verkleben bei einfacher Textextraktion"
+    ],
+    "quick_wins": [
+      "Karte erst auf Klick laden",
+      "noindex-Seiten aus der Sitemap nehmen",
+      "fetchpriority für das LCP-Bild",
+      "Zwei Schema-Eigenschaften richtigstellen",
+      "Weiterleitung ab http ohne www in einem Sprung"
+    ]
+  },
+  "categories": [
+    {
+      "name": "Technical SEO",
+      "score": 72,
+      "what_works": [
+        "HTTPS mit HSTS, Sicherheits-Header bis auf CSP",
+        "Canonicals in 501 Seiten ohne einen Fehler",
+        "Serverseitig gerendert, auch /suche ohne JavaScript lesbar",
+        "hreflang korrekt abwesend, die Seite ist einsprachig"
+      ],
+      "findings": [
+        {
+          "title": "16 Gruppen doppelter Titel auf Wegseiten",
+          "severity": "High",
+          "description": "Neunmal derselbe Titel für verschiedene Abschnitte des Fernwanderwegs E1, Ursache ist die Kürzung bei 54 Zeichen.",
+          "recommendation": "Staffelung wie bei Zielseiten nachziehen, Bundesland oder Kürzel als Unterscheidung."
+        },
+        {
+          "title": "Übersichtsseiten ohne Blätterfunktion",
+          "severity": "High",
+          "description": "/ziele 678 kB mit 767 von 7.062 Verweisen, /wanderwege 464 von 1.634. Der Rest ist intern nicht verlinkt.",
+          "recommendation": "Blättern einführen, damit alle Detailseiten über interne Verweise erreichbar sind."
+        },
+        {
+          "title": "noindex-Seiten stehen in der Sitemap",
+          "severity": "Medium",
+          "description": "parkplaetze.xml führt alle 4.321 Adressen, darunter 223 mit noindex.",
+          "recommendation": "Beim Erzeugen der Sitemap nach aussagen >= 3 filtern."
+        },
+        {
+          "title": "Zwei Weiterleitungssprünge ab http ohne www",
+          "severity": "Medium",
+          "description": "http://wanderparkplatz.info/ geht über https://wanderparkplatz.info/ auf www.",
+          "recommendation": "Bei Vercel in einem Schritt auf das Ziel leiten."
+        },
+        {
+          "title": "Keine Content-Security-Policy",
+          "severity": "Medium",
+          "description": "Alle übrigen Sicherheits-Header sind gesetzt.",
+          "recommendation": "CSP ergänzen, die OSM-Einbettung und Wikimedia-Bilder zulässt."
+        }
+      ]
+    },
+    {
+      "name": "Content Quality",
+      "score": 55,
+      "what_works": [
+        "Über uns, Impressum und Datenschutz legen Methode, Lizenzen und die eigene noindex-Schwelle offen",
+        "Kreisseiten sind die eigenständigsten Texte, Jaccard 0,081"
+      ],
+      "findings": [
+        {
+          "title": "Wegseiten: größtes Volumen, dünnster Inhalt",
+          "severity": "High",
+          "description": "1.634 Seiten, 94 Prozent unter 500 Wörtern, zugleich höchste Ähnlichkeit mit Jaccard 0,317.",
+          "recommendation": "Wie bei Ziel- und Kreisseiten über die gemeinsamen Parkplätze anreichern."
+        },
+        {
+          "title": "Einzelne Seitenpaare fast deckungsgleich",
+          "severity": "Medium",
+          "description": "/ziel/marksburg und /ziel/philippsburg-hxuds erreichen 0,711, dreimal über dem Schnitt der Kategorie.",
+          "recommendation": "Textbausteine bei gleicher Datenlage variieren."
+        },
+        {
+          "title": "Erfahrungssignale fehlen strukturell",
+          "severity": "Medium",
+          "description": "Bewertungsfunktion vorhanden, aber durchgehend ohne Einträge.",
+          "recommendation": "Bewertungen aktiv einholen, sobald Verkehr da ist."
+        }
+      ]
+    },
+    {
+      "name": "On-Page SEO",
+      "score": 78,
+      "what_works": [
+        "Kein fehlender Titel, keine fehlende Beschreibung, genau eine H1 je Seite in 501 Seiten",
+        "Nur eine Beschreibung über 160 Zeichen"
+      ],
+      "findings": [
+        {
+          "title": "54 Seiten teilen sich 16 Titel",
+          "severity": "High",
+          "description": "Fast ausschließlich Wegseiten, siehe Technik.",
+          "recommendation": "Siehe Maßnahme 2 im Plan."
+        }
+      ]
+    },
+    {
+      "name": "Schema",
+      "score": 65,
+      "what_works": [
+        "BreadcrumbList korrekt mit richtigen Positionen",
+        "aggregateRating richtigerweise nirgends gesetzt, es gibt keine Bewertungen",
+        "Organization und WebSite sauber über @graph verknüpft"
+      ],
+      "findings": [
+        {
+          "title": "maximumAttendeeCapacity für Stellplätze zweckentfremdet",
+          "severity": "High",
+          "description": "Forbach meldet 25 Teilnehmer statt 25 Stellplätze.",
+          "recommendation": "Als additionalProperty mit PropertyValue abbilden."
+        },
+        {
+          "title": "accessibilityFeature auf ParkingFacility ungültig",
+          "severity": "High",
+          "description": "Die Eigenschaft ist für CreativeWork definiert, nicht für Place.",
+          "recommendation": "Als amenityFeature mit LocationFeatureSpecification abbilden."
+        },
+        {
+          "title": "CollectionPage fehlt auf Kreis, Bundesland und Ort",
+          "severity": "High",
+          "description": "Strukturell dieselben Listenseiten wie Region, Ziel und Weg, die es haben.",
+          "recommendation": "Ergänzen."
+        }
+      ]
+    },
+    {
+      "name": "Performance",
+      "score": 75,
+      "what_works": [
+        "LCP und CLS in allen zehn Messungen im grünen Bereich",
+        "CLS durchgehend 0,000, Bild und Karte reservieren ihren Platz korrekt"
+      ],
+      "findings": [
+        {
+          "title": "Kartenfenster lädt sofort statt verzögert",
+          "severity": "High",
+          "description": "Das JavaScript der OSM-Einbettung ist 1,37 MB unkomprimiert, je Aufruf rund 360 kB. loading=lazy greift nicht, weil das iframe im sichtbaren Bereich liegt. Betrifft 14.450 Seiten. Überträgt zudem die IP jedes Besuchers an einen Dritten.",
+          "recommendation": "Platzhalter, Karte erst auf Klick einhängen."
+        },
+        {
+          "title": "Hohe Blockierzeit auf Parkplatzseiten mobil",
+          "severity": "Medium",
+          "description": "Median 609 ms gegenüber 0 bis 31 ms auf kartenlosen Kreisseiten.",
+          "recommendation": "Sollte mit Maßnahme 1 verschwinden, danach erneut messen."
+        }
+      ]
+    },
+    {
+      "name": "AI Search Readiness",
+      "score": 62,
+      "what_works": [
+        "robots.txt sperrt keinen KI-Crawler aus",
+        "llms.txt vorhanden, mit Herkunft und Zitierhinweis",
+        "ODbL-Nennung im Fuß jeder Seite"
+      ],
+      "findings": [
+        {
+          "title": "Listen verkleben bei einfacher Textextraktion",
+          "severity": "High",
+          "description": "Ohne CSS entsteht 'KönigstuhlGipfel568 m139 m'. Betrifft den größten Teil des Textvolumens auf Detailseiten.",
+          "recommendation": "Echte Trennzeichen oder Leerraum in die Auszeichnung."
+        },
+        {
+          "title": "Überschriften formulieren keine Fragen",
+          "severity": "Medium",
+          "description": "Durchgehend beschreibend statt fragend.",
+          "recommendation": "Wo es natürlich ist, als Frage formulieren."
+        }
+      ]
+    },
+    {
+      "name": "Images",
+      "score": 90,
+      "what_works": [
+        "Kein einziges Bild ohne Alternativtext in 294 Bildern",
+        "next/image mit passenden Größen, Urheber und Lizenz an jedem Bild"
+      ],
+      "findings": [
+        {
+          "title": "Kein Vorrang für das Bild, das die Ladezeit bestimmt",
+          "severity": "Low",
+          "description": "Auf Desktop ist das Commons-Bild das LCP-Element, ohne fetchpriority.",
+          "recommendation": "fetchpriority high setzen."
+        }
+      ]
+    }
+  ],
+  "action_plan": {
+    "phases": [
+      {
+        "name": "Phase 1: Sofort",
+        "timeframe": "Diese Woche",
+        "items": [
+          "Karte erst auf Klick laden",
+          "Doppelte Titel auf Wegseiten auflösen",
+          "Zwei Schema-Eigenschaften richtigstellen"
+        ]
+      },
+      {
+        "name": "Phase 2: Kurzfristig",
+        "timeframe": "Woche 1 bis 2",
+        "items": [
+          "Übersichtsseiten blättern lassen",
+          "Listen mit echten Trennzeichen",
+          "noindex-Seiten aus der Sitemap"
+        ]
+      },
+      {
+        "name": "Phase 3: Inhalt",
+        "timeframe": "Monat 2",
+        "items": [
+          "Wegseiten anreichern",
+          "CollectionPage ergänzen",
+          "Bundeslandseiten mit wenig Bestand"
+        ]
+      },
+      {
+        "name": "Phase 4: Laufend",
+        "timeframe": "Ab Ende September",
+        "items": [
+          "Search-Console-Daten auswerten",
+          "Danach über Facettenseiten entscheiden",
+          "Impressum und Passwortwechsel durch den Betreiber"
+        ]
+      }
+    ]
+  },
+  "artifacts": {
+    "findings_dir": "findings/",
+    "screenshots_dir": "screenshots/"
+  },
+  "limitations": [
+    "Keine Google-Zugangsdaten: keine Felddaten aus Search Console, CrUX, PageSpeed oder Analytics. Ladeleistung nur im Labor gemessen.",
+    "Kein DataForSEO, Moz oder Ahrefs: keine Backlink- und keine echten Positionsdaten.",
+    "Der Crawl über 500 Seiten war breitensuchend und erreichte keine Ortsseite. Nachgeprüft: Ortsseiten sind gut verlinkt, das war ein Artefakt des Crawlers.",
+    "Der Kartenblock als Ursache der niedrigen Klickrate ließ sich nicht belegen, Suchergebnisseiten sind maschinell nicht zuverlässig auszulesen."
+  ]
+}

@@ -8,7 +8,7 @@ import {
   zieleAmTrail, orteAmTrail,
 } from "@/lib/db";
 import { jsonLd, nf } from "@/lib/format";
-import { titelVariante, beschreibung } from "@/lib/meta";
+import { titelVariante, kuerzeMitte, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
 import ZieleListe from "@/components/ZieleListe";
 import Block from "@/components/Block";
@@ -44,9 +44,13 @@ export async function generateMetadata({
   return {
     // Gesucht wird "Wanderparkplatz <Wegname>" — der Wegname allein vorn
     // ließ die Seite bei dieser Formulierung auf Position 21 stehen.
+    //
+    // Passt der volle Titel nicht, fällt zuerst die Zahl der Ausgangspunkte
+    // weg und der Name bekommt den ganzen Platz. Gekürzt wird dann in der
+    // Mitte: Bei Etappen und Teilstücken steht die Unterscheidung hinten.
     title: titelVariante(
       `Wanderparkplatz ${t.name} – ${punkte}`,
-      `Wanderparkplatz ${t.name}`,
+      `Wanderparkplatz ${kuerzeMitte(t.name, 60 - "Wanderparkplatz ".length)}`,
     ),
     description: beschreibung(
       `${nf.format(t.parkplatz_count)} ${t.parkplatz_count === 1 ? "Wanderparkplatz" : "Wanderparkplätze"} am ${t.name}` +

@@ -132,7 +132,18 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
               description: absaetze.join(" "),
               url: `${SITE}/wanderparkplatz/${p.slug}`,
               geo: { "@type": "GeoCoordinates", latitude: p.lat, longitude: p.lon },
-              ...(p.stellplaetze ? { maximumAttendeeCapacity: p.stellplaetze } : {}),
+              // Stellplätze als additionalProperty, nicht als
+              // maximumAttendeeCapacity: Letzteres zählt Teilnehmer einer
+              // Veranstaltung und stand hier für 25 Autos.
+              ...(p.stellplaetze
+                ? {
+                    additionalProperty: {
+                      "@type": "PropertyValue",
+                      name: "Stellplätze",
+                      value: p.stellplaetze,
+                    },
+                  }
+                : {}),
               ...(p.gebuehr === false ? { isAccessibleForFree: true } : {}),
               ...(p.gebuehr === true ? { isAccessibleForFree: false } : {}),
               ...(p.oeffnungszeiten ? { openingHours: p.oeffnungszeiten } : {}),
@@ -149,11 +160,15 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
                     },
                   }
                 : {}),
+              // amenityFeature statt accessibilityFeature: Letzteres ist auf
+              // CreativeWork definiert, nicht auf einem Ort.
               ...(p.barrierefrei != null
                 ? {
-                    accessibilityFeature: p.barrierefrei
-                      ? "wheelchairAccessibleParking"
-                      : "noWheelchairAccessibleParking",
+                    amenityFeature: {
+                      "@type": "LocationFeatureSpecification",
+                      name: "Barrierefreie Stellplätze",
+                      value: p.barrierefrei,
+                    },
                   }
                 : {}),
               address: {
