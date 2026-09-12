@@ -2,11 +2,16 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ParkplatzListe from "@/components/ParkplatzListe";
 import RegionListe from "@/components/RegionListe";
+import WegeListe from "@/components/WegeListe";
+import ZieleListe from "@/components/ZieleListe";
+import Umfeld from "@/components/Umfeld";
 import Brotkrumen from "@/components/Brotkrumen";
-import { parkplaetzeIn, alleSlugs } from "@/lib/db";
+import {
+  parkplaetzeIn, alleSlugs, wanderwegeImKreis, zieleImKreis, umfeldImKreis,
+} from "@/lib/db";
 import { kreisBySlug, orteIn, nachbarKreise } from "@/lib/queries";
 import { nf } from "@/lib/format";
-import { kreisTitel, kreisDativ, kreisNominativ } from "@/lib/regionen";
+import { kreisDativ, kreisNominativ } from "@/lib/regionen";
 import { titel, beschreibung } from "@/lib/meta";
 import { VORRENDERN } from "@/lib/vorrendern";
 
@@ -38,11 +43,16 @@ export default async function KreisSeite({ params }: PageProps<"/kreis/[slug]">)
   const k = await kreisBySlug(slug);
   if (!k) notFound();
 
-  const [orte, plaetze, nachbarn] = await Promise.all([
+  const [orte, plaetze, nachbarn, wege, ziele, umfeld] = await Promise.all([
     orteIn(k.id),
     parkplaetzeIn("kreis_id", k.id, MAX_LISTE),
     nachbarKreise(k.id, k.bundesland_id!, 8),
+    wanderwegeImKreis(k.id, 16),
+    zieleImKreis(k.id, 12),
+    umfeldImKreis(k.id),
   ]);
+
+  const kostenfrei = plaetze.filter((p) => p.gebuehr === false).length;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -56,13 +66,51 @@ export default async function KreisSeite({ params }: PageProps<"/kreis/[slug]">)
       <h1 className="mt-3 text-3xl font-bold tracking-tight">
         Wanderparkplätze {kreisDativ(k.name, k.typ)}
       </h1>
-      <p className="mt-4 text-lg text-muted">
-        {nf.format(k.poi_count)} Wanderparkplätze sind hier erfasst
-        {orte.length > 0 && `, verteilt auf ${nf.format(orte.length)} Orte`}.{" "}
-        {kreisNominativ(k.name, k.typ)} liegt in {k.bl_name}.
-      </p>
+      {/* Ein Satz, eine Zeichenkette: aus JSX zusammengesetzt entstünden
+          Leerzeichen vor Komma und Punkt. Einzahl und Mehrzahl an jeder
+          Stelle, sonst steht auf 61 Kreisseiten "1 Wanderparkplätze". */}
+      <div className="mt-4 space-y-4 text-lg text-muted">
+        <p>
+          {`${nf.format(k.poi_count)} ${k.poi_count === 1 ? "Wanderparkplatz ist" : "Wanderparkplätze sind"} hier erfasst` +
+            (orte.length
+              ? `, verteilt auf ${nf.format(orte.length)} ${orte.length === 1 ? "Ort" : "Orte"}`
+              : "") +
+            `. ${kreisNominativ(k.name, k.typ)} liegt in ${k.bl_name}.` +
+            (kostenfrei > 0
+              ? ` ${nf.format(kostenfrei)} ${kostenfrei === 1 ? "Platz ist" : "Plätze sind"} nachweislich kostenfrei.`
+              : "")}
+        </p>
+        {wege.length > 0 && (
+          <p>
+            {`Ab diesen Parkplätzen ${wege.length === 1 ? "führt ein markierter Wanderweg" : `führen ${nf.format(wege.length)} markierte Wanderwege`} weiter` +
+              (ziele.length
+                ? `, und ${ziele.length === 1 ? "ein Wanderziel liegt" : `${nf.format(ziele.length)} Wanderziele liegen`} in Reichweite`
+                : "") +
+              "."}
+          </p>
+        )}
+      </div>
 
       <RegionListe items={orte} basis="ort" titel={`Orte ${kreisDativ(k.name, k.typ)}`} />
+
+      {wege.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-xl font-semibold">Wanderwege {kreisDativ(k.name, k.typ)}</h2>
+          <WegeListe items={wege} />
+        </section>
+      )}
+
+      {ziele.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-xl font-semibold">Wanderziele {kreisDativ(k.name, k.typ)}</h2>
+          <ZieleListe items={ziele} />
+          <p className="mt-3 text-sm text-muted">
+            Luftlinie ab dem nächstgelegenen Parkplatz.
+          </p>
+        </section>
+      )}
+
+      <Umfeld items={umfeld} />
 
       <section className="mt-10">
         <h2 className="text-xl font-semibold">

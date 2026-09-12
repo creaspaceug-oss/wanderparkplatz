@@ -691,37 +691,52 @@ export interface OrtTrail {
 }
 
 /** Wanderwege an allen Parkplätzen des Orts, je Weg der nächste Abstand. */
-export const wanderwegeImOrt = cache((ortId: number, limit = 12) =>
-  q<OrtTrail>(
-    `SELECT t.name, t.slug, t.eigene_seite, t.netz, t.ref, t.markierung, t.laenge_km,
-            min(pt.distanz_m)::int AS distanz_m
-       FROM parkplatz p
-       JOIN parkplatz_trail pt ON pt.parkplatz_id = p.id
-       JOIN trail t            ON t.id = pt.trail_id
-      WHERE p.ort_id = $1 AND p.aktiv
-      GROUP BY t.id, t.name, t.slug, t.eigene_seite, t.netz, t.ref, t.markierung, t.laenge_km
-      ORDER BY CASE t.netz WHEN 'iwn' THEN 1 WHEN 'nwn' THEN 2 WHEN 'rwn' THEN 3 ELSE 4 END,
-               min(pt.distanz_m), t.name
-      LIMIT $2`,
-    [ortId, limit],
-  ),
-);
+/**
+ * Wanderwege, Umfeld und Ziele einer Region — gebaut je Bezugsspalte.
+ *
+ * Orts- und Kreisseiten brauchen dieselben drei Abfragen, nur mit einem
+ * anderen Bezug des Parkplatzes. Die Spalte kommt aus dieser Datei, nie von
+ * außen; sie wandert deshalb gefahrlos in den Abfragetext.
+ */
+const wegeInRegion = (spalte: "ort_id" | "kreis_id") =>
+  cache((id: number, limit = 12) =>
+    q<OrtTrail>(
+      `SELECT t.name, t.slug, t.eigene_seite, t.netz, t.ref, t.markierung, t.laenge_km,
+              min(pt.distanz_m)::int AS distanz_m
+         FROM parkplatz p
+         JOIN parkplatz_trail pt ON pt.parkplatz_id = p.id
+         JOIN trail t            ON t.id = pt.trail_id
+        WHERE p.${spalte} = $1 AND p.aktiv
+        GROUP BY t.id, t.name, t.slug, t.eigene_seite, t.netz, t.ref, t.markierung, t.laenge_km
+        ORDER BY CASE t.netz WHEN 'iwn' THEN 1 WHEN 'nwn' THEN 2 WHEN 'rwn' THEN 3 ELSE 4 END,
+                 min(pt.distanz_m), t.name
+        LIMIT $2`,
+      [id, limit],
+    ),
+  );
 
-/** Umfeld aller Parkplätze des Orts, je Kategorie und Name der nächste Eintrag. */
-export const umfeldImOrt = cache((ortId: number, limit = 14) =>
-  q<UmfeldEintrag>(
-    // Spalten qualifizieren: parkplatz und parkplatz_nearby haben beide
-    // eine Spalte "name".
-    `SELECT n.kategorie, n.name, min(n.distanz_m)::int AS distanz_m
-       FROM parkplatz p
-       JOIN parkplatz_nearby n ON n.parkplatz_id = p.id
-      WHERE p.ort_id = $1 AND p.aktiv
-      GROUP BY n.kategorie, n.name
-      ORDER BY n.kategorie, min(n.distanz_m)
-      LIMIT $2`,
-    [ortId, limit],
-  ),
-);
+export const wanderwegeImOrt = wegeInRegion("ort_id");
+export const wanderwegeImKreis = wegeInRegion("kreis_id");
+
+/** Umfeld aller Parkplätze der Region, je Kategorie und Name der nächste Eintrag. */
+const umfeldInRegion = (spalte: "ort_id" | "kreis_id") =>
+  cache((id: number, limit = 14) =>
+    q<UmfeldEintrag>(
+      // Spalten qualifizieren: parkplatz und parkplatz_nearby haben beide
+      // eine Spalte "name".
+      `SELECT n.kategorie, n.name, min(n.distanz_m)::int AS distanz_m
+         FROM parkplatz p
+         JOIN parkplatz_nearby n ON n.parkplatz_id = p.id
+        WHERE p.${spalte} = $1 AND p.aktiv
+        GROUP BY n.kategorie, n.name
+        ORDER BY n.kategorie, min(n.distanz_m)
+        LIMIT $2`,
+      [id, limit],
+    ),
+  );
+
+export const umfeldImOrt = umfeldInRegion("ort_id");
+export const umfeldImKreis = umfeldInRegion("kreis_id");
 
 export interface OrtZiel {
   name: string;
@@ -732,27 +747,31 @@ export interface OrtZiel {
   distanz_m: number;
 }
 
-/** Wanderziele, die von den Parkplätzen des Orts aus erreichbar sind. */
-export const zieleImOrt = cache((ortId: number, limit = 10) =>
-  q<OrtZiel>(
-    // Ausgewählt wird nach Bekanntheit, angezeigt nach Entfernung — sonst
-    // springt die Liste von 4,9 km zurück auf 297 m, weil erst die bekannten
-    // und dann die unbekannten Ziele kämen.
-    `SELECT name, slug, art, hoehe_m, eigene_seite, distanz_m FROM (
-       SELECT z.name, z.slug, z.art, z.hoehe_m, z.eigene_seite, z.bekannt,
-              min(pz.distanz_m)::int AS distanz_m
-         FROM parkplatz p
-         JOIN parkplatz_ziel pz ON pz.parkplatz_id = p.id
-         JOIN ziel z            ON z.id = pz.ziel_id
-        WHERE p.ort_id = $1 AND p.aktiv
-        GROUP BY z.id, z.name, z.slug, z.art, z.hoehe_m, z.eigene_seite, z.bekannt
-        ORDER BY z.bekannt DESC, min(pz.distanz_m)
-        LIMIT $2
-     ) x
-     ORDER BY distanz_m`,
-    [ortId, limit],
-  ),
-);
+/** Wanderziele, die von den Parkplätzen der Region aus erreichbar sind. */
+const zieleInRegion = (spalte: "ort_id" | "kreis_id") =>
+  cache((id: number, limit = 10) =>
+    q<OrtZiel>(
+      // Ausgewählt wird nach Bekanntheit, angezeigt nach Entfernung — sonst
+      // springt die Liste von 4,9 km zurück auf 297 m, weil erst die bekannten
+      // und dann die unbekannten Ziele kämen.
+      `SELECT name, slug, art, hoehe_m, eigene_seite, distanz_m FROM (
+         SELECT z.name, z.slug, z.art, z.hoehe_m, z.eigene_seite, z.bekannt,
+                min(pz.distanz_m)::int AS distanz_m
+           FROM parkplatz p
+           JOIN parkplatz_ziel pz ON pz.parkplatz_id = p.id
+           JOIN ziel z            ON z.id = pz.ziel_id
+          WHERE p.${spalte} = $1 AND p.aktiv
+          GROUP BY z.id, z.name, z.slug, z.art, z.hoehe_m, z.eigene_seite, z.bekannt
+          ORDER BY z.bekannt DESC, min(pz.distanz_m)
+          LIMIT $2
+       ) x
+       ORDER BY distanz_m`,
+      [id, limit],
+    ),
+  );
+
+export const zieleImOrt = zieleInRegion("ort_id");
+export const zieleImKreis = zieleInRegion("kreis_id");
 
 // ------------------------------ Ziel ↔ Wanderweg, über gemeinsame Parkplätze
 //

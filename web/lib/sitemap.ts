@@ -31,9 +31,50 @@ export const SITEMAP_TYPEN = [
 
 export type SitemapTyp = (typeof SITEMAP_TYPEN)[number];
 
+/**
+ * lastmod ist das einzige Signal dieser Datei, das Google auswertet —
+ * changefreq und priority ignoriert es seit Jahren. Regionen, Wege und Ziele
+ * führen keinen eigenen Änderungsstand: Sie werden bei jedem Import neu
+ * aufgebaut, ein Datum von dort hieße "heute" und wäre wertlos. Ihr Inhalt
+ * ändert sich aber genau dann, wenn sich einer ihrer Parkplätze ändert, und
+ * deren Stand rückt nur bei echter inhaltlicher Änderung vor. Das jüngste
+ * dieser Daten ist damit ein ehrliches lastmod.
+ */
 export async function eintraege(typ: SitemapTyp): Promise<SitemapEintrag[]> {
-  const einfach = (rows: { slug: string }[], praefix: string, frequenz: string, gewicht: string) =>
-    rows.map((r) => ({ pfad: `${praefix}/${r.slug}`, frequenz, gewicht }));
+  const einfach = (
+    rows: { slug: string; aktualisiert?: Date }[],
+    praefix: string,
+    frequenz: string,
+    gewicht: string,
+  ) =>
+    rows.map((r) => ({
+      pfad: `${praefix}/${r.slug}`,
+      geaendert: r.aktualisiert,
+      frequenz,
+      gewicht,
+    }));
+
+  /** Jüngster Stand der Parkplätze einer Region. */
+  const region = (tabelle: string, spalte: string) =>
+    q<{ slug: string; aktualisiert: Date }>(
+      `SELECT r.slug, max(p.aktualisiert) AS aktualisiert
+         FROM ${tabelle} r JOIN parkplatz p ON p.${spalte} = r.id AND p.aktiv
+        WHERE r.poi_count > 0
+        GROUP BY r.id, r.slug, r.poi_count
+        ORDER BY r.poi_count DESC`,
+    );
+
+  /** Jüngster Stand der Parkplätze an einem Weg oder Ziel. */
+  const verknuepft = (tabelle: string, brueckentabelle: string, spalte: string) =>
+    q<{ slug: string; aktualisiert: Date }>(
+      `SELECT e.slug, max(p.aktualisiert) AS aktualisiert
+         FROM ${tabelle} e
+         JOIN ${brueckentabelle} v ON v.${spalte} = e.id
+         JOIN parkplatz p ON p.id = v.parkplatz_id AND p.aktiv
+        WHERE e.eigene_seite
+        GROUP BY e.id, e.slug, e.parkplatz_count
+        ORDER BY e.parkplatz_count DESC`,
+    );
 
   switch (typ) {
     case "seiten":
@@ -55,50 +96,20 @@ export async function eintraege(typ: SitemapTyp): Promise<SitemapEintrag[]> {
       }));
     }
     case "bundeslaender":
-      return einfach(
-        await q<{ slug: string }>(
-          "SELECT slug FROM bundesland WHERE poi_count > 0 ORDER BY poi_count DESC",
-        ),
-        "/bundesland",
-        "weekly",
-        "0.8",
-      );
+      return einfach(await region("bundesland", "bundesland_id"), "/bundesland", "weekly", "0.8");
     case "kreise":
-      return einfach(
-        await q<{ slug: string }>(
-          "SELECT slug FROM kreis WHERE poi_count > 0 ORDER BY poi_count DESC",
-        ),
-        "/kreis",
-        "weekly",
-        "0.7",
-      );
+      return einfach(await region("kreis", "kreis_id"), "/kreis", "weekly", "0.7");
     case "orte":
-      return einfach(
-        await q<{ slug: string }>(
-          "SELECT slug FROM ort WHERE poi_count > 0 ORDER BY poi_count DESC",
-        ),
-        "/ort",
-        "weekly",
-        "0.6",
-      );
+      return einfach(await region("ort", "ort_id"), "/ort", "weekly", "0.6");
     case "wanderwege":
       return einfach(
-        await q<{ slug: string }>(
-          "SELECT slug FROM trail WHERE eigene_seite ORDER BY parkplatz_count DESC",
-        ),
+        await verknuepft("trail", "parkplatz_trail", "trail_id"),
         "/wanderweg",
         "monthly",
         "0.6",
       );
     case "ziele":
-      return einfach(
-        await q<{ slug: string }>(
-          "SELECT slug FROM ziel WHERE eigene_seite ORDER BY parkplatz_count DESC",
-        ),
-        "/ziel",
-        "monthly",
-        "0.6",
-      );
+      return einfach(await verknuepft("ziel", "parkplatz_ziel", "ziel_id"), "/ziel", "monthly", "0.6");
     case "parkplaetze":
       return (
         await q<{ slug: string; aktualisiert: Date }>(
