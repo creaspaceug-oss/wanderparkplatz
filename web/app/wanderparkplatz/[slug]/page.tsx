@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { parkplatzBySlug, inDerNaehe, alleSlugs, trailsAmPlatz, umfeldAmPlatz, zieleAmPlatz } from "@/lib/db";
+import {
+  parkplatzBySlug, inDerNaehe, alleSlugs, trailsAmPlatz, umfeldAmPlatz, zieleAmPlatz,
+  bildZumPlatz, type TrailAmPlatz,
+} from "@/lib/db";
 import { beschreibung, metaBeschreibung } from "@/lib/beschreibung";
 import { jsonLd, km, gebuehrText } from "@/lib/format";
 import { titelVariante } from "@/lib/meta";
+import CommonsBild from "@/components/CommonsBild";
+import Karte from "@/components/Karte";
+import Merkmale from "@/components/Merkmale";
 import { istIndexierbar } from "@/lib/inhalt";
 import { VORRENDERN } from "@/lib/vorrendern";
 import { bewertungenFuer } from "@/lib/bewertung";
@@ -73,17 +79,54 @@ function Faktenzeile({ label, wert }: { label: string; wert: React.ReactNode }) 
 
 const jaNein = (v: boolean | null) => (v == null ? null : v ? "ja" : "nein");
 
+/** Ab hier werden die Wege eingeklappt. */
+const SICHTBARE_WEGE = 10;
+
+function Wegezeile({ t }: { t: TrailAmPlatz }) {
+  return (
+    <li className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-3">
+      <span className="font-medium">
+        {t.ref && (
+          <span className="mr-2 rounded border border-line px-1.5 py-0.5 text-xs tabular-nums text-muted">
+            {t.ref}
+          </span>
+        )}
+        {/* Nur verlinken, wo es auch eine Seite gibt — sonst führte der
+            Verweis ins Leere. */}
+        {t.eigene_seite ? (
+          <Link href={`/wanderweg/${t.slug}`} className="hover:text-accent">
+            {t.name}
+          </Link>
+        ) : (
+          t.name
+        )}
+      </span>
+      <span className="text-sm text-muted">
+        {[
+          NETZ[t.netz ?? ""] ?? null,
+          t.markierung,
+          t.laenge_km ? `${Number(t.laenge_km).toLocaleString("de-DE")} km` : null,
+          t.distanz_m <= 30 ? "direkt am Platz" : `${t.distanz_m} m entfernt`,
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+      </span>
+    </li>
+  );
+}
+
 export default async function Detailseite({ params }: PageProps<"/wanderparkplatz/[slug]">) {
   const { slug } = await params;
   const p = await parkplatzBySlug(slug);
   if (!p) notFound();
 
-  const [nahe, bewertungen, trails, umfeld, ziele] = await Promise.all([
+  const [nahe, bewertungen, trails, umfeld, ziele, bild] = await Promise.all([
     inDerNaehe(p.id, p.lat, p.lon, 20, 8),
     bewertungenFuer(p.id),
     trailsAmPlatz(p.id),
     umfeldAmPlatz(p.id),
     zieleAmPlatz(p.id),
+    bildZumPlatz(p.id),
   ]);
   const schnitt = p.bewertung_schnitt ? Number(p.bewertung_schnitt) : null;
   const absaetze = beschreibung(p, trails);
@@ -202,6 +245,31 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
         </p>
       )}
 
+      <Merkmale p={p} />
+
+      {bild && (
+        <figure className="mt-6">
+          <CommonsBild
+            bild={bild}
+            alt={`${bild.ziel_name} — Wanderziel nahe ${p.name}`}
+            breite={1200}
+            hoehe={675}
+            prioritaet
+          />
+          {/* Ohne diese Zeile hielte man das Foto für den Platz selbst. */}
+          <figcaption className="mt-1 text-sm text-muted">
+            Das Bild zeigt{" "}
+            <Link href={`/ziel/${bild.ziel_slug}`} className="underline hover:text-accent">
+              {bild.ziel_name}
+            </Link>
+            , {bild.ziel_distanz_m < 1000
+              ? `${bild.ziel_distanz_m} m`
+              : `${(bild.ziel_distanz_m / 1000).toFixed(1).replace(".", ",")} km`}{" "}
+            entfernt — nicht den Parkplatz.
+          </figcaption>
+        </figure>
+      )}
+
       <div className="mt-6 space-y-4 text-lg leading-relaxed">
         {absaetze.map((a) => (
           <p key={a.slice(0, 40)}>{a}</p>
@@ -214,37 +282,27 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
             Wanderwege ab diesem Parkplatz
           </h2>
           <ul className="mt-4 divide-y divide-line">
-            {trails.map((t) => (
-              <li key={t.slug} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-3">
-                <span className="font-medium">
-                  {t.ref && (
-                    <span className="mr-2 rounded border border-line px-1.5 py-0.5 text-xs tabular-nums text-muted">
-                      {t.ref}
-                    </span>
-                  )}
-                  {/* Nur verlinken, wo es auch eine Seite gibt — sonst führte
-                      der Verweis ins Leere. */}
-                  {t.eigene_seite ? (
-                    <Link href={`/wanderweg/${t.slug}`} className="hover:text-accent">
-                      {t.name}
-                    </Link>
-                  ) : (
-                    t.name
-                  )}
-                </span>
-                <span className="text-sm text-muted">
-                  {[
-                    NETZ[t.netz ?? ""] ?? null,
-                    t.markierung,
-                    t.laenge_km ? `${Number(t.laenge_km).toLocaleString("de-DE")} km` : null,
-                    t.distanz_m <= 30 ? "direkt am Platz" : `${t.distanz_m} m entfernt`,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </span>
-              </li>
+            {trails.slice(0, SICHTBARE_WEGE).map((t) => (
+              <Wegezeile key={t.slug} t={t} />
             ))}
           </ul>
+
+          {/* Manche Plätze liegen an über zwanzig Wegen. Alle untereinander
+              sind eine Wand aus gleich aussehenden Zeilen; eingeklappt
+              stehen sie trotzdem im Quelltext und bleiben auffindbar. */}
+          {trails.length > SICHTBARE_WEGE && (
+            <details className="mt-3">
+              <summary className="cursor-pointer text-sm text-muted hover:text-accent">
+                {`${trails.length - SICHTBARE_WEGE} weitere Wege anzeigen`}
+              </summary>
+              <ul className="mt-2 divide-y divide-line border-t border-line">
+                {trails.slice(SICHTBARE_WEGE).map((t) => (
+                  <Wegezeile key={t.slug} t={t} />
+                ))}
+              </ul>
+            </details>
+          )}
+
           <p className="mt-3 text-sm text-muted">
             Wegeverlauf und Markierung stammen aus OpenStreetMap. Vor Ort gilt die
             Beschilderung.
@@ -273,7 +331,8 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
 
       <section className="mt-10">
         <h2 className="text-xl font-semibold">Anfahrt</h2>
-        <p className="mt-3 text-muted">
+        <Karte lat={p.lat} lon={p.lon} titel={p.name} />
+        <p className="mt-4 text-muted">
           Koordinaten <span className="tabular-nums text-foreground">{koord}</span> — in der
           Navigation direkt eingebbar.
         </p>
@@ -352,10 +411,14 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
         </div>
       </section>
 
+      {/* Ohne Ersatzwert: Date.now() im Render wäre bei jedem Aufruf ein
+          anderer Wert. Die Spalte ist in der Datenbank nie leer. */}
       <p className="mt-10 text-sm text-muted">
-        Angaben aus OpenStreetMap, zuletzt abgeglichen am{" "}
-        {new Date(p.aktualisiert ?? Date.now()).toLocaleDateString("de-DE")}. Gebühren und
-        Zufahrtsregeln ändern sich — die Beschilderung vor Ort gilt.
+        Angaben aus OpenStreetMap
+        {p.aktualisiert
+          ? `, zuletzt abgeglichen am ${new Date(p.aktualisiert).toLocaleDateString("de-DE")}`
+          : ""}
+        . Gebühren und Zufahrtsregeln ändern sich — die Beschilderung vor Ort gilt.
       </p>
     </article>
   );

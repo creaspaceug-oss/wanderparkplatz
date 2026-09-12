@@ -852,3 +852,38 @@ export const orteAmTrail = (trailId: number, limit = 12) =>
       LIMIT $2`,
     [trailId, limit],
   );
+
+export interface PlatzBild {
+  url: string;
+  breite: number;
+  hoehe: number;
+  lizenz: string | null;
+  lizenz_url: string | null;
+  urheber: string | null;
+  quelle_url: string;
+  ziel_name: string;
+  ziel_slug: string;
+  ziel_distanz_m: number;
+}
+
+/**
+ * Bild für eine Parkplatzseite — das nächstgelegene bebilderte Wanderziel.
+ *
+ * Von Parkplätzen selbst gibt es praktisch keine Fotos, von den Zielen
+ * dahinter schon. Zwei Drittel der indexierbaren Plätze haben eines in
+ * Reichweite. Die Beschriftung muss sagen, was zu sehen ist: Ein Gipfelfoto
+ * über einer Parkplatzseite wäre sonst schlicht irreführend.
+ */
+export const bildZumPlatz = cache((parkplatzId: number) =>
+  one<PlatzBild>(
+    `SELECT b.url, b.breite, b.hoehe, b.lizenz, b.lizenz_url, b.urheber, b.quelle_url,
+            z.name AS ziel_name, z.slug AS ziel_slug, pz.distanz_m AS ziel_distanz_m
+       FROM parkplatz_ziel pz
+       JOIN ziel z ON z.id = pz.ziel_id
+       JOIN bild b ON b.wikidata = z.wikidata
+      WHERE pz.parkplatz_id = $1
+      ORDER BY pz.distanz_m
+      LIMIT 1`,
+    [parkplatzId],
+  ),
+);
