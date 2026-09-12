@@ -142,4 +142,6 @@ jobs:
       - name: Bei IndexNow melden
         if: steps.aufbereiten.outputs.vollstaendig == 'ja'
         continue-on-error: true
+        # Das doppelte "--" ist nötig: Ohne das zweite frisst der innere
+        # npm-Aufruf die Schalter als eigene Konfiguration.
         run: npm run indexnow -- --tage 8
