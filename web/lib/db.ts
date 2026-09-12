@@ -691,6 +691,9 @@ export interface OrtTrail {
 }
 
 /** Wanderwege an allen Parkplätzen des Orts, je Weg der nächste Abstand. */
+/** Spalte, über die ein Parkplatz seiner Region zugeordnet ist. */
+type Bezug = "ort_id" | "kreis_id" | "bundesland_id";
+
 /**
  * Wanderwege, Umfeld und Ziele einer Region — gebaut je Bezugsspalte.
  *
@@ -698,7 +701,7 @@ export interface OrtTrail {
  * anderen Bezug des Parkplatzes. Die Spalte kommt aus dieser Datei, nie von
  * außen; sie wandert deshalb gefahrlos in den Abfragetext.
  */
-const wegeInRegion = (spalte: "ort_id" | "kreis_id") =>
+const wegeInRegion = (spalte: Bezug) =>
   cache((id: number, limit = 12) =>
     q<OrtTrail>(
       `SELECT t.name, t.slug, t.eigene_seite, t.netz, t.ref, t.markierung, t.laenge_km,
@@ -717,9 +720,10 @@ const wegeInRegion = (spalte: "ort_id" | "kreis_id") =>
 
 export const wanderwegeImOrt = wegeInRegion("ort_id");
 export const wanderwegeImKreis = wegeInRegion("kreis_id");
+export const wanderwegeImLand = wegeInRegion("bundesland_id");
 
 /** Umfeld aller Parkplätze der Region, je Kategorie und Name der nächste Eintrag. */
-const umfeldInRegion = (spalte: "ort_id" | "kreis_id") =>
+const umfeldInRegion = (spalte: Bezug) =>
   cache((id: number, limit = 14) =>
     q<UmfeldEintrag>(
       // Spalten qualifizieren: parkplatz und parkplatz_nearby haben beide
@@ -737,6 +741,7 @@ const umfeldInRegion = (spalte: "ort_id" | "kreis_id") =>
 
 export const umfeldImOrt = umfeldInRegion("ort_id");
 export const umfeldImKreis = umfeldInRegion("kreis_id");
+export const umfeldImLand = umfeldInRegion("bundesland_id");
 
 export interface OrtZiel {
   name: string;
@@ -748,7 +753,7 @@ export interface OrtZiel {
 }
 
 /** Wanderziele, die von den Parkplätzen der Region aus erreichbar sind. */
-const zieleInRegion = (spalte: "ort_id" | "kreis_id") =>
+const zieleInRegion = (spalte: Bezug) =>
   cache((id: number, limit = 10) =>
     q<OrtZiel>(
       // Ausgewählt wird nach Bekanntheit, angezeigt nach Entfernung — sonst
@@ -772,6 +777,7 @@ const zieleInRegion = (spalte: "ort_id" | "kreis_id") =>
 
 export const zieleImOrt = zieleInRegion("ort_id");
 export const zieleImKreis = zieleInRegion("kreis_id");
+export const zieleImLand = zieleInRegion("bundesland_id");
 
 // ------------------------------ Ziel ↔ Wanderweg, über gemeinsame Parkplätze
 //
@@ -927,4 +933,21 @@ export const anzahlZiele = cache(async () =>
 
 export const anzahlWege = cache(async () =>
   (await q<{ n: number }>("SELECT count(*)::int AS n FROM trail WHERE eigene_seite"))[0].n,
+);
+
+/** Umfeld aller Parkplätze an einem Weg, je Kategorie und Name der nächste Eintrag. */
+export const umfeldAmTrail = cache((trailId: number, limit = 14) =>
+  q<UmfeldEintrag>(
+    // Spalten qualifizieren: parkplatz und parkplatz_nearby haben beide
+    // eine Spalte "name".
+    `SELECT n.kategorie, n.name, min(n.distanz_m)::int AS distanz_m
+       FROM parkplatz_trail pt
+       JOIN parkplatz p        ON p.id = pt.parkplatz_id AND p.aktiv
+       JOIN parkplatz_nearby n ON n.parkplatz_id = p.id
+      WHERE pt.trail_id = $1
+      GROUP BY n.kategorie, n.name
+      ORDER BY n.kategorie, min(n.distanz_m)
+      LIMIT $2`,
+    [trailId, limit],
+  ),
 );

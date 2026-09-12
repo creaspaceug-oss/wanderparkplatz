@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ParkplatzListe from "@/components/ParkplatzListe";
 import Brotkrumen from "@/components/Brotkrumen";
+import SammlungLd from "@/components/SammlungLd";
 import {
   parkplaetzeIn, umkreis, alleSlugs, wanderwegeImOrt, umfeldImOrt, zieleImOrt,
 } from "@/lib/db";
@@ -70,6 +71,16 @@ export default async function OrtSeite({ params }: PageProps<"/ort/[slug]">) {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
+      <SammlungLd
+        name={`Wanderparkplätze in ${o.name}`}
+        pfad={`/ort/${o.slug}`}
+        art="Place"
+        ueber={o.name}
+        anzahl={o.poi_count}
+        lat={o.lat}
+        lon={o.lon}
+      />
+
       <Brotkrumen pfad={pfad} aktuell={o.name} />
       <h1 className="mt-3 text-3xl font-bold tracking-tight">Wanderparkplätze in {o.name}</h1>
 

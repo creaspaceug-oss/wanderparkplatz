@@ -8,12 +8,13 @@ import ZieleListe from "@/components/ZieleListe";
 import Umfeld from "@/components/Umfeld";
 import Block from "@/components/Block";
 import Brotkrumen from "@/components/Brotkrumen";
+import SammlungLd from "@/components/SammlungLd";
 import {
   parkplaetzeIn, alleSlugs, wanderwegeImKreis, zieleImKreis, umfeldImKreis,
 } from "@/lib/db";
 import { kreisBySlug, orteIn, nachbarKreise } from "@/lib/queries";
 import { nf } from "@/lib/format";
-import { kreisDativ, kreisNominativ } from "@/lib/regionen";
+import { kreisTitel, kreisDativ, kreisNominativ } from "@/lib/regionen";
 import { titel, beschreibung } from "@/lib/meta";
 import { VORRENDERN } from "@/lib/vorrendern";
 
@@ -58,6 +59,14 @@ export default async function KreisSeite({ params }: PageProps<"/kreis/[slug]">)
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
+      <SammlungLd
+        name={`Wanderparkplätze ${kreisDativ(k.name, k.typ)}`}
+        pfad={`/kreis/${k.slug}`}
+        art="AdministrativeArea"
+        ueber={kreisTitel(k.name, k.typ)}
+        anzahl={k.poi_count}
+      />
+
       <Brotkrumen
         pfad={[
           { name: "Startseite", url: "/" },

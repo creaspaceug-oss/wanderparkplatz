@@ -4,7 +4,14 @@ import ParkplatzListe from "@/components/ParkplatzListe";
 import RegionListe from "@/components/RegionListe";
 import Block from "@/components/Block";
 import Brotkrumen from "@/components/Brotkrumen";
-import { parkplaetzeIn, alleSlugs } from "@/lib/db";
+import SammlungLd from "@/components/SammlungLd";
+import Faktenkarte from "@/components/Faktenkarte";
+import WegeListe from "@/components/WegeListe";
+import ZieleListe from "@/components/ZieleListe";
+import Umfeld from "@/components/Umfeld";
+import {
+  parkplaetzeIn, alleSlugs, wanderwegeImLand, zieleImLand, umfeldImLand,
+} from "@/lib/db";
 import { bundeslandBySlug, kreiseIn } from "@/lib/queries";
 import { nf } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
@@ -35,35 +42,102 @@ export default async function BundeslandSeite({ params }: PageProps<"/bundesland
   const bl = await bundeslandBySlug(slug);
   if (!bl) notFound();
 
-  const [kreise, top] = await Promise.all([
+  const [kreise, top, wege, ziele, umfeld] = await Promise.all([
     kreiseIn(bl.id),
     parkplaetzeIn("bundesland_id", bl.id, 40),
+    wanderwegeImLand(bl.id, 16),
+    zieleImLand(bl.id, 12),
+    umfeldImLand(bl.id),
   ]);
 
+  const kostenfrei = top.filter((p) => p.gebuehr === false).length;
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
+    <div className="mx-auto max-w-5xl px-4 py-10">
+      <SammlungLd
+        name={`Wanderparkplätze in ${bl.name}`}
+        pfad={`/bundesland/${bl.slug}`}
+        art="AdministrativeArea"
+        ueber={bl.name}
+        anzahl={bl.poi_count}
+      />
+
       <Brotkrumen pfad={[{ name: "Startseite", url: "/" }]} aktuell={bl.name} />
       <h1 className="mt-3 text-3xl font-bold tracking-tight">
         Wanderparkplätze in {bl.name}
       </h1>
-      <p className="mt-4 text-lg text-muted">
-        In {bl.name} sind {nf.format(bl.poi_count)} Wanderparkplätze verzeichnet, verteilt auf{" "}
-        {nf.format(kreise.length)} Landkreise und kreisfreie Städte. Die Liste unten zeigt die
-        Plätze mit den vollständigsten Angaben.
-      </p>
 
-      <Block klasse="mt-10" titel={`Landkreise in ${bl.name}`}>
-        <RegionListe items={kreise} basis="kreis" />
-      </Block>
+      <div className="mt-4 space-y-4 text-lg text-muted">
+        <p>
+          {`In ${bl.name} ${bl.poi_count === 1 ? "ist ein Wanderparkplatz" : `sind ${nf.format(bl.poi_count)} Wanderparkplätze`} verzeichnet` +
+            (kreise.length
+              ? `, verteilt auf ${nf.format(kreise.length)} ${kreise.length === 1 ? "Landkreis beziehungsweise kreisfreie Stadt" : "Landkreise und kreisfreie Städte"}`
+              : "") +
+            "." +
+            (kostenfrei > 0
+              ? ` Unter den ausführlich erfassten ${kostenfrei === 1 ? "ist einer" : `sind ${nf.format(kostenfrei)}`} nachweislich kostenfrei.`
+              : "")}
+        </p>
+        {wege.length > 0 && (
+          <p>
+            {`Ab diesen Parkplätzen ${wege.length === 1 ? "führt ein markierter Wanderweg" : `führen ${nf.format(wege.length)} markierte Wanderwege`} weiter` +
+              (ziele.length
+                ? `, und ${ziele.length === 1 ? "ein Wanderziel liegt" : `${nf.format(ziele.length)} Wanderziele liegen`} in Reichweite`
+                : "") +
+              "."}
+          </p>
+        )}
+      </div>
 
-      <section className="mt-10">
-        <h2 className="text-xl font-semibold">
-          Ausführlich erfasste Wanderparkplätze in {bl.name}
-        </h2>
-        <div className="mt-4">
-          <ParkplatzListe items={top} />
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
+        <aside className="order-1 space-y-6 lg:order-2">
+          <Faktenkarte
+            titel={`Daten zu ${bl.name}`}
+            eintraege={[
+              ["Wanderparkplätze", nf.format(bl.poi_count)],
+              ["Landkreise", kreise.length ? nf.format(kreise.length) : null],
+              ["Markierte Wanderwege", wege.length ? nf.format(wege.length) : null],
+              ["Wanderziele", ziele.length ? nf.format(ziele.length) : null],
+            ]}
+          />
+
+          {kreise.length > 0 && (
+            <Block titel={`Landkreise in ${bl.name}`}>
+              <RegionListe items={kreise} basis="kreis" spalten={1} />
+            </Block>
+          )}
+        </aside>
+
+        <div className="order-2 space-y-6 lg:order-1">
+          <Block titel={`Ausführlich erfasste Wanderparkplätze in ${bl.name}`}>
+            <ParkplatzListe items={top} />
+          </Block>
+
+          {wege.length > 0 && (
+            <Block titel={`Wanderwege in ${bl.name}`}>
+              <WegeListe items={wege} maxSichtbar={10} />
+            </Block>
+          )}
+
+          {ziele.length > 0 && (
+            <Block
+              titel={`Wanderziele in ${bl.name}`}
+              fussnote="Luftlinie ab dem nächstgelegenen Parkplatz."
+            >
+              <ZieleListe items={ziele} />
+            </Block>
+          )}
+
+          {umfeld.length > 0 && (
+            <Block
+              titel="In Laufweite"
+              fussnote="Luftlinie ab dem nächstgelegenen Parkplatz. Öffnungszeiten und Fahrpläne sind nicht erfasst."
+            >
+              <Umfeld items={umfeld} />
+            </Block>
+          )}
         </div>
-      </section>
+      </div>
     </div>
   );
 }

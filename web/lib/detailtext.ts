@@ -121,10 +121,11 @@ export function zieltext(
 
 export function wegtext(
   weg: { name: string; parkplatz_count: number; laenge_km: string | null; markierung: string | null },
-  plaetze: { gebuehr: boolean | null }[],
+  plaetze: { gebuehr: boolean | null; stellplaetze: number | null; oberflaeche: string | null }[],
   ziele: OrtZiel[],
   orte: { name: string }[],
   laender: string[],
+  umfeld: UmfeldEintrag[] = [],
 ): string[] {
   const absaetze: string[] = [];
 
@@ -136,6 +137,28 @@ export function wegtext(
       " Alle Plätze liegen höchstens 200 Meter vom Wegverlauf entfernt — sie eignen sich" +
       " als Ausgangspunkt für eine Runde oder als Ein- und Ausstieg einer Etappe.",
   );
+
+  // Zahlen, die vor der Fahrt zählen: Wie viel Platz gibt es, und worauf
+  // steht man. Beides liegt vor, stand aber nur auf den Einzelseiten.
+  const summe = plaetze.reduce((s, p) => s + (p.stellplaetze ?? 0), 0);
+  const mitZahl = plaetze.filter((p) => p.stellplaetze != null).length;
+  const unbefestigt = plaetze.filter(
+    (p) => p.oberflaeche && /Schotter|Kies|Naturboden|Erde|Wiese|unbefestigt|Sand|Rasengitter|Hackschnitzel/i.test(p.oberflaeche),
+  ).length;
+  const mitBelag = plaetze.filter((p) => p.oberflaeche).length;
+
+  const kapazitaet: string[] = [];
+  if (summe > 0)
+    kapazitaet.push(
+      `Für ${mitZahl === 1 ? "einen Platz" : `${nf.format(mitZahl)} Plätze`} ist die Stellplatzzahl erfasst, zusammen ${nf.format(summe)} Stellplätze.`,
+    );
+  if (mitBelag > 0 && unbefestigt > 0)
+    kapazitaet.push(
+      unbefestigt === mitBelag
+        ? `Wo der Untergrund bekannt ist, ${mitBelag === 1 ? "ist er unbefestigt" : "sind alle unbefestigt"} — Schotter, Kies oder Waldboden.`
+        : `Von ${nf.format(mitBelag)} Plätzen mit Angabe zum Untergrund ${unbefestigt === 1 ? "ist einer" : `sind ${nf.format(unbefestigt)}`} unbefestigt.`,
+    );
+  if (kapazitaet.length) absaetze.push(kapazitaet.join(" "));
 
   if (orte.length > 1)
     absaetze.push(
@@ -157,6 +180,9 @@ export function wegtext(
       teile.push(`Am höchsten liegt ${hoechster.name} mit ${nf.format(hoechster.hoehe_m!)} Metern.`);
     absaetze.push(teile.join(" "));
   }
+
+  const umfeldSatz = umfeldsatz(umfeld);
+  if (umfeldSatz) absaetze.push(umfeldSatz);
 
   return absaetze;
 }

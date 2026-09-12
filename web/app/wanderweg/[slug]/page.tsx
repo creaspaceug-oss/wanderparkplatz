@@ -5,12 +5,13 @@ import ParkplatzListe from "@/components/ParkplatzListe";
 import Brotkrumen from "@/components/Brotkrumen";
 import {
   trailBySlug, parkplaetzeAmTrail, kreiseAmTrail, trailSeiten, verwandteTrails,
-  zieleAmTrail, orteAmTrail,
+  zieleAmTrail, orteAmTrail, umfeldAmTrail,
 } from "@/lib/db";
 import { jsonLd, nf } from "@/lib/format";
 import { titelVariante, kuerzeMitte, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
 import ZieleListe from "@/components/ZieleListe";
+import Umfeld from "@/components/Umfeld";
 import Block from "@/components/Block";
 import Faktenkarte from "@/components/Faktenkarte";
 import RegionListe from "@/components/RegionListe";
@@ -66,12 +67,13 @@ export default async function WanderwegSeite({ params }: PageProps<"/wanderweg/[
   const t = await trailBySlug(slug);
   if (!t) notFound();
 
-  const [plaetze, kreise, verwandt, ziele, orte] = await Promise.all([
+  const [plaetze, kreise, verwandt, ziele, orte, umfeld] = await Promise.all([
     parkplaetzeAmTrail(t.id),
     kreiseAmTrail(t.id),
     verwandteTrails(t.id),
     zieleAmTrail(t.id),
     orteAmTrail(t.id),
+    umfeldAmTrail(t.id),
   ]);
   if (!plaetze.length) notFound();
 
@@ -148,7 +150,7 @@ export default async function WanderwegSeite({ params }: PageProps<"/wanderweg/[
 
         <div className="order-2 space-y-6 lg:order-1">
           <div className="space-y-4 text-lg leading-relaxed text-muted">
-            {wegtext(t, plaetze, ziele, orte, laender).map((a) => (
+            {wegtext(t, plaetze, ziele, orte, laender, umfeld).map((a) => (
               <p key={a.slice(0, 40)}>{a}</p>
             ))}
           </div>
@@ -166,6 +168,15 @@ export default async function WanderwegSeite({ params }: PageProps<"/wanderweg/[
               fussnote="Luftlinie ab dem nächstgelegenen Parkplatz am Weg, nicht ab dem Wegverlauf."
             >
               <ZieleListe items={ziele} />
+            </Block>
+          )}
+
+          {umfeld.length > 0 && (
+            <Block
+              titel="In Laufweite der Parkplätze"
+              fussnote="Luftlinie ab dem nächstgelegenen Parkplatz am Weg. Öffnungszeiten und Fahrpläne sind nicht erfasst."
+            >
+              <Umfeld items={umfeld} />
             </Block>
           )}
 
