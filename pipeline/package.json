@@ -10,7 +10,8 @@
     "moderieren": "node --experimental-strip-types src/moderieren.ts",
     "setup": "node --experimental-strip-types src/setup.ts",
     "bilder": "node --experimental-strip-types src/bilder.ts",
-    "sicherung": "node --experimental-strip-types src/sicherung.ts"
+    "sicherung": "node --experimental-strip-types src/sicherung.ts",
+    "indexnow": "node --experimental-strip-types src/indexnow.ts"
   },
   "dependencies": {
     "pg": "^8.13.1"

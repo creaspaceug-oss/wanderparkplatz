@@ -134,3 +134,12 @@ jobs:
       - name: Hinweis ohne Deploy Hook
         if: steps.aufbereiten.outputs.vollstaendig == 'ja' && env.VERCEL_DEPLOY_HOOK == ''
         run: echo "Kein Deploy Hook hinterlegt — die Daten sind importiert, die Seiten ziehen mit ihrer nächsten Revalidierung nach."
+
+      # Meldet Bing, Yandex, Seznam und Naver, was sich geändert hat. Google
+      # beteiligt sich an IndexNow nicht und bleibt beim Crawlen nach Sitemap.
+      # Gemeldet wird, was seit dem letzten Wochenlauf ein neues lastmod trägt;
+      # ein Fehlschlag soll den Lauf nicht rot färben, die Daten sind ja drin.
+      - name: Bei IndexNow melden
+        if: steps.aufbereiten.outputs.vollstaendig == 'ja'
+        continue-on-error: true
+        run: npm run indexnow -- --tage 8
