@@ -32,6 +32,8 @@ export default function Umkreissuche() {
   const [radius, setRadius] = useState(25);
   const [treffer, setTreffer] = useState<Treffer[]>([]);
   const [bezug, setBezug] = useState<string>("");
+  // Ergebnis stammt aus der IP-Gegend, nicht aus einer Standortabfrage.
+  const [grob, setGrob] = useState(false);
 
   // Standorteingabe
   const [eingabe, setEingabe] = useState("");
@@ -39,6 +41,8 @@ export default function Umkreissuche() {
   const [offen, setOffen] = useState(false);
   const [aktiv, setAktiv] = useState(-1);
   const letztesZiel = useRef<{ lat: number; lon: number } | null>(null);
+  /** Sobald jemand selbst sucht, hat das Vorrang vor der groben Vorbelegung. */
+  const eigeneSuche = useRef(false);
   const box = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -64,6 +68,39 @@ export default function Umkreissuche() {
     };
   }, [eingabe]);
 
+  /**
+   * Beim Laden einmal fragen, aus welcher Gegend die Anfrage kam, und gleich
+   * Ergebnisse zeigen.
+   *
+   * Wer "wanderparkplatz in der nähe" sucht, will Parkplätze sehen und nicht
+   * erst ein Formular ausfüllen. Die Gegend liefert Vercel ohnehin mit jeder
+   * Anfrage mit; es braucht also weder eine Nachfrage im Browser noch eine
+   * Erlaubnis. Genau ist das nicht, deshalb steht der Hinweis darunter und
+   * die Schaltfläche für den echten Standort bleibt.
+   */
+  useEffect(() => {
+    const ab = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch(`/api/naehe?r=${radius}`, { signal: ab.signal });
+        const d = await res.json();
+        if (!d.verfuegbar || !d.treffer?.length) return;
+        // Hat jemand die Wartezeit schon zum Suchen genutzt, bleibt sein
+        // Ergebnis stehen.
+        if (eigeneSuche.current) return;
+        setTreffer(d.treffer);
+        setBezug(d.stadt ?? "deiner Gegend");
+        setGrob(true);
+        setStatus("fertig");
+      } catch {
+        /* abgebrochen oder ohne Standort — dann bleibt das Formular */
+      }
+    })();
+    return () => ab.abort();
+    // Bewusst nur beim Laden: Ein Radiuswechsel löst die eigene Suche aus.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const zu = (e: MouseEvent) => {
       if (box.current && !box.current.contains(e.target as Node)) setOffen(false);
@@ -74,6 +111,8 @@ export default function Umkreissuche() {
 
   async function suche(lat: number, lon: number, r: number, label: string) {
     letztesZiel.current = { lat, lon };
+    eigeneSuche.current = true;
+    setGrob(false);
     setStatus("sucht");
     setBezug(label);
     try {
@@ -89,6 +128,7 @@ export default function Umkreissuche() {
   }
 
   function perGps(r = radius) {
+    eigeneSuche.current = true;
     setRadius(r);
     if (!("geolocation" in navigator)) {
       setStatus("fehler");
@@ -248,6 +288,19 @@ export default function Umkreissuche() {
             {treffer.length} Wanderparkplätze im Umkreis von {radius} km um {bezug}, nach
             Entfernung sortiert:
           </p>
+          {grob && (
+            <p className="mt-1 text-sm text-muted">
+              Die Gegend stammt aus deiner Internetverbindung und ist nur ungefähr.{" "}
+              <button
+                type="button"
+                onClick={() => perGps()}
+                className="underline hover:text-accent"
+              >
+                Genauen Standort verwenden
+              </button>{" "}
+              oder oben einen Ort eingeben.
+            </p>
+          )}
           <ul className="mt-3 divide-y divide-line">
             {treffer.map((t) => (
               <li key={t.slug} className="flex items-baseline gap-3 py-2.5">
