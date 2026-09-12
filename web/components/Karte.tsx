@@ -42,7 +42,7 @@ export default function Karte({
           title={`Lage: ${titel}`}
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
-          className="block h-[320px] w-full border-0"
+          className="block h-[340px] w-full border-0"
         />
       </div>
       <figcaption className="mt-1.5 text-xs text-muted">

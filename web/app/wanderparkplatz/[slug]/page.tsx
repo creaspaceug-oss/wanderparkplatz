@@ -157,7 +157,7 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
   ];
 
   return (
-    <article className="mx-auto max-w-3xl px-4 py-10">
+    <article className="mx-auto max-w-5xl px-4 py-10">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={jsonLd({
@@ -247,169 +247,188 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
 
       <Merkmale p={p} />
 
-      {bild && (
-        <figure className="mt-6">
-          <CommonsBild
-            bild={bild}
-            alt={`${bild.ziel_name} — Wanderziel nahe ${p.name}`}
-            breite={1200}
-            hoehe={675}
-            prioritaet
-          />
-          {/* Ohne diese Zeile hielte man das Foto für den Platz selbst. */}
-          <figcaption className="mt-1 text-sm text-muted">
-            Das Bild zeigt{" "}
-            <Link href={`/ziel/${bild.ziel_slug}`} className="underline hover:text-accent">
-              {bild.ziel_name}
-            </Link>
-            , {bild.ziel_distanz_m < 1000
-              ? `${bild.ziel_distanz_m} m`
-              : `${(bild.ziel_distanz_m / 1000).toFixed(1).replace(".", ",")} km`}{" "}
-            entfernt — nicht den Parkplatz.
-          </figcaption>
-        </figure>
-      )}
+      {/* Zwei Spalten ab Tablet: Karte und Daten bleiben beim Scrollen stehen,
+          statt am Ende einer langen Spalte zu verschwinden. Auf dem Handy
+          bestimmt die Reihenfolge im Quelltext — dort stehen Karte und Daten
+          zuerst, weil "wo ist das" und "was kostet das" die Fragen sind, die
+          über die Fahrt entscheiden. */}
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
+        <aside className="order-1 space-y-6 lg:order-2 lg:sticky lg:top-6">
+          <section className="rounded-xl border border-line bg-card p-5">
+            <h2 className="text-lg font-semibold">Anfahrt</h2>
+            <Karte lat={p.lat} lon={p.lon} titel={p.name} />
+            <p className="mt-3 text-sm text-muted">
+              Koordinaten <span className="tabular-nums text-foreground">{koord}</span> — in
+              der Navigation direkt eingebbar.
+            </p>
+            <div className="mt-4 grid gap-2">
+              <a
+                className="rounded-lg border border-line px-3 py-2 text-center text-sm hover:border-accent"
+                href={`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}`}
+                rel="noopener nofollow"
+                target="_blank"
+              >
+                Route bei Google Maps
+              </a>
+              <a
+                className="rounded-lg border border-line px-3 py-2 text-center text-sm hover:border-accent"
+                href={`https://maps.apple.com/?daddr=${p.lat},${p.lon}`}
+                rel="noopener nofollow"
+                target="_blank"
+              >
+                Route bei Apple Karten
+              </a>
+              <a
+                className="rounded-lg border border-line px-3 py-2 text-center text-sm hover:border-accent"
+                href={`https://www.openstreetmap.org/${p.osm_type ?? "node"}/${p.osm_id ?? ""}`}
+                rel="noopener nofollow"
+                target="_blank"
+              >
+                In OpenStreetMap ansehen
+              </a>
+            </div>
+          </section>
 
-      <div className="mt-6 space-y-4 text-lg leading-relaxed">
-        {absaetze.map((a) => (
-          <p key={a.slice(0, 40)}>{a}</p>
-        ))}
-      </div>
 
-      {trails.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-xl font-semibold">
-            Wanderwege ab diesem Parkplatz
-          </h2>
-          <ul className="mt-4 divide-y divide-line">
-            {trails.slice(0, SICHTBARE_WEGE).map((t) => (
-              <Wegezeile key={t.slug} t={t} />
+          <section className="rounded-xl border border-line bg-card p-5">
+            <h2 className="text-lg font-semibold">Daten zum Parkplatz</h2>
+            <dl className="mt-3 text-sm">
+              {belegt.map(([label, wert]) => (
+                <Faktenzeile key={label} label={label} wert={wert} />
+              ))}
+            </dl>
+            {belegt.length < 5 && (
+              <p className="mt-4 rounded-lg bg-accent-soft p-3 text-sm">
+                Für diesen Parkplatz sind bislang nur wenige Merkmale erfasst. Ergänzungen sind
+                über OpenStreetMap jederzeit möglich.
+              </p>
+            )}
+          </section>
+
+        </aside>
+
+        <div className="order-2 space-y-10 lg:order-1">
+          {bild && (
+            <figure>
+              <CommonsBild
+                bild={bild}
+                alt={`${bild.ziel_name} — Wanderziel nahe ${p.name}`}
+                breite={1200}
+                hoehe={675}
+                prioritaet
+              />
+              {/* Ohne diese Zeile hielte man das Foto für den Platz selbst. */}
+              <figcaption className="mt-1 text-sm text-muted">
+                Das Bild zeigt{" "}
+                <Link href={`/ziel/${bild.ziel_slug}`} className="underline hover:text-accent">
+                  {bild.ziel_name}
+                </Link>
+                , {bild.ziel_distanz_m < 1000
+                  ? `${bild.ziel_distanz_m} m`
+                  : `${(bild.ziel_distanz_m / 1000).toFixed(1).replace(".", ",")} km`}{" "}
+                entfernt — nicht den Parkplatz.
+              </figcaption>
+            </figure>
+          )}
+
+
+          <div className="space-y-4 text-lg leading-relaxed">
+            {absaetze.map((a) => (
+              <p key={a.slice(0, 40)}>{a}</p>
             ))}
-          </ul>
+          </div>
 
-          {/* Manche Plätze liegen an über zwanzig Wegen. Alle untereinander
-              sind eine Wand aus gleich aussehenden Zeilen; eingeklappt
-              stehen sie trotzdem im Quelltext und bleiben auffindbar. */}
-          {trails.length > SICHTBARE_WEGE && (
-            <details className="mt-3">
-              <summary className="cursor-pointer text-sm text-muted hover:text-accent">
-                {`${trails.length - SICHTBARE_WEGE} weitere Wege anzeigen`}
-              </summary>
-              <ul className="mt-2 divide-y divide-line border-t border-line">
-                {trails.slice(SICHTBARE_WEGE).map((t) => (
+
+          {trails.length > 0 && (
+            <section>
+              <h2 className="text-xl font-semibold">
+                Wanderwege ab diesem Parkplatz
+              </h2>
+              <ul className="mt-4 divide-y divide-line">
+                {trails.slice(0, SICHTBARE_WEGE).map((t) => (
                   <Wegezeile key={t.slug} t={t} />
                 ))}
               </ul>
-            </details>
+
+              {/* Manche Plätze liegen an über zwanzig Wegen. Alle untereinander
+                  sind eine Wand aus gleich aussehenden Zeilen; eingeklappt
+                  stehen sie trotzdem im Quelltext und bleiben auffindbar. */}
+              {trails.length > SICHTBARE_WEGE && (
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-sm text-muted hover:text-accent">
+                    {`${trails.length - SICHTBARE_WEGE} weitere Wege anzeigen`}
+                  </summary>
+                  <ul className="mt-2 divide-y divide-line border-t border-line">
+                    {trails.slice(SICHTBARE_WEGE).map((t) => (
+                      <Wegezeile key={t.slug} t={t} />
+                    ))}
+                  </ul>
+                </details>
+              )}
+
+              <p className="mt-3 text-sm text-muted">
+                Wegeverlauf und Markierung stammen aus OpenStreetMap. Vor Ort gilt die
+                Beschilderung.
+              </p>
+            </section>
           )}
 
-          <p className="mt-3 text-sm text-muted">
-            Wegeverlauf und Markierung stammen aus OpenStreetMap. Vor Ort gilt die
-            Beschilderung.
-          </p>
-        </section>
-      )}
 
-      <section className="mt-10">
-        <h2 className="text-xl font-semibold">Daten zum Parkplatz</h2>
-        <dl className="mt-4">
-          {belegt.map(([label, wert]) => (
-            <Faktenzeile key={label} label={label} wert={wert} />
-          ))}
-        </dl>
-        {belegt.length < 5 && (
-          <p className="mt-4 rounded-lg bg-accent-soft p-3 text-sm">
-            Für diesen Parkplatz sind bislang nur wenige Merkmale erfasst. Ergänzungen sind
-            über OpenStreetMap jederzeit möglich.
-          </p>
-        )}
-      </section>
+          <ZieleAmPlatz items={ziele} />
 
-      <ZieleAmPlatz items={ziele} />
+          <Umfeld items={umfeld} />
 
-      <Umfeld items={umfeld} />
 
-      <section className="mt-10">
-        <h2 className="text-xl font-semibold">Anfahrt</h2>
-        <Karte lat={p.lat} lon={p.lon} titel={p.name} />
-        <p className="mt-4 text-muted">
-          Koordinaten <span className="tabular-nums text-foreground">{koord}</span> — in der
-          Navigation direkt eingebbar.
-        </p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <a
-            className="rounded-lg border border-line bg-card px-4 py-2 hover:border-accent"
-            href={`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}`}
-            rel="noopener nofollow"
-            target="_blank"
-          >
-            Route bei Google Maps
-          </a>
-          <a
-            className="rounded-lg border border-line bg-card px-4 py-2 hover:border-accent"
-            href={`https://maps.apple.com/?daddr=${p.lat},${p.lon}`}
-            rel="noopener nofollow"
-            target="_blank"
-          >
-            Route bei Apple Karten
-          </a>
-          <a
-            className="rounded-lg border border-line bg-card px-4 py-2 hover:border-accent"
-            href={`https://www.openstreetmap.org/${p.osm_type ?? "node"}/${p.osm_id ?? ""}`}
-            rel="noopener nofollow"
-            target="_blank"
-          >
-            In OpenStreetMap ansehen
-          </a>
-        </div>
-      </section>
+          {nahe.length > 0 && (
+            <section>
+              <h2 className="text-xl font-semibold">Wanderparkplätze in der Nähe</h2>
+              <ul className="mt-4 divide-y divide-line">
+                {nahe.map((n) => (
+                  <li key={n.slug} className="flex items-baseline gap-3 py-2.5">
+                    <span className="w-16 shrink-0 tabular-nums text-sm text-muted">{km(n.km)} km</span>
+                    <span>
+                      <Link href={`/wanderparkplatz/${n.slug}`} className="font-medium hover:text-accent">
+                        {n.name}
+                      </Link>
+                      {n.ort_name && <span className="block text-sm text-muted">{n.ort_name}</span>}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-      {nahe.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-xl font-semibold">Wanderparkplätze in der Nähe</h2>
-          <ul className="mt-4 divide-y divide-line">
-            {nahe.map((n) => (
-              <li key={n.slug} className="flex items-baseline gap-3 py-2.5">
-                <span className="w-16 shrink-0 tabular-nums text-sm text-muted">{km(n.km)} km</span>
+
+          <section>
+            <h2 className="text-xl font-semibold">Bewertungen</h2>
+            {p.bewertung_anzahl > 0 && schnitt ? (
+              <p className="mt-2 flex items-center gap-2 text-muted">
+                <Sterne wert={schnitt} groesse="text-lg" />
                 <span>
-                  <Link href={`/wanderparkplatz/${n.slug}`} className="font-medium hover:text-accent">
-                    {n.name}
-                  </Link>
-                  {n.ort_name && <span className="block text-sm text-muted">{n.ort_name}</span>}
+                  <span className="font-medium text-foreground">
+                    {schnitt.toLocaleString("de-DE", { minimumFractionDigits: 1 })}
+                  </span>{" "}
+                  von 5 · {p.bewertung_anzahl}{" "}
+                  {p.bewertung_anzahl === 1 ? "Bewertung" : "Bewertungen"}
                 </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+              </p>
+            ) : (
+              <p className="mt-2 text-muted">
+                Noch keine Bewertung. Warst du hier? Deine Einschätzung hilft anderen — gerade
+                bei Angaben, die OpenStreetMap nicht führt: Andrang am Wochenende, Zustand der
+                Zufahrt, aktuelle Gebühren.
+              </p>
+            )}
 
-      <section className="mt-12">
-        <h2 className="text-xl font-semibold">Bewertungen</h2>
-        {p.bewertung_anzahl > 0 && schnitt ? (
-          <p className="mt-2 flex items-center gap-2 text-muted">
-            <Sterne wert={schnitt} groesse="text-lg" />
-            <span>
-              <span className="font-medium text-foreground">
-                {schnitt.toLocaleString("de-DE", { minimumFractionDigits: 1 })}
-              </span>{" "}
-              von 5 · {p.bewertung_anzahl}{" "}
-              {p.bewertung_anzahl === 1 ? "Bewertung" : "Bewertungen"}
-            </span>
-          </p>
-        ) : (
-          <p className="mt-2 text-muted">
-            Noch keine Bewertung. Warst du hier? Deine Einschätzung hilft anderen — gerade
-            bei Angaben, die OpenStreetMap nicht führt: Andrang am Wochenende, Zustand der
-            Zufahrt, aktuelle Gebühren.
-          </p>
-        )}
+            <Bewertungen items={bewertungen} />
 
-        <Bewertungen items={bewertungen} />
+            <div className="mt-6">
+              <BewertungFormular slug={p.slug} />
+            </div>
+          </section>
 
-        <div className="mt-6">
-          <BewertungFormular slug={p.slug} />
         </div>
-      </section>
+      </div>
 
       {/* Ohne Ersatzwert: Date.now() im Render wäre bei jedem Aufruf ein
           anderer Wert. Die Spalte ist in der Datenbank nie leer. */}
