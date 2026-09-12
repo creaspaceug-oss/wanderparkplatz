@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import RegionListe from "@/components/RegionListe";
+import Block from "@/components/Block";
 import Brotkrumen from "@/components/Brotkrumen";
 import { bundeslaender, topKreise, kennzahlen } from "@/lib/queries";
 import { nf } from "@/lib/format";
@@ -31,8 +32,12 @@ export default async function BundeslaenderSeite() {
         und kreisfreien Städten. Der Bestand folgt der Wanderdichte: Mittelgebirge und
         Alpenvorland liegen deutlich vor den Küsten- und Tieflandregionen.
       </p>
-      <RegionListe items={laender} basis="bundesland" titel="Alle Bundesländer" />
-      <RegionListe items={kreise} basis="kreis" titel="Landkreise mit dem größten Bestand" />
+      <Block klasse="mt-10" titel="Alle Bundesländer">
+        <RegionListe items={laender} basis="bundesland" />
+      </Block>
+      <Block klasse="mt-6" titel="Landkreise mit dem größten Bestand">
+        <RegionListe items={kreise} basis="kreis" />
+      </Block>
     </div>
   );
 }

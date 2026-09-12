@@ -11,6 +11,9 @@ import { jsonLd, nf } from "@/lib/format";
 import { titelVariante, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
 import ZieleListe from "@/components/ZieleListe";
+import Block from "@/components/Block";
+import Faktenkarte from "@/components/Faktenkarte";
+import RegionListe from "@/components/RegionListe";
 import { wegtext } from "@/lib/detailtext";
 
 export const revalidate = 604800;
@@ -70,14 +73,8 @@ export default async function WanderwegSeite({ params }: PageProps<"/wanderweg/[
 
   const laender = [...new Set(plaetze.map((p) => p.bl_name).filter(Boolean))] as string[];
 
-  const merkmale = [
-    t.netz ? NETZ[t.netz] : null,
-    km(t.laenge_km),
-    t.markierung ? `Markierung: ${t.markierung}` : null,
-  ].filter(Boolean) as string[];
-
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
+    <div className="mx-auto max-w-5xl px-4 py-10">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={jsonLd({
@@ -113,101 +110,95 @@ export default async function WanderwegSeite({ params }: PageProps<"/wanderweg/[
         Wanderparkplätze am {t.name}
       </h1>
 
-      {merkmale.length > 0 && (
-        <p className="mt-3 flex flex-wrap gap-x-2 gap-y-1 text-muted">
-          {t.ref && (
-            <span className="rounded border border-line px-1.5 py-0.5 text-sm tabular-nums">
-              {t.ref}
-            </span>
+      {/* Keine Karte: Ein Punktmarker für einen Weg über 180 Kilometer sagt
+          nichts. Die Seitenspalte trägt hier die harten Angaben und die
+          Landkreise, durch die der Weg führt. */}
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
+        <aside className="order-1 space-y-6 lg:order-2">
+          <Faktenkarte
+            titel="Daten zum Weg"
+            eintraege={[
+              ["Einordnung", t.netz ? NETZ[t.netz] : null],
+              ["Länge", km(t.laenge_km)],
+              ["Markierung", t.markierung],
+              ["Kürzel", t.ref],
+              ["Wanderparkplätze", nf.format(t.parkplatz_count)],
+              ["Bundesländer", laender.length ? laender.join(", ") : null],
+            ]}
+          />
+
+          {kreise.length > 0 && (
+            <Block titel="Landkreise am Weg">
+              <RegionListe
+                items={kreise.map((k) => ({
+                  slug: k.slug,
+                  name: k.name,
+                  poi_count: k.poi_count,
+                }))}
+                basis="kreis"
+                spalten={1}
+              />
+            </Block>
           )}
-          <span>{merkmale.join(" · ")}</span>
-        </p>
-      )}
+        </aside>
 
-      <div className="mt-4 space-y-4 text-lg leading-relaxed text-muted">
-        {wegtext(t, plaetze, ziele, orte, laender).map((a) => (
-          <p key={a.slice(0, 40)}>{a}</p>
-        ))}
-      </div>
+        <div className="order-2 space-y-6 lg:order-1">
+          <div className="space-y-4 text-lg leading-relaxed text-muted">
+            {wegtext(t, plaetze, ziele, orte, laender).map((a) => (
+              <p key={a.slice(0, 40)}>{a}</p>
+            ))}
+          </div>
 
-      <section className="mt-10">
-        <h2 className="text-xl font-semibold">Parkplätze am Weg</h2>
-        <div className="mt-4">
-          <ParkplatzListe items={plaetze} />
+          <Block
+            titel="Parkplätze am Weg"
+            fussnote="Sortiert nach Vollständigkeit der Angaben, nicht nach Wegverlauf. Der Verlauf des Weges selbst ist hier nicht abgebildet — maßgeblich ist die Markierung vor Ort."
+          >
+            <ParkplatzListe items={plaetze} />
+          </Block>
+
+          {ziele.length > 0 && (
+            <Block
+              titel="Wanderziele am Weg"
+              fussnote="Luftlinie ab dem nächstgelegenen Parkplatz am Weg, nicht ab dem Wegverlauf."
+            >
+              <ZieleListe items={ziele} />
+            </Block>
+          )}
+
+          {orte.length > 1 && (
+            <Block titel="Orte am Weg">
+              <RegionListe
+                items={orte.map((o) => ({ slug: o.slug, name: o.name, poi_count: o.poi_count }))}
+                basis="ort"
+                spalten={2}
+              />
+            </Block>
+          )}
+
+          {verwandt.length > 0 && (
+            <Block titel="Wege an denselben Parkplätzen">
+              <ul className="divide-y divide-line">
+                {verwandt.map((v) => (
+                  <li key={v.slug} className="py-3">
+                    <Link href={`/wanderweg/${v.slug}`} className="font-medium hover:text-accent">
+                      {v.name}
+                    </Link>
+                    <span className="block text-sm text-muted">
+                      {[
+                        v.netz ? NETZ[v.netz] : null,
+                        km(v.laenge_km),
+                        `${v.parkplatz_count} Parkplätze`,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Block>
+          )}
         </div>
-        <p className="mt-3 text-sm text-muted">
-          Sortiert nach Vollständigkeit der Angaben, nicht nach Wegverlauf. Der Verlauf des
-          Weges selbst ist hier nicht abgebildet — maßgeblich ist die Markierung vor Ort.
-        </p>
-      </section>
-
-      {ziele.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-xl font-semibold">Wanderziele am Weg</h2>
-          <ZieleListe items={ziele} />
-          <p className="mt-3 text-sm text-muted">
-            Luftlinie ab dem nächstgelegenen Parkplatz am Weg, nicht ab dem Wegverlauf.
-          </p>
-        </section>
-      )}
-
-      {orte.length > 1 && (
-        <section className="mt-10">
-          <h2 className="text-xl font-semibold">Orte am Weg</h2>
-          <ul className="mt-4 grid gap-x-6 sm:grid-cols-2">
-            {orte.map((o) => (
-              <li
-                key={o.slug}
-                className="flex items-baseline justify-between gap-2 border-b border-line py-2"
-              >
-                <Link href={`/ort/${o.slug}`} className="truncate hover:text-accent">
-                  {o.name}
-                </Link>
-                <span className="shrink-0 text-sm tabular-nums text-muted">{o.poi_count}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {kreise.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-xl font-semibold">Landkreise am Weg</h2>
-          <ul className="mt-4 grid gap-x-6 sm:grid-cols-2">
-            {kreise.map((k) => (
-              <li
-                key={k.slug}
-                className="flex items-baseline justify-between gap-2 border-b border-line py-2"
-              >
-                <Link href={`/kreis/${k.slug}`} className="truncate hover:text-accent">
-                  {k.name}
-                </Link>
-                <span className="shrink-0 text-sm tabular-nums text-muted">{k.poi_count}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {verwandt.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-xl font-semibold">Wege an denselben Parkplätzen</h2>
-          <ul className="mt-4 divide-y divide-line">
-            {verwandt.map((v) => (
-              <li key={v.slug} className="py-2.5">
-                <Link href={`/wanderweg/${v.slug}`} className="font-medium hover:text-accent">
-                  {v.name}
-                </Link>
-                <span className="block text-sm text-muted">
-                  {[v.netz ? NETZ[v.netz] : null, km(v.laenge_km), `${v.parkplatz_count} Parkplätze`]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      </div>
     </div>
   );
 }

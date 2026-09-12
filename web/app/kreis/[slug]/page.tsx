@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ParkplatzListe from "@/components/ParkplatzListe";
 import RegionListe from "@/components/RegionListe";
+import Faktenkarte from "@/components/Faktenkarte";
 import WegeListe from "@/components/WegeListe";
 import ZieleListe from "@/components/ZieleListe";
 import Umfeld from "@/components/Umfeld";
@@ -56,7 +57,7 @@ export default async function KreisSeite({ params }: PageProps<"/kreis/[slug]">)
   const kostenfrei = plaetze.filter((p) => p.gebuehr === false).length;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
+    <div className="mx-auto max-w-5xl px-4 py-10">
       <Brotkrumen
         pfad={[
           { name: "Startseite", url: "/" },
@@ -92,51 +93,70 @@ export default async function KreisSeite({ params }: PageProps<"/kreis/[slug]">)
         )}
       </div>
 
-      <RegionListe items={orte} basis="ort" titel={`Orte ${kreisDativ(k.name, k.typ)}`} />
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
+        <aside className="order-1 space-y-6 lg:order-2">
+          <Faktenkarte
+            titel={`Daten ${kreisDativ(k.name, k.typ)}`}
+            eintraege={[
+              ["Wanderparkplätze", nf.format(k.poi_count)],
+              ["davon kostenfrei", kostenfrei > 0 ? nf.format(kostenfrei) : null],
+              ["Orte mit Bestand", orte.length ? nf.format(orte.length) : null],
+              ["Markierte Wanderwege", wege.length ? nf.format(wege.length) : null],
+              ["Wanderziele", ziele.length ? nf.format(ziele.length) : null],
+              ["Bundesland", k.bl_name ?? null],
+            ]}
+          />
 
-      {wege.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-xl font-semibold">Wanderwege {kreisDativ(k.name, k.typ)}</h2>
-          <WegeListe items={wege} />
-        </section>
-      )}
+          {nachbarn.length > 0 && (
+            <Block titel={`Weitere Landkreise in ${k.bl_name}`}>
+              <RegionListe items={nachbarn} basis="kreis" spalten={1} />
+            </Block>
+          )}
+        </aside>
 
-      {ziele.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-xl font-semibold">Wanderziele {kreisDativ(k.name, k.typ)}</h2>
-          <ZieleListe items={ziele} />
-          <p className="mt-3 text-sm text-muted">
-            Luftlinie ab dem nächstgelegenen Parkplatz.
-          </p>
-        </section>
-      )}
+        <div className="order-2 space-y-6 lg:order-1">
+          <Block
+            titel={`${plaetze.length >= MAX_LISTE ? "Wanderparkplätze" : "Alle Wanderparkplätze"} ${kreisDativ(k.name, k.typ)}`}
+            einleitung={
+              plaetze.length >= MAX_LISTE
+                ? `Angezeigt werden die ${nf.format(MAX_LISTE)} Plätze mit den vollständigsten Angaben. Die übrigen stehen auf den Ortsseiten.`
+                : undefined
+            }
+          >
+            <ParkplatzListe items={plaetze} />
+          </Block>
 
-      {umfeld.length > 0 && (
-        <Block
-          klasse="mt-10"
-          titel="In Laufweite"
-          fussnote="Luftlinie ab dem nächstgelegenen Parkplatz. Öffnungszeiten und Fahrpläne sind nicht erfasst."
-        >
-          <Umfeld items={umfeld} />
-        </Block>
-      )}
+          {orte.length > 0 && (
+            <Block titel={`Orte ${kreisDativ(k.name, k.typ)}`}>
+              <RegionListe items={orte} basis="ort" spalten={2} />
+            </Block>
+          )}
 
-      <section className="mt-10">
-        <h2 className="text-xl font-semibold">
-          {plaetze.length >= MAX_LISTE ? "Wanderparkplätze" : "Alle Wanderparkplätze"} {kreisDativ(k.name, k.typ)}
-        </h2>
-        {plaetze.length >= MAX_LISTE && (
-          <p className="mt-2 text-sm text-muted">
-            Angezeigt werden die {nf.format(MAX_LISTE)} Plätze mit den vollständigsten
-            Angaben. Die übrigen stehen auf den Ortsseiten weiter oben.
-          </p>
-        )}
-        <div className="mt-4">
-          <ParkplatzListe items={plaetze} />
+          {wege.length > 0 && (
+            <Block titel={`Wanderwege ${kreisDativ(k.name, k.typ)}`}>
+              <WegeListe items={wege} maxSichtbar={10} />
+            </Block>
+          )}
+
+          {ziele.length > 0 && (
+            <Block
+              titel={`Wanderziele ${kreisDativ(k.name, k.typ)}`}
+              fussnote="Luftlinie ab dem nächstgelegenen Parkplatz."
+            >
+              <ZieleListe items={ziele} />
+            </Block>
+          )}
+
+          {umfeld.length > 0 && (
+            <Block
+              titel="In Laufweite"
+              fussnote="Luftlinie ab dem nächstgelegenen Parkplatz. Öffnungszeiten und Fahrpläne sind nicht erfasst."
+            >
+              <Umfeld items={umfeld} />
+            </Block>
+          )}
         </div>
-      </section>
-
-      <RegionListe items={nachbarn} basis="kreis" titel={`Weitere Landkreise in ${k.bl_name}`} />
+      </div>
     </div>
   );
 }

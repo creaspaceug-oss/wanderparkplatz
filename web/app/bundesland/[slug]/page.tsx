@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ParkplatzListe from "@/components/ParkplatzListe";
 import RegionListe from "@/components/RegionListe";
+import Block from "@/components/Block";
 import Brotkrumen from "@/components/Brotkrumen";
 import { parkplaetzeIn, alleSlugs } from "@/lib/db";
 import { bundeslandBySlug, kreiseIn } from "@/lib/queries";
@@ -51,7 +52,9 @@ export default async function BundeslandSeite({ params }: PageProps<"/bundesland
         Plätze mit den vollständigsten Angaben.
       </p>
 
-      <RegionListe items={kreise} basis="kreis" titel={`Landkreise in ${bl.name}`} />
+      <Block klasse="mt-10" titel={`Landkreise in ${bl.name}`}>
+        <RegionListe items={kreise} basis="kreis" />
+      </Block>
 
       <section className="mt-10">
         <h2 className="text-xl font-semibold">
