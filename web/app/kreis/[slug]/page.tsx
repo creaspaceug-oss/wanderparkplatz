@@ -5,6 +5,7 @@ import RegionListe from "@/components/RegionListe";
 import WegeListe from "@/components/WegeListe";
 import ZieleListe from "@/components/ZieleListe";
 import Umfeld from "@/components/Umfeld";
+import Block from "@/components/Block";
 import Brotkrumen from "@/components/Brotkrumen";
 import {
   parkplaetzeIn, alleSlugs, wanderwegeImKreis, zieleImKreis, umfeldImKreis,
@@ -110,7 +111,15 @@ export default async function KreisSeite({ params }: PageProps<"/kreis/[slug]">)
         </section>
       )}
 
-      <Umfeld items={umfeld} />
+      {umfeld.length > 0 && (
+        <Block
+          klasse="mt-10"
+          titel="In Laufweite"
+          fussnote="Luftlinie ab dem nächstgelegenen Parkplatz. Öffnungszeiten und Fahrpläne sind nicht erfasst."
+        >
+          <Umfeld items={umfeld} />
+        </Block>
+      )}
 
       <section className="mt-10">
         <h2 className="text-xl font-semibold">

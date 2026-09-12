@@ -7,23 +7,21 @@ const meter = (m: number) =>
   m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1).replace(".", ",")} km`;
 
 /**
- * Liste von Wanderzielen mit Entfernung. Genutzt von Orts- und Wegseiten.
+ * Wanderziele mit Entfernung.
  *
- * Verlinkt wird nur, wo es eine Seite gibt. Die Entfernung ist Luftlinie ab
- * dem nächstgelegenen Parkplatz — der Hinweis darauf gehört unter die Liste
- * und wird deshalb von der aufrufenden Seite gesetzt.
+ * Die Entfernung steht rechts und rechtsbündig, nicht als führende Spalte:
+ * Gesucht wird nach einem Namen, sortiert wird nach Entfernung. Der Name
+ * gehört deshalb an den Anfang der Zeile, wo der Blick ihn findet.
  */
 export default function ZieleListe({ items }: { items: OrtZiel[] }) {
   if (!items.length) return null;
 
   return (
-    <ul className="mt-4 divide-y divide-line">
+    <ul className="divide-y divide-line">
       {items.map((z) => (
-        <li key={z.slug} className="flex items-baseline gap-3 py-2.5">
-          <span className="w-20 shrink-0 tabular-nums text-sm text-muted">
-            {meter(z.distanz_m)}
-          </span>
-          <span className="min-w-0">
+        <li key={z.slug} className="flex items-start justify-between gap-4 py-3">
+          <div className="min-w-0">
+            {/* Nur verlinken, wo es auch eine Seite gibt. */}
             {z.eigene_seite ? (
               <Link href={`/ziel/${z.slug}`} className="font-medium hover:text-accent">
                 {z.name}
@@ -31,11 +29,15 @@ export default function ZieleListe({ items }: { items: OrtZiel[] }) {
             ) : (
               <span className="font-medium">{z.name}</span>
             )}
-            <span className="block text-sm text-muted">
-              {[zielTitel(z.art), z.hoehe_m ? `${nf.format(z.hoehe_m)} m` : null]
-                .filter(Boolean)
-                .join(" · ")}
-            </span>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
+              <span className="rounded-full border border-line px-2 py-0.5 text-xs">
+                {zielTitel(z.art)}
+              </span>
+              {z.hoehe_m != null && <span>{nf.format(z.hoehe_m)} m</span>}
+            </div>
+          </div>
+          <span className="shrink-0 pt-0.5 text-sm tabular-nums text-muted">
+            {meter(z.distanz_m)}
           </span>
         </li>
       ))}

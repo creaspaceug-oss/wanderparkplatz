@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   parkplatzBySlug, inDerNaehe, alleSlugs, trailsAmPlatz, umfeldAmPlatz, zieleAmPlatz,
-  bildZumPlatz, type TrailAmPlatz,
+  bildZumPlatz,
 } from "@/lib/db";
 import { beschreibung, metaBeschreibung } from "@/lib/beschreibung";
 import { jsonLd, km, gebuehrText } from "@/lib/format";
@@ -11,6 +11,9 @@ import { titelVariante } from "@/lib/meta";
 import CommonsBild from "@/components/CommonsBild";
 import Karte from "@/components/Karte";
 import Merkmale from "@/components/Merkmale";
+import Block from "@/components/Block";
+import WegeListe from "@/components/WegeListe";
+import ZieleListe from "@/components/ZieleListe";
 import { istIndexierbar } from "@/lib/inhalt";
 import { VORRENDERN } from "@/lib/vorrendern";
 import { bewertungenFuer } from "@/lib/bewertung";
@@ -18,16 +21,7 @@ import BewertungFormular from "@/components/BewertungFormular";
 import Bewertungen from "@/components/Bewertungen";
 import Sterne from "@/components/Sterne";
 import Umfeld from "@/components/Umfeld";
-import ZieleAmPlatz from "@/components/ZieleAmPlatz";
 import { SITE } from "@/lib/site";
-
-/** OSM-Netzstufe → Einordnung für Leser. */
-const NETZ: Record<string, string> = {
-  iwn: "internationaler Fernwanderweg",
-  nwn: "nationaler Fernwanderweg",
-  rwn: "regionaler Wanderweg",
-  lwn: "örtlicher Wanderweg",
-};
 
 // Täglich statt wöchentlich: freigegebene Bewertungen sollen zeitnah erscheinen.
 export const revalidate = 86400;
@@ -82,38 +76,6 @@ const jaNein = (v: boolean | null) => (v == null ? null : v ? "ja" : "nein");
 /** Ab hier werden die Wege eingeklappt. */
 const SICHTBARE_WEGE = 10;
 
-function Wegezeile({ t }: { t: TrailAmPlatz }) {
-  return (
-    <li className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-3">
-      <span className="font-medium">
-        {t.ref && (
-          <span className="mr-2 rounded border border-line px-1.5 py-0.5 text-xs tabular-nums text-muted">
-            {t.ref}
-          </span>
-        )}
-        {/* Nur verlinken, wo es auch eine Seite gibt — sonst führte der
-            Verweis ins Leere. */}
-        {t.eigene_seite ? (
-          <Link href={`/wanderweg/${t.slug}`} className="hover:text-accent">
-            {t.name}
-          </Link>
-        ) : (
-          t.name
-        )}
-      </span>
-      <span className="text-sm text-muted">
-        {[
-          NETZ[t.netz ?? ""] ?? null,
-          t.markierung,
-          t.laenge_km ? `${Number(t.laenge_km).toLocaleString("de-DE")} km` : null,
-          t.distanz_m <= 30 ? "direkt am Platz" : `${t.distanz_m} m entfernt`,
-        ]
-          .filter(Boolean)
-          .join(" · ")}
-      </span>
-    </li>
-  );
-}
 
 export default async function Detailseite({ params }: PageProps<"/wanderparkplatz/[slug]">) {
   const { slug } = await params;
@@ -253,7 +215,7 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
           zuerst, weil "wo ist das" und "was kostet das" die Fragen sind, die
           über die Fahrt entscheiden. */}
       <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
-        <aside className="order-1 space-y-6 lg:order-2 lg:sticky lg:top-6">
+        <aside className="order-1 space-y-6 lg:order-2">
           <section className="rounded-xl border border-line bg-card p-5">
             <h2 className="text-lg font-semibold">Anfahrt</h2>
             <Karte lat={p.lat} lon={p.lon} titel={p.name} />
@@ -307,7 +269,7 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
 
         </aside>
 
-        <div className="order-2 space-y-10 lg:order-1">
+        <div className="order-2 space-y-6 lg:order-1">
           {bild && (
             <figure>
               <CommonsBild
@@ -331,78 +293,65 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
             </figure>
           )}
 
-
           <div className="space-y-4 text-lg leading-relaxed">
             {absaetze.map((a) => (
               <p key={a.slice(0, 40)}>{a}</p>
             ))}
           </div>
 
-
           {trails.length > 0 && (
-            <section>
-              <h2 className="text-xl font-semibold">
-                Wanderwege ab diesem Parkplatz
-              </h2>
-              <ul className="mt-4 divide-y divide-line">
-                {trails.slice(0, SICHTBARE_WEGE).map((t) => (
-                  <Wegezeile key={t.slug} t={t} />
-                ))}
-              </ul>
-
-              {/* Manche Plätze liegen an über zwanzig Wegen. Alle untereinander
-                  sind eine Wand aus gleich aussehenden Zeilen; eingeklappt
-                  stehen sie trotzdem im Quelltext und bleiben auffindbar. */}
-              {trails.length > SICHTBARE_WEGE && (
-                <details className="mt-3">
-                  <summary className="cursor-pointer text-sm text-muted hover:text-accent">
-                    {`${trails.length - SICHTBARE_WEGE} weitere Wege anzeigen`}
-                  </summary>
-                  <ul className="mt-2 divide-y divide-line border-t border-line">
-                    {trails.slice(SICHTBARE_WEGE).map((t) => (
-                      <Wegezeile key={t.slug} t={t} />
-                    ))}
-                  </ul>
-                </details>
-              )}
-
-              <p className="mt-3 text-sm text-muted">
-                Wegeverlauf und Markierung stammen aus OpenStreetMap. Vor Ort gilt die
-                Beschilderung.
-              </p>
-            </section>
+            <Block
+              titel="Wanderwege ab diesem Parkplatz"
+              fussnote="Wegeverlauf und Markierung stammen aus OpenStreetMap. Vor Ort gilt die Beschilderung."
+            >
+              <WegeListe items={trails} maxSichtbar={SICHTBARE_WEGE} />
+            </Block>
           )}
 
+          {ziele.length > 0 && (
+            <Block
+              titel="Ziele in Reichweite"
+              fussnote="Luftlinie ab dem Parkplatz. Der Weg dorthin ist je nach Gelände deutlich länger."
+            >
+              <ZieleListe items={ziele} />
+            </Block>
+          )}
 
-          <ZieleAmPlatz items={ziele} />
-
-          <Umfeld items={umfeld} />
-
+          {umfeld.length > 0 && (
+            <Block
+              titel="In Laufweite"
+              fussnote="Luftlinie ab dem Parkplatz. Öffnungszeiten von Gaststätten und Fahrpläne sind nicht erfasst — gerade in Wandergebieten lohnt der Blick vorab."
+            >
+              <Umfeld items={umfeld} />
+            </Block>
+          )}
 
           {nahe.length > 0 && (
-            <section>
-              <h2 className="text-xl font-semibold">Wanderparkplätze in der Nähe</h2>
-              <ul className="mt-4 divide-y divide-line">
+            <Block titel="Wanderparkplätze in der Nähe">
+              <ul className="divide-y divide-line">
                 {nahe.map((n) => (
-                  <li key={n.slug} className="flex items-baseline gap-3 py-2.5">
-                    <span className="w-16 shrink-0 tabular-nums text-sm text-muted">{km(n.km)} km</span>
-                    <span>
-                      <Link href={`/wanderparkplatz/${n.slug}`} className="font-medium hover:text-accent">
+                  <li key={n.slug} className="flex items-start justify-between gap-4 py-3">
+                    <span className="min-w-0">
+                      <Link
+                        href={`/wanderparkplatz/${n.slug}`}
+                        className="font-medium hover:text-accent"
+                      >
                         {n.name}
                       </Link>
                       {n.ort_name && <span className="block text-sm text-muted">{n.ort_name}</span>}
                     </span>
+                    <span className="shrink-0 pt-0.5 text-sm tabular-nums text-muted">
+                      {km(n.km)} km
+                    </span>
                   </li>
                 ))}
               </ul>
-            </section>
+            </Block>
           )}
 
-
-          <section>
-            <h2 className="text-xl font-semibold">Bewertungen</h2>
+          <Block titel="Bewertungen">
             {p.bewertung_anzahl > 0 && schnitt ? (
-              <p className="mt-2 flex items-center gap-2 text-muted">
+              <p className="flex items-center gap-2 text-muted">
                 <Sterne wert={schnitt} groesse="text-lg" />
                 <span>
                   <span className="font-medium text-foreground">
@@ -413,7 +362,7 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
                 </span>
               </p>
             ) : (
-              <p className="mt-2 text-muted">
+              <p className="text-muted">
                 Noch keine Bewertung. Warst du hier? Deine Einschätzung hilft anderen — gerade
                 bei Angaben, die OpenStreetMap nicht führt: Andrang am Wochenende, Zustand der
                 Zufahrt, aktuelle Gebühren.
@@ -425,8 +374,7 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
             <div className="mt-6">
               <BewertungFormular slug={p.slug} />
             </div>
-          </section>
-
+          </Block>
         </div>
       </div>
 

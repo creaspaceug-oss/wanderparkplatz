@@ -10,6 +10,9 @@ import { nf, km } from "@/lib/format";
 import { bildFuer } from "@/lib/bild";
 import CommonsBild from "@/components/CommonsBild";
 import Umfeld from "@/components/Umfeld";
+import Block from "@/components/Block";
+import Karte from "@/components/Karte";
+import Faktenkarte from "@/components/Faktenkarte";
 import WegeListe from "@/components/WegeListe";
 import ZieleListe from "@/components/ZieleListe";
 import { ortstext } from "@/lib/ortstext";
@@ -63,72 +66,102 @@ export default async function OrtSeite({ params }: PageProps<"/ort/[slug]">) {
   if (o.bl_slug) pfad.push({ name: o.bl_name!, url: `/bundesland/${o.bl_slug}` });
   if (o.kreis_slug) pfad.push({ name: o.kreis_name!, url: `/kreis/${o.kreis_slug}` });
 
+  const koord = `${o.lat.toFixed(5)}, ${o.lon.toFixed(5)}`;
+
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
+    <div className="mx-auto max-w-5xl px-4 py-10">
       <Brotkrumen pfad={pfad} aktuell={o.name} />
       <h1 className="mt-3 text-3xl font-bold tracking-tight">Wanderparkplätze in {o.name}</h1>
-      {bild && (
-        <CommonsBild
-          bild={bild}
-          alt={`Ansicht von ${o.name}`}
-          breite={1200}
-          hoehe={675}
-          prioritaet
-          klasse="mt-5"
-        />
-      )}
-      <div className="mt-5 space-y-4 text-lg leading-relaxed text-muted">
-        {ortstext(o, zugeordnet, wege, ziele).map((a) => (
-          <p key={a.slice(0, 40)}>{a}</p>
-        ))}
-      </div>
 
-      <section className="mt-8">
-        <h2 className="text-xl font-semibold">Wanderparkplätze bei {o.name}</h2>
-        <div className="mt-4">
-          <ParkplatzListe items={zugeordnet} />
-        </div>
-      </section>
+      {/* Wie auf den Parkplatzseiten: Lage und harte Zahlen in einer eigenen
+          Spalte, auf dem Handy vor dem Fließtext. */}
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
+        <aside className="order-1 space-y-6 lg:order-2">
+          <section className="rounded-xl border border-line bg-card p-5 sm:p-6">
+            <h2 className="text-lg font-semibold tracking-tight">Lage</h2>
+            <Karte lat={o.lat} lon={o.lon} titel={o.name} hoeheKm={4} />
+            <p className="mt-3 text-sm text-muted">
+              Ortsmitte, <span className="tabular-nums text-foreground">{koord}</span>. Die
+              Parkplätze liegen im Umkreis.
+            </p>
+          </section>
 
-      {wege.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-xl font-semibold">Wanderwege ab {o.name}</h2>
-          <WegeListe items={wege} />
-        </section>
-      )}
+          <Faktenkarte
+            titel={`Daten zu ${o.name}`}
+            eintraege={[
+              ["Wanderparkplätze", nf.format(o.poi_count)],
+              ["Landkreis", o.kreis_name ?? null],
+              ["Bundesland", o.bl_name ?? null],
+              ["Einwohner", o.einwohner ? nf.format(o.einwohner) : null],
+            ]}
+          />
+        </aside>
 
-      {ziele.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-xl font-semibold">Wanderziele in Reichweite</h2>
-          <ZieleListe items={ziele} />
-          <p className="mt-3 text-sm text-muted">
-            Luftlinie ab dem nächstgelegenen Parkplatz.
-          </p>
-        </section>
-      )}
+        <div className="order-2 space-y-6 lg:order-1">
+          {bild && (
+            <CommonsBild bild={bild} alt={`Ansicht von ${o.name}`} breite={1200} hoehe={675} prioritaet />
+          )}
 
-      <Umfeld items={umfeld} />
-
-      {umgebung.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-xl font-semibold">Weitere Ausgangspunkte im Umkreis</h2>
-          <ul className="mt-4 divide-y divide-line">
-            {umgebung.map((p) => (
-              <li key={p.slug} className="flex items-baseline gap-3 py-2.5">
-                <span className="w-16 shrink-0 tabular-nums text-sm text-muted">{km(p.km)} km</span>
-                <span>
-                  <Link href={`/wanderparkplatz/${p.slug}`} className="font-medium hover:text-accent">
-                    {p.name}
-                  </Link>
-                  {p.ort_name && p.ort_name !== o.name && (
-                    <span className="block text-sm text-muted">{p.ort_name}</span>
-                  )}
-                </span>
-              </li>
+          <div className="space-y-4 text-lg leading-relaxed text-muted">
+            {ortstext(o, zugeordnet, wege, ziele).map((a) => (
+              <p key={a.slice(0, 40)}>{a}</p>
             ))}
-          </ul>
-        </section>
-      )}
+          </div>
+
+          <Block titel={`Wanderparkplätze bei ${o.name}`}>
+            <ParkplatzListe items={zugeordnet} />
+          </Block>
+
+          {wege.length > 0 && (
+            <Block titel={`Wanderwege ab ${o.name}`}>
+              <WegeListe items={wege} maxSichtbar={10} />
+            </Block>
+          )}
+
+          {ziele.length > 0 && (
+            <Block
+              titel="Wanderziele in Reichweite"
+              fussnote="Luftlinie ab dem nächstgelegenen Parkplatz."
+            >
+              <ZieleListe items={ziele} />
+            </Block>
+          )}
+
+          {umfeld.length > 0 && (
+            <Block
+              titel="In Laufweite"
+              fussnote="Luftlinie ab dem nächstgelegenen Parkplatz. Öffnungszeiten und Fahrpläne sind nicht erfasst."
+            >
+              <Umfeld items={umfeld} />
+            </Block>
+          )}
+
+          {umgebung.length > 0 && (
+            <Block titel="Weitere Ausgangspunkte im Umkreis">
+              <ul className="divide-y divide-line">
+                {umgebung.map((pl) => (
+                  <li key={pl.slug} className="flex items-start justify-between gap-4 py-3">
+                    <span className="min-w-0">
+                      <Link
+                        href={`/wanderparkplatz/${pl.slug}`}
+                        className="font-medium hover:text-accent"
+                      >
+                        {pl.name}
+                      </Link>
+                      {pl.ort_name && pl.ort_name !== o.name && (
+                        <span className="block text-sm text-muted">{pl.ort_name}</span>
+                      )}
+                    </span>
+                    <span className="shrink-0 pt-0.5 text-sm tabular-nums text-muted">
+                      {km(pl.km)} km
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Block>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

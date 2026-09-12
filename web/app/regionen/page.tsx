@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import Brotkrumen from "@/components/Brotkrumen";
 import RegionKarten from "@/components/RegionKarten";
 import { regionBestaende } from "@/lib/db";

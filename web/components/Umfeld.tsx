@@ -1,12 +1,12 @@
 import type { UmfeldEintrag } from "@/lib/db";
 
-const KATEGORIE: Record<string, { titel: string; leer: string }> = {
-  einkehr: { titel: "Einkehr", leer: "" },
-  oepnv: { titel: "Bus und Bahn", leer: "" },
-  wc: { titel: "Toilette", leer: "" },
-  aussicht: { titel: "Aussichtspunkt", leer: "" },
-  infotafel: { titel: "Infotafel oder Wegweiser", leer: "" },
-  schutzhuette: { titel: "Schutzhütte", leer: "" },
+const KATEGORIE: Record<string, string> = {
+  einkehr: "Einkehr",
+  oepnv: "Bus und Bahn",
+  wc: "Toilette",
+  aussicht: "Aussichtspunkt",
+  infotafel: "Infotafel oder Wegweiser",
+  schutzhuette: "Schutzhütte",
 };
 
 /** Reihenfolge nach Nutzen vor der Wanderung, nicht alphabetisch. */
@@ -14,6 +14,13 @@ const REIHENFOLGE = ["oepnv", "wc", "einkehr", "infotafel", "aussicht", "schutzh
 
 const meter = (m: number) => (m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1).replace(".", ",")} km`);
 
+/**
+ * Was in Laufweite liegt, nach Art gruppiert.
+ *
+ * Je Art ein eigener Kasten statt einer durchlaufenden Definitionsliste: Wer
+ * wissen will, ob es eine Toilette gibt, sucht nach einer Überschrift, nicht
+ * nach einer Zeile in einer langen Aufzählung.
+ */
 export default function Umfeld({ items }: { items: UmfeldEintrag[] }) {
   if (!items.length) return null;
 
@@ -28,32 +35,25 @@ export default function Umfeld({ items }: { items: UmfeldEintrag[] }) {
   if (!gruppen.length) return null;
 
   return (
-    <section className="mt-10">
-      <h2 className="text-xl font-semibold">In Laufweite</h2>
-      <dl className="mt-4 grid gap-x-8 sm:grid-cols-2">
-        {gruppen.map((k) => {
-          const liste = proKategorie.get(k)!;
-          return (
-            <div key={k} className="border-b border-line py-3">
-              <dt className="text-sm text-muted">{KATEGORIE[k]?.titel ?? k}</dt>
-              <dd className="mt-1">
-                {liste.map((e, i) => (
-                  <span key={`${e.name}-${e.distanz_m}-${i}`} className="block">
-                    {e.name ?? <span className="text-muted">ohne Namen erfasst</span>}
-                    <span className="ml-2 text-sm tabular-nums text-muted">
-                      {meter(e.distanz_m)}
-                    </span>
-                  </span>
-                ))}
-              </dd>
-            </div>
-          );
-        })}
-      </dl>
-      <p className="mt-3 text-sm text-muted">
-        Luftlinie ab dem Parkplatz. Öffnungszeiten von Gaststätten und Fahrpläne sind nicht
-        erfasst — gerade in Wandergebieten lohnt der Blick vorab.
-      </p>
-    </section>
+    <div className="grid gap-4 sm:grid-cols-2">
+      {gruppen.map((k) => (
+        <div key={k} className="rounded-lg border border-line p-4">
+          <h3 className="text-sm font-semibold">{KATEGORIE[k] ?? k}</h3>
+          <ul className="mt-2 space-y-1">
+            {proKategorie.get(k)!.map((e, i) => (
+              <li
+                key={`${e.name}-${e.distanz_m}-${i}`}
+                className="flex items-baseline justify-between gap-3 text-sm"
+              >
+                <span className={e.name ? "" : "text-muted"}>
+                  {e.name ?? "ohne Namen erfasst"}
+                </span>
+                <span className="shrink-0 tabular-nums text-muted">{meter(e.distanz_m)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
   );
 }
