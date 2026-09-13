@@ -951,3 +951,117 @@ export const umfeldAmTrail = cache((trailId: number, limit = 14) =>
     [trailId, limit],
   ),
 );
+
+// --------------------------------------------- Auswertung: Anbindung an ÖPNV
+//
+// Grundlage ist parkplatz_nearby mit der Kategorie "oepnv". Erfasst werden
+// dort Haltestellen im Umkreis von 1.000 Metern um den Parkplatz; je Platz
+// zählt die nächstgelegene. Ein LEFT JOIN ist Absicht — Plätze ohne jede
+// Haltestelle sind der halbe Befund und dürfen nicht herausfallen.
+
+const NAECHSTE_HALTESTELLE = `
+  SELECT p.id, p.bundesland_id, p.kreis_id, min(x.distanz_m) AS m
+    FROM parkplatz p
+    LEFT JOIN parkplatz_nearby x ON x.parkplatz_id = p.id AND x.kategorie = 'oepnv'
+   WHERE p.aktiv
+   GROUP BY p.id, p.bundesland_id, p.kreis_id`;
+
+export interface OepnvGesamt {
+  plaetze: number;
+  mit_halt: number;
+  prozent: string;
+  median: number;
+  b300: number;
+  b500: number;
+  mit_bahnhof: number;
+}
+
+export const oepnvGesamt = cache(
+  async (): Promise<OepnvGesamt> =>
+    (
+      await q<OepnvGesamt>(
+        `WITH n AS (${NAECHSTE_HALTESTELLE})
+         SELECT count(*)::int AS plaetze,
+                count(m)::int AS mit_halt,
+                round(100.0 * count(m) / count(*), 1)::text AS prozent,
+                percentile_cont(0.5) WITHIN GROUP (ORDER BY m)::int AS median,
+                count(*) FILTER (WHERE m <= 300)::int AS b300,
+                count(*) FILTER (WHERE m <= 500)::int AS b500,
+                (SELECT count(DISTINCT y.parkplatz_id)::int
+                   FROM parkplatz_nearby y JOIN parkplatz p2 ON p2.id = y.parkplatz_id AND p2.aktiv
+                  WHERE y.kategorie = 'oepnv' AND y.name ILIKE '%bahnhof%') AS mit_bahnhof
+           FROM n`,
+      )
+    )[0],
+);
+
+export interface OepnvRegion {
+  name: string;
+  slug: string;
+  plaetze: number;
+  mit_halt: number;
+  prozent: string;
+  median: number | null;
+}
+
+export const oepnvNachLand = cache(() =>
+  q<OepnvRegion>(
+    `WITH n AS (${NAECHSTE_HALTESTELLE})
+     SELECT b.name, b.slug, count(*)::int AS plaetze, count(n.m)::int AS mit_halt,
+            round(100.0 * count(n.m) / count(*), 1)::text AS prozent,
+            percentile_cont(0.5) WITHIN GROUP (ORDER BY n.m)::int AS median
+       FROM n JOIN bundesland b ON b.id = n.bundesland_id
+      GROUP BY b.name, b.slug
+      ORDER BY count(n.m)::numeric / count(*) DESC, count(*) DESC`,
+  ),
+);
+
+/** Kreise ab einer Mindestzahl — unter fünf Plätzen ist ein Anteil Zufall. */
+export const oepnvNachKreis = cache((mindestens = 5) =>
+  q<OepnvRegion>(
+    `WITH n AS (${NAECHSTE_HALTESTELLE})
+     SELECT k.name, k.slug, count(*)::int AS plaetze, count(n.m)::int AS mit_halt,
+            round(100.0 * count(n.m) / count(*), 1)::text AS prozent,
+            percentile_cont(0.5) WITHIN GROUP (ORDER BY n.m)::int AS median
+       FROM n JOIN kreis k ON k.id = n.kreis_id
+      GROUP BY k.name, k.slug
+     HAVING count(*) >= $1
+      ORDER BY count(n.m)::numeric / count(*) DESC, count(*) DESC`,
+    [mindestens],
+  ),
+);
+
+/** Entfernungen in Körben zu je 200 Metern, für das Säulenbild. */
+export const oepnvVerteilung = cache(() =>
+  q<{ von: number; anzahl: number }>(
+    `WITH n AS (${NAECHSTE_HALTESTELLE})
+     SELECT (floor(m / 200) * 200)::int AS von, count(*)::int AS anzahl
+       FROM n WHERE m IS NOT NULL
+      GROUP BY 1 ORDER BY 1`,
+  ),
+);
+
+export interface OepnvBeispiel {
+  platz: string;
+  slug: string;
+  ort: string | null;
+  land: string;
+  halt: string;
+  distanz_m: number;
+}
+
+/** Plätze, an denen die Haltestelle praktisch danebensteht. */
+export const oepnvBeispiele = cache((limit = 8) =>
+  q<OepnvBeispiel>(
+    `SELECT p.name AS platz, p.slug, o.name AS ort, b.name AS land,
+            x.name AS halt, x.distanz_m
+       FROM parkplatz p
+       JOIN parkplatz_nearby x ON x.parkplatz_id = p.id AND x.kategorie = 'oepnv'
+       LEFT JOIN ort o        ON o.id = p.ort_id
+       JOIN bundesland b      ON b.id = p.bundesland_id
+      WHERE p.aktiv AND x.name IS NOT NULL AND x.distanz_m <= 60 AND p.aussagen >= 5
+      ORDER BY x.distanz_m, p.aussagen DESC
+      LIMIT $1`,
+    [limit],
+  ),
+);
