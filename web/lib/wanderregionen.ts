@@ -12,6 +12,16 @@
 export interface Wanderregion {
   slug: string;
   name: string;
+  /**
+   * Der Name im Dativ, samt Präposition: "in der Fränkischen Schweiz".
+   *
+   * Eine Regel gibt es nicht. Das Genus steckt nicht im Wort ("die Eifel",
+   * aber "der Harz"), und Namen mit Adjektiv werden mitdekliniert
+   * ("im Bayerischen Wald"). Dazu die Alb, auf der man wandert, nicht in
+   * ihr. Deshalb gepflegt statt abgeleitet — und als Pflichtfeld, damit
+   * eine neue Region ohne diese Angabe gar nicht erst übersetzt.
+   */
+  dativ: string;
   lat: number;
   lon: number;
   radiusKm: number;
@@ -30,6 +40,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "schwarzwald",
     name: "Schwarzwald",
+    dativ: "im Schwarzwald",
     lat: 48.2, lon: 8.2, radiusKm: 55,
     laender: ["Baden-Württemberg"],
     kurz: "Größtes zusammenhängendes Mittelgebirge Deutschlands",
@@ -41,6 +52,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "schwaebische-alb",
     name: "Schwäbische Alb",
+    dativ: "auf der Schwäbischen Alb",
     lat: 48.45, lon: 9.35, radiusKm: 50,
     laender: ["Baden-Württemberg"],
     kurz: "Karstlandschaft mit Albtrauf, Höhlen und Burgen",
@@ -52,6 +64,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "harz",
     name: "Harz",
+    dativ: "im Harz",
     lat: 51.75, lon: 10.6, radiusKm: 35,
     laender: ["Niedersachsen", "Sachsen-Anhalt", "Thüringen"],
     kurz: "Nördlichstes Mittelgebirge, geprägt vom Brocken",
@@ -63,6 +76,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "eifel",
     name: "Eifel",
+    dativ: "in der Eifel",
     lat: 50.4, lon: 6.6, radiusKm: 45,
     laender: ["Nordrhein-Westfalen", "Rheinland-Pfalz"],
     kurz: "Vulkanische Mittelgebirgslandschaft mit Maaren",
@@ -74,6 +88,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "sauerland",
     name: "Sauerland",
+    dativ: "im Sauerland",
     lat: 51.2, lon: 8.2, radiusKm: 40,
     laender: ["Nordrhein-Westfalen"],
     kurz: "Waldreiche Höhenzüge mit dichtem Wegenetz",
@@ -85,6 +100,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "bayerischer-wald",
     name: "Bayerischer Wald",
+    dativ: "im Bayerischen Wald",
     lat: 48.95, lon: 13.3, radiusKm: 45,
     laender: ["Bayern"],
     kurz: "Ältester Nationalpark Deutschlands, ausgedehnte Bergwälder",
@@ -96,6 +112,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "allgaeu",
     name: "Allgäu",
+    dativ: "im Allgäu",
     lat: 47.65, lon: 10.3, radiusKm: 40,
     laender: ["Bayern", "Baden-Württemberg"],
     kurz: "Voralpenland und Allgäuer Alpen",
@@ -107,6 +124,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "odenwald",
     name: "Odenwald",
+    dativ: "im Odenwald",
     lat: 49.6, lon: 8.9, radiusKm: 30,
     laender: ["Hessen", "Baden-Württemberg", "Bayern"],
     kurz: "Buntsandstein, Burgen und weiche Höhenzüge",
@@ -118,6 +136,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "taunus",
     name: "Taunus",
+    dativ: "im Taunus",
     lat: 50.2, lon: 8.35, radiusKm: 30,
     laender: ["Hessen", "Rheinland-Pfalz"],
     kurz: "Mittelgebirge vor den Toren von Frankfurt",
@@ -129,6 +148,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "rhoen",
     name: "Rhön",
+    dativ: "in der Rhön",
     lat: 50.5, lon: 10.0, radiusKm: 30,
     laender: ["Hessen", "Bayern", "Thüringen"],
     kurz: "Das „Land der offenen Fernen“",
@@ -140,6 +160,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "fraenkische-schweiz",
     name: "Fränkische Schweiz",
+    dativ: "in der Fränkischen Schweiz",
     lat: 49.8, lon: 11.25, radiusKm: 25,
     laender: ["Bayern"],
     kurz: "Felsentürme, Höhlen und Burgen auf engem Raum",
@@ -151,6 +172,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "erzgebirge",
     name: "Erzgebirge",
+    dativ: "im Erzgebirge",
     lat: 50.6, lon: 13.2, radiusKm: 45,
     laender: ["Sachsen"],
     kurz: "Kammlandschaft mit Bergbaugeschichte",
@@ -162,6 +184,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "saechsische-schweiz",
     name: "Sächsische Schweiz",
+    dativ: "in der Sächsischen Schweiz",
     lat: 50.92, lon: 14.15, radiusKm: 20,
     laender: ["Sachsen"],
     kurz: "Elbsandsteingebirge mit Tafelbergen und Schluchten",
@@ -173,6 +196,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "thueringer-wald",
     name: "Thüringer Wald",
+    dativ: "im Thüringer Wald",
     lat: 50.65, lon: 10.7, radiusKm: 35,
     laender: ["Thüringen"],
     kurz: "Langgestreckter Höhenzug entlang des Rennsteigs",
@@ -184,6 +208,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "pfaelzerwald",
     name: "Pfälzerwald",
+    dativ: "im Pfälzerwald",
     lat: 49.3, lon: 7.85, radiusKm: 35,
     laender: ["Rheinland-Pfalz"],
     kurz: "Größtes zusammenhängendes Waldgebiet Deutschlands",
@@ -195,6 +220,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "hunsrueck",
     name: "Hunsrück",
+    dativ: "im Hunsrück",
     lat: 49.9, lon: 7.2, radiusKm: 35,
     laender: ["Rheinland-Pfalz", "Saarland"],
     kurz: "Ruhige Höhenrücken zwischen Mosel, Saar und Nahe",
@@ -206,6 +232,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "westerwald",
     name: "Westerwald",
+    dativ: "im Westerwald",
     lat: 50.6, lon: 7.85, radiusKm: 30,
     laender: ["Rheinland-Pfalz", "Hessen", "Nordrhein-Westfalen"],
     kurz: "Basaltkuppen, Seenplatte und stille Wälder",
@@ -217,6 +244,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "teutoburger-wald",
     name: "Teutoburger Wald",
+    dativ: "im Teutoburger Wald",
     lat: 52.0, lon: 8.55, radiusKm: 35,
     laender: ["Nordrhein-Westfalen", "Niedersachsen"],
     kurz: "Schmaler Kamm mit Externsteinen und Hermannsdenkmal",
@@ -228,6 +256,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "lueneburger-heide",
     name: "Lüneburger Heide",
+    dativ: "in der Lüneburger Heide",
     lat: 53.15, lon: 10.05, radiusKm: 35,
     laender: ["Niedersachsen"],
     kurz: "Offene Heidelandschaft, flach und weitläufig",
@@ -239,6 +268,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "spessart",
     name: "Spessart",
+    dativ: "im Spessart",
     lat: 50.0, lon: 9.4, radiusKm: 30,
     laender: ["Bayern", "Hessen"],
     kurz: "Ausgedehnte Laubwälder zwischen Main und Kinzig",
@@ -250,6 +280,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "berchtesgadener-land",
     name: "Berchtesgadener Land",
+    dativ: "im Berchtesgadener Land",
     lat: 47.63, lon: 12.95, radiusKm: 20,
     laender: ["Bayern"],
     kurz: "Hochalpine Landschaft um Watzmann und Königssee",
@@ -261,6 +292,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "zugspitzregion",
     name: "Zugspitzregion",
+    dativ: "in der Zugspitzregion",
     lat: 47.5, lon: 11.1, radiusKm: 25,
     laender: ["Bayern"],
     kurz: "Rund um den höchsten Berg Deutschlands",
@@ -272,6 +304,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "chiemgau",
     name: "Chiemgau",
+    dativ: "im Chiemgau",
     lat: 47.8, lon: 12.5, radiusKm: 30,
     laender: ["Bayern"],
     kurz: "Voralpen zwischen Chiemsee und Kaisergebirge",
@@ -283,6 +316,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "bergisches-land",
     name: "Bergisches Land",
+    dativ: "im Bergischen Land",
     lat: 51.05, lon: 7.3, radiusKm: 30,
     laender: ["Nordrhein-Westfalen"],
     kurz: "Talsperren und Höhenrücken östlich von Köln",
@@ -294,6 +328,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "weserbergland",
     name: "Weserbergland",
+    dativ: "im Weserbergland",
     lat: 51.9, lon: 9.4, radiusKm: 40,
     laender: ["Niedersachsen", "Nordrhein-Westfalen", "Hessen"],
     kurz: "Bewaldete Höhenzüge beiderseits der Weser",
@@ -305,6 +340,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "altmuehltal",
     name: "Altmühltal",
+    dativ: "im Altmühltal",
     lat: 48.95, lon: 11.3, radiusKm: 35,
     laender: ["Bayern"],
     kurz: "Jurafelsen und Wacholderheiden entlang der Altmühl",
@@ -316,6 +352,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "kellerwald",
     name: "Kellerwald",
+    dativ: "im Kellerwald",
     lat: 51.15, lon: 9.05, radiusKm: 25,
     laender: ["Hessen"],
     kurz: "Alte Buchenwälder am Edersee",
@@ -327,6 +364,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "fichtelgebirge",
     name: "Fichtelgebirge",
+    dativ: "im Fichtelgebirge",
     lat: 50.0, lon: 11.85, radiusKm: 25,
     laender: ["Bayern"],
     kurz: "Hufeisenförmiges Granitgebirge in Oberfranken",
@@ -338,6 +376,7 @@ export const WANDERREGIONEN: Wanderregion[] = [
   {
     slug: "mecklenburgische-seenplatte",
     name: "Mecklenburgische Seenplatte",
+    dativ: "in der Mecklenburgischen Seenplatte",
     lat: 53.45, lon: 12.85, radiusKm: 45,
     laender: ["Mecklenburg-Vorpommern"],
     kurz: "Größtes zusammenhängendes Seengebiet Deutschlands",

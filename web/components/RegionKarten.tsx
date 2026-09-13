@@ -42,7 +42,7 @@ export default async function RegionKarten({
                   <span className="relative block aspect-[16/10] overflow-hidden bg-line">
                     <Image
                       src={b.url}
-                      alt={`Landschaft im ${r.name}`}
+                      alt={`Landschaft ${r.dativ}`}
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="object-cover transition duration-300 group-hover:scale-105"

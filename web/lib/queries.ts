@@ -5,7 +5,8 @@ export interface RegionZeile {
   slug: string;
   name: string;
   poi_count: number;
-  typ?: string;
+  /** Bei Kreisen die Gattung; in der Datenbank darf sie fehlen. */
+  typ?: string | null;
   bl_name?: string;
   bl_slug?: string;
 }

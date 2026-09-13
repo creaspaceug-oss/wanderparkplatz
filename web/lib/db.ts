@@ -701,21 +701,21 @@ type Bezug = "ort_id" | "kreis_id" | "bundesland_id";
  * anderen Bezug des Parkplatzes. Die Spalte kommt aus dieser Datei, nie von
  * außen; sie wandert deshalb gefahrlos in den Abfragetext.
  */
+const WEGE_SQL = (wo: string, lim: string) => `
+  SELECT t.name, t.slug, t.eigene_seite, t.netz, t.ref, t.markierung, t.laenge_km,
+         min(pt.distanz_m)::int AS distanz_m
+    FROM parkplatz p
+    JOIN parkplatz_trail pt ON pt.parkplatz_id = p.id
+    JOIN trail t            ON t.id = pt.trail_id
+   WHERE ${wo}
+   GROUP BY t.id, t.name, t.slug, t.eigene_seite, t.netz, t.ref, t.markierung, t.laenge_km
+   ORDER BY CASE t.netz WHEN 'iwn' THEN 1 WHEN 'nwn' THEN 2 WHEN 'rwn' THEN 3 ELSE 4 END,
+            min(pt.distanz_m), t.name
+   LIMIT ${lim}`;
+
 const wegeInRegion = (spalte: Bezug) =>
   cache((id: number, limit = 12) =>
-    q<OrtTrail>(
-      `SELECT t.name, t.slug, t.eigene_seite, t.netz, t.ref, t.markierung, t.laenge_km,
-              min(pt.distanz_m)::int AS distanz_m
-         FROM parkplatz p
-         JOIN parkplatz_trail pt ON pt.parkplatz_id = p.id
-         JOIN trail t            ON t.id = pt.trail_id
-        WHERE p.${spalte} = $1 AND p.aktiv
-        GROUP BY t.id, t.name, t.slug, t.eigene_seite, t.netz, t.ref, t.markierung, t.laenge_km
-        ORDER BY CASE t.netz WHEN 'iwn' THEN 1 WHEN 'nwn' THEN 2 WHEN 'rwn' THEN 3 ELSE 4 END,
-                 min(pt.distanz_m), t.name
-        LIMIT $2`,
-      [id, limit],
-    ),
+    q<OrtTrail>(WEGE_SQL(`p.${spalte} = $1 AND p.aktiv`, "$2"), [id, limit]),
   );
 
 export const wanderwegeImOrt = wegeInRegion("ort_id");
@@ -723,20 +723,20 @@ export const wanderwegeImKreis = wegeInRegion("kreis_id");
 export const wanderwegeImLand = wegeInRegion("bundesland_id");
 
 /** Umfeld aller Parkplätze der Region, je Kategorie und Name der nächste Eintrag. */
+// Spalten qualifizieren: parkplatz und parkplatz_nearby haben beide eine
+// Spalte "name".
+const UMFELD_SQL = (wo: string, lim: string) => `
+  SELECT n.kategorie, n.name, min(n.distanz_m)::int AS distanz_m
+    FROM parkplatz p
+    JOIN parkplatz_nearby n ON n.parkplatz_id = p.id
+   WHERE ${wo}
+   GROUP BY n.kategorie, n.name
+   ORDER BY n.kategorie, min(n.distanz_m)
+   LIMIT ${lim}`;
+
 const umfeldInRegion = (spalte: Bezug) =>
   cache((id: number, limit = 14) =>
-    q<UmfeldEintrag>(
-      // Spalten qualifizieren: parkplatz und parkplatz_nearby haben beide
-      // eine Spalte "name".
-      `SELECT n.kategorie, n.name, min(n.distanz_m)::int AS distanz_m
-         FROM parkplatz p
-         JOIN parkplatz_nearby n ON n.parkplatz_id = p.id
-        WHERE p.${spalte} = $1 AND p.aktiv
-        GROUP BY n.kategorie, n.name
-        ORDER BY n.kategorie, min(n.distanz_m)
-        LIMIT $2`,
-      [id, limit],
-    ),
+    q<UmfeldEintrag>(UMFELD_SQL(`p.${spalte} = $1 AND p.aktiv`, "$2"), [id, limit]),
   );
 
 export const umfeldImOrt = umfeldInRegion("ort_id");
@@ -753,31 +753,73 @@ export interface OrtZiel {
 }
 
 /** Wanderziele, die von den Parkplätzen der Region aus erreichbar sind. */
+// Ausgewählt wird nach Bekanntheit, angezeigt nach Entfernung — sonst springt
+// die Liste von 4,9 km zurück auf 297 m, weil erst die bekannten und dann die
+// unbekannten Ziele kämen.
+const ZIELE_SQL = (wo: string, lim: string) => `
+  SELECT name, slug, art, hoehe_m, eigene_seite, distanz_m FROM (
+    SELECT z.name, z.slug, z.art, z.hoehe_m, z.eigene_seite, z.bekannt,
+           min(pz.distanz_m)::int AS distanz_m
+      FROM parkplatz p
+      JOIN parkplatz_ziel pz ON pz.parkplatz_id = p.id
+      JOIN ziel z            ON z.id = pz.ziel_id
+     WHERE ${wo}
+     GROUP BY z.id, z.name, z.slug, z.art, z.hoehe_m, z.eigene_seite, z.bekannt
+     ORDER BY z.bekannt DESC, min(pz.distanz_m)
+     LIMIT ${lim}
+  ) x
+  ORDER BY distanz_m`;
+
 const zieleInRegion = (spalte: Bezug) =>
   cache((id: number, limit = 10) =>
-    q<OrtZiel>(
-      // Ausgewählt wird nach Bekanntheit, angezeigt nach Entfernung — sonst
-      // springt die Liste von 4,9 km zurück auf 297 m, weil erst die bekannten
-      // und dann die unbekannten Ziele kämen.
-      `SELECT name, slug, art, hoehe_m, eigene_seite, distanz_m FROM (
-         SELECT z.name, z.slug, z.art, z.hoehe_m, z.eigene_seite, z.bekannt,
-                min(pz.distanz_m)::int AS distanz_m
-           FROM parkplatz p
-           JOIN parkplatz_ziel pz ON pz.parkplatz_id = p.id
-           JOIN ziel z            ON z.id = pz.ziel_id
-          WHERE p.${spalte} = $1 AND p.aktiv
-          GROUP BY z.id, z.name, z.slug, z.art, z.hoehe_m, z.eigene_seite, z.bekannt
-          ORDER BY z.bekannt DESC, min(pz.distanz_m)
-          LIMIT $2
-       ) x
-       ORDER BY distanz_m`,
-      [id, limit],
-    ),
+    q<OrtZiel>(ZIELE_SQL(`p.${spalte} = $1 AND p.aktiv`, "$2"), [id, limit]),
   );
 
 export const zieleImOrt = zieleInRegion("ort_id");
 export const zieleImKreis = zieleInRegion("kreis_id");
 export const zieleImLand = zieleInRegion("bundesland_id");
+
+/*
+ * Dieselben drei Abfragen für Wanderregionen.
+ *
+ * Eine Region ist keine Verwaltungseinheit, sondern Mittelpunkt und Radius —
+ * es gibt keine Spalte, über die ein Parkplatz ihr zugeordnet wäre. Nur das
+ * WHERE unterscheidet sich, der Rest ist derselbe Abfragetext.
+ */
+export const wanderwegeImUmkreis = cache(
+  (lat: number, lon: number, radiusKm: number, limit = 14) =>
+    q<OrtTrail>(WEGE_SQL(IM_UMKREIS("$1", "$2", "$3"), "$4"), [lat, lon, radiusKm, limit]),
+);
+
+export const zieleImUmkreis = cache(
+  (lat: number, lon: number, radiusKm: number, limit = 12) =>
+    q<OrtZiel>(ZIELE_SQL(IM_UMKREIS("$1", "$2", "$3"), "$4"), [lat, lon, radiusKm, limit]),
+);
+
+export const umfeldImUmkreis = cache(
+  (lat: number, lon: number, radiusKm: number, limit = 14) =>
+    q<UmfeldEintrag>(UMFELD_SQL(IM_UMKREIS("$1", "$2", "$3"), "$4"), [lat, lon, radiusKm, limit]),
+);
+
+/** Die Anbindungszahl einer Wanderregion — wie oepnvFuerRegion, nur geografisch. */
+export const oepnvImUmkreis = cache(
+  async (lat: number, lon: number, radiusKm: number) =>
+    (
+      await q<{ plaetze: number; mit_halt: number; prozent: string; median: number | null }>(
+        `WITH n AS (
+           SELECT p.id, min(x.distanz_m) AS m
+             FROM parkplatz p
+             LEFT JOIN parkplatz_nearby x ON x.parkplatz_id = p.id AND x.kategorie = 'oepnv'
+            WHERE ${IM_UMKREIS("$1", "$2", "$3")}
+            GROUP BY p.id)
+         SELECT count(*)::int AS plaetze, count(m)::int AS mit_halt,
+                round(100.0 * count(m) / NULLIF(count(*), 0), 0)::text AS prozent,
+                percentile_cont(0.5) WITHIN GROUP (ORDER BY m)::int AS median
+           FROM n`,
+        [lat, lon, radiusKm],
+      )
+    )[0],
+);
 
 // ------------------------------ Ziel ↔ Wanderweg, über gemeinsame Parkplätze
 //
