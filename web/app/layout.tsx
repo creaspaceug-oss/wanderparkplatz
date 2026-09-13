@@ -80,6 +80,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               veralten — bitte vor Ort prüfen.
             </p>
             <p className="mt-3 flex gap-4">
+              <Link href="/wandern-ohne-auto" className="hover:text-foreground">
+                Wandern ohne Auto
+              </Link>
               <Link href="/ueber-uns" className="hover:text-foreground">Über uns</Link>
               <Link href="/impressum" className="hover:text-foreground">Impressum</Link>
               <Link href="/datenschutz" className="hover:text-foreground">Datenschutz</Link>

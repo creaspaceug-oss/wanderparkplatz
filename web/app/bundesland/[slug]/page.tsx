@@ -6,11 +6,12 @@ import Block from "@/components/Block";
 import Brotkrumen from "@/components/Brotkrumen";
 import SammlungLd from "@/components/SammlungLd";
 import Faktenkarte from "@/components/Faktenkarte";
+import OhneAuto from "@/components/OhneAuto";
 import WegeListe from "@/components/WegeListe";
 import ZieleListe from "@/components/ZieleListe";
 import Umfeld from "@/components/Umfeld";
 import {
-  parkplaetzeIn, alleSlugs, wanderwegeImLand, zieleImLand, umfeldImLand,
+  parkplaetzeIn, alleSlugs, wanderwegeImLand, zieleImLand, umfeldImLand, oepnvFuerRegion,
 } from "@/lib/db";
 import { bundeslandBySlug, kreiseIn } from "@/lib/queries";
 import { nf } from "@/lib/format";
@@ -43,12 +44,13 @@ export default async function BundeslandSeite({ params }: PageProps<"/bundesland
   const bl = await bundeslandBySlug(slug);
   if (!bl) notFound();
 
-  const [kreise, top, wege, ziele, umfeld] = await Promise.all([
+  const [kreise, top, wege, ziele, umfeld, ohneAuto] = await Promise.all([
     kreiseIn(bl.id),
     parkplaetzeIn("bundesland_id", bl.id, 40),
     wanderwegeImLand(bl.id, 16),
     zieleImLand(bl.id, 12),
     umfeldImLand(bl.id),
+    oepnvFuerRegion("bundesland_id", bl.id),
   ]);
 
   const kostenfrei = top.filter((p) => p.gebuehr === false).length;
@@ -128,6 +130,8 @@ export default async function BundeslandSeite({ params }: PageProps<"/bundesland
               <ZieleListe items={ziele} />
             </Block>
           )}
+
+          <OhneAuto daten={ohneAuto} region={landDativ(bl.name)} />
 
           {umfeld.length > 0 && (
             <Block

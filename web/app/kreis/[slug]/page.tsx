@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import ParkplatzListe from "@/components/ParkplatzListe";
 import RegionListe from "@/components/RegionListe";
 import Faktenkarte from "@/components/Faktenkarte";
+import OhneAuto from "@/components/OhneAuto";
 import WegeListe from "@/components/WegeListe";
 import ZieleListe from "@/components/ZieleListe";
 import Umfeld from "@/components/Umfeld";
@@ -10,7 +11,7 @@ import Block from "@/components/Block";
 import Brotkrumen from "@/components/Brotkrumen";
 import SammlungLd from "@/components/SammlungLd";
 import {
-  parkplaetzeIn, alleSlugs, wanderwegeImKreis, zieleImKreis, umfeldImKreis,
+  parkplaetzeIn, alleSlugs, wanderwegeImKreis, zieleImKreis, umfeldImKreis, oepnvFuerRegion,
 } from "@/lib/db";
 import { kreisBySlug, orteIn, nachbarKreise } from "@/lib/queries";
 import { nf } from "@/lib/format";
@@ -46,13 +47,14 @@ export default async function KreisSeite({ params }: PageProps<"/kreis/[slug]">)
   const k = await kreisBySlug(slug);
   if (!k) notFound();
 
-  const [orte, plaetze, nachbarn, wege, ziele, umfeld] = await Promise.all([
+  const [orte, plaetze, nachbarn, wege, ziele, umfeld, ohneAuto] = await Promise.all([
     orteIn(k.id),
     parkplaetzeIn("kreis_id", k.id, MAX_LISTE),
     nachbarKreise(k.id, k.bundesland_id!, 8),
     wanderwegeImKreis(k.id, 16),
     zieleImKreis(k.id, 12),
     umfeldImKreis(k.id),
+    oepnvFuerRegion("kreis_id", k.id),
   ]);
 
   const kostenfrei = plaetze.filter((p) => p.gebuehr === false).length;
@@ -155,6 +157,8 @@ export default async function KreisSeite({ params }: PageProps<"/kreis/[slug]">)
               <ZieleListe items={ziele} />
             </Block>
           )}
+
+          <OhneAuto daten={ohneAuto} region={kreisDativ(k.name, k.typ)} />
 
           {umfeld.length > 0 && (
             <Block

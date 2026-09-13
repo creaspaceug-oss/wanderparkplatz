@@ -5,6 +5,7 @@ import ParkplatzListe from "@/components/ParkplatzListe";
 import RegionKarten from "@/components/RegionKarten";
 import ParkplatzKarten from "@/components/ParkplatzKarten";
 import { bundeslaender, topKreise, kennzahlen } from "@/lib/queries";
+import { oepnvGesamt } from "@/lib/db";
 import { regionBestaende, groessteParkplaetze, vorzeigeMitBild } from "@/lib/db";
 import { WANDERREGIONEN } from "@/lib/wanderregionen";
 import { jsonLd, nf } from "@/lib/format";
@@ -85,13 +86,14 @@ function Abschnitt({
 }
 
 export default async function Startseite() {
-  const [laender, kreise, zahlen, bestaende, groesste, vorzeige] = await Promise.all([
+  const [laender, kreise, zahlen, bestaende, groesste, vorzeige, oepnv] = await Promise.all([
     bundeslaender(),
     topKreise(18),
     kennzahlen(),
     regionBestaende(WANDERREGIONEN),
     groessteParkplaetze(6),
     vorzeigeMitBild(6, 54),
+    oepnvGesamt(),
   ]);
 
   const proSlug = new Map(bestaende.map((b) => [b.slug, b.n]));
@@ -274,6 +276,33 @@ export default async function Startseite() {
           ))}
         </ul>
       </Abschnitt>
+
+      {/* ------------------------------------------------------------ Auswertung */}
+      <section className="mx-auto max-w-5xl px-4 py-10">
+        <div className="rounded-xl border border-line bg-accent-soft p-6 sm:p-8">
+          <p className="text-sm font-medium uppercase tracking-wide text-muted">
+            Datenauswertung
+          </p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight">
+            Wandern ohne Auto: Wie gut sind Deutschlands Wanderparkplätze an Bus und
+            Bahn angebunden?
+          </h2>
+          <p className="mt-3 max-w-2xl leading-relaxed text-muted">
+            An {nf.format(oepnv.mit_halt)} der {nf.format(oepnv.plaetze)} erfassten
+            Ausgangspunkte liegt eine Haltestelle in Laufweite, im Mittel{" "}
+            {nf.format(oepnv.median)} Meter entfernt. Nur{" "}
+            {((oepnv.mit_bahnhof / oepnv.plaetze) * 100).toFixed(1).replace(".", ",")}{" "}
+            Prozent liegen an einem Bahnhof. Alle Bundesländer und Landkreise im
+            Vergleich, mit Datensatz zum Herunterladen.
+          </p>
+          <Link
+            href="/wandern-ohne-auto"
+            className="mt-5 inline-block rounded-lg border border-accent bg-card px-4 py-2 font-medium hover:border-foreground"
+          >
+            Zur Auswertung
+          </Link>
+        </div>
+      </section>
 
       {/* -------------------------------------------------- Auswertung des Bestands */}
       <Abschnitt

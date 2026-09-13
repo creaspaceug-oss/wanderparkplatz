@@ -1096,3 +1096,29 @@ export const oepnvLuecken = cache((limit = 10) =>
     [limit],
   ),
 );
+
+/**
+ * Die Anbindungszahl einer einzelnen Region.
+ *
+ * Damit trägt jede Kreis- und Bundeslandseite ihren eigenen Wert aus der
+ * Auswertung und verweist von dort darauf — ein Verweis, der etwas sagt,
+ * statt nur zu verlinken.
+ */
+export const oepnvFuerRegion = cache(
+  async (spalte: "kreis_id" | "bundesland_id", id: number) =>
+    (
+      await q<{ plaetze: number; mit_halt: number; prozent: string; median: number | null }>(
+        `WITH n AS (
+           SELECT p.id, min(x.distanz_m) AS m
+             FROM parkplatz p
+             LEFT JOIN parkplatz_nearby x ON x.parkplatz_id = p.id AND x.kategorie = 'oepnv'
+            WHERE p.aktiv AND p.${spalte} = $1
+            GROUP BY p.id)
+         SELECT count(*)::int AS plaetze, count(m)::int AS mit_halt,
+                round(100.0 * count(m) / NULLIF(count(*), 0), 0)::text AS prozent,
+                percentile_cont(0.5) WITHIN GROUP (ORDER BY m)::int AS median
+           FROM n`,
+        [id],
+      )
+    )[0],
+);
