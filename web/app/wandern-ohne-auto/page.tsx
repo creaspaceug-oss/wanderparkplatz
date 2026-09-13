@@ -3,8 +3,10 @@ import Link from "next/link";
 import Brotkrumen from "@/components/Brotkrumen";
 import Block from "@/components/Block";
 import Saeulen from "@/components/Saeulen";
+import Datentabelle from "@/components/Datentabelle";
 import {
   oepnvGesamt, oepnvNachLand, oepnvNachKreis, oepnvVerteilung, oepnvBeispiele,
+  oepnvStadtLand, oepnvLuecken,
 } from "@/lib/db";
 import { jsonLd, nf } from "@/lib/format";
 import { beschreibung } from "@/lib/meta";
@@ -38,55 +40,19 @@ const prozent = (v: string) => `${String(v).replace(".", ",")} %`;
 /** Unter zehn Plätzen ist ein Prozentwert eine Zufallszahl. */
 const DUENN = 10;
 
-function Zeile({ r, basis }: { r: Awaited<ReturnType<typeof oepnvNachLand>>[0]; basis: string }) {
-  const duenn = r.plaetze < DUENN;
-  return (
-    <tr className="border-b border-line">
-      <td className="py-2 pr-3">
-        <Link href={`/${basis}/${r.slug}`} className="hover:text-accent">
-          {r.name}
-        </Link>{" "}
-        {duenn && <span className="ml-2 text-xs text-muted">zu wenige</span>}
-      </td>
-      <td className="py-2 pr-3 text-right tabular-nums">{nf.format(r.plaetze)}</td>
-      <td className="py-2 pr-3 text-right tabular-nums">{nf.format(r.mit_halt)}</td>
-      <td className="py-2 pr-3 text-right tabular-nums font-medium">
-        {duenn ? <span className="text-muted">{prozent(r.prozent)}</span> : prozent(r.prozent)}
-      </td>
-      <td className="py-2 text-right tabular-nums text-muted">{meter(r.median)}</td>
-    </tr>
-  );
-}
-
-function Kopf() {
-  return (
-    <thead>
-      <tr className="border-b-2 border-line text-left text-sm text-muted">
-        <th className="py-2 pr-3 font-medium">Region</th>
-        <th className="py-2 pr-3 text-right font-medium">Plätze</th>
-        <th className="py-2 pr-3 text-right font-medium">mit Haltestelle</th>
-        <th className="py-2 pr-3 text-right font-medium">Anteil</th>
-        <th className="py-2 text-right font-medium">Median</th>
-      </tr>
-    </thead>
-  );
-}
-
 export default async function WandernOhneAuto() {
-  const [g, laender, kreise, verteilung, beispiele] = await Promise.all([
+  const [g, laender, kreise, verteilung, beispiele, stadtLand, luecken] = await Promise.all([
     oepnvGesamt(),
     oepnvNachLand(),
     oepnvNachKreis(5),
     oepnvVerteilung(),
     oepnvBeispiele(8),
+    oepnvStadtLand(),
+    oepnvLuecken(10),
   ]);
 
   const ohne = g.plaetze - g.mit_halt;
   const bahnProzent = ((g.mit_bahnhof / g.plaetze) * 100).toFixed(1).replace(".", ",");
-  const belastbar = kreise.filter((k) => k.plaetze >= DUENN);
-  const besten = belastbar.slice(0, 10);
-  const schlechtesten = [...belastbar].reverse().slice(0, 10);
-
   // Gesucht wird bis 1.000 m, deshalb fällt genau dieser Wert in einen
   // eigenen Korb. Er gehört an das Ende des letzten Bereichs, nicht daneben.
   const koerbe = verteilung
@@ -202,72 +168,89 @@ export default async function WandernOhneAuto() {
         einleitung="Sortiert nach dem Anteil der Wanderparkplätze mit Haltestelle in Laufweite."
         fussnote={`Bundesländer mit weniger als ${DUENN} erfassten Wanderparkplätzen sind gekennzeichnet — dort ist der Anteil eine Zufallszahl. Berlin und Bremen führen keine ausgewiesenen Wanderparkplätze.`}
       >
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <Kopf />
-            <tbody>
-              {laender.map((r) => (
-                <Zeile key={r.slug} r={r} basis="bundesland" />
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Datentabelle
+          zeilen={laender}
+          basis="bundesland"
+          duennAb={DUENN}
+          regionWort="Bundesland"
+        />
       </Block>
 
       <Block
         klasse="mt-6"
-        titel="Die zehn Landkreise mit der besten Anbindung"
-        einleitung={`Nur Kreise mit mindestens ${DUENN} Wanderparkplätzen.`}
+        titel="Stadt und Land"
+        fussnote="Die Zahlen enthalten nur Kreise, denen Wanderparkplätze zugeordnet sind."
       >
-        <div className="overflow-x-auto">
+        <div className="space-y-3 leading-relaxed">
+          <p>
+            Das Gefälle zwischen den Ländern hat eine einfache Ursache. In kreisfreien
+            Städten haben {stadtLand.find((r) => r.art.startsWith("kreisfrei"))?.prozent.replace(".", ",")} Prozent
+            der Wanderparkplätze eine Haltestelle in Laufweite, in Landkreisen{" "}
+            {stadtLand.find((r) => r.art.startsWith("Landkreise"))?.prozent.replace(".", ",")} Prozent.
+            Auch die Entfernung unterscheidet sich deutlich.
+          </p>
+        </div>
+        <div className="mt-4 overflow-x-auto">
           <table className="w-full text-sm">
-            <Kopf />
+            <thead>
+              <tr className="border-b-2 border-line text-left text-sm text-muted">
+                <th className="py-2 pr-3 font-medium">Art</th>
+                <th className="py-2 pr-3 text-right font-medium">Plätze</th>
+                <th className="py-2 pr-3 text-right font-medium">mit Haltestelle</th>
+                <th className="py-2 pr-3 text-right font-medium">Anteil</th>
+                <th className="py-2 text-right font-medium">Median</th>
+              </tr>
+            </thead>
             <tbody>
-              {besten.map((r) => (
-                <Zeile key={r.slug} r={r} basis="kreis" />
+              {stadtLand.map((r) => (
+                <tr key={r.art} className="border-b border-line">
+                  <td className="py-2 pr-3">{r.art}</td>
+                  <td className="py-2 pr-3 text-right tabular-nums">{nf.format(r.plaetze)}</td>
+                  <td className="py-2 pr-3 text-right tabular-nums">{nf.format(r.mit_halt)}</td>
+                  <td className="py-2 pr-3 text-right font-medium tabular-nums">
+                    {prozent(r.prozent)}
+                  </td>
+                  <td className="py-2 text-right tabular-nums text-muted">{meter(r.median)}</td>
+                </tr>
               ))}
             </tbody>
           </table>
         </div>
+        <p className="mt-4 leading-relaxed">
+          Das ist wenig überraschend und trotzdem der Kern des Befunds: Gewandert wird
+          auf dem Land, und dort ist die Anbindung schwächer. Die {nf.format(ohne)}{" "}
+          Wanderparkplätze ohne Haltestelle liegen fast vollständig in Landkreisen.
+        </p>
       </Block>
 
       <Block
         klasse="mt-6"
-        titel="Die zehn Landkreise mit der schwächsten Anbindung"
-        einleitung={`Nur Kreise mit mindestens ${DUENN} Wanderparkplätzen.`}
+        titel="Wo ein Wanderbus am meisten brächte"
+        einleitung="Landkreise mit den meisten Ausgangspunkten ohne jede Haltestelle — absolut gezählt, nicht anteilig."
+        fussnote="Ein Kreis mit vierzig unerschlossenen Plätzen ist für eine Verkehrsplanung interessanter als einer mit dreien bei schlechterer Quote."
       >
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <Kopf />
-            <tbody>
-              {schlechtesten.map((r) => (
-                <Zeile key={r.slug} r={r} basis="kreis" />
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ul className="divide-y divide-line">
+          {luecken.map((l) => (
+            <li key={l.slug} className="flex items-baseline justify-between gap-4 py-2.5">
+              <Link href={`/kreis/${l.slug}`} className="hover:text-accent">
+                {l.name}
+              </Link>{" "}
+              <span className="shrink-0 text-sm tabular-nums text-muted">
+                <span className="font-medium text-foreground">{nf.format(l.ohne_halt)}</span> von{" "}
+                {nf.format(l.plaetze)}
+              </span>
+            </li>
+          ))}
+        </ul>
       </Block>
 
       <Block
         klasse="mt-6"
         titel={`Alle ${nf.format(kreise.length)} Landkreise`}
-        einleitung="Aufgeklappt: jeder Kreis mit mindestens fünf erfassten Wanderparkplätzen."
+        einleitung="Such deinen Kreis oder sortiere nach einer Spalte. Jeder Name führt zu den Wanderparkplätzen dort."
+        fussnote={`Kreise mit weniger als ${DUENN} erfassten Wanderparkplätzen sind gekennzeichnet — dort ist der Anteil eine Zufallszahl. Aufgenommen sind Kreise ab fünf Plätzen.`}
       >
-        <details>
-          <summary className="cursor-pointer text-sm text-muted hover:text-accent">
-            Vollständige Tabelle anzeigen
-          </summary>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-sm">
-              <Kopf />
-              <tbody>
-                {kreise.map((r) => (
-                  <Zeile key={r.slug} r={r} basis="kreis" />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </details>
+        <Datentabelle zeilen={kreise} basis="kreis" duennAb={DUENN} regionWort="Landkreis" />
       </Block>
 
       {beispiele.length > 0 && (

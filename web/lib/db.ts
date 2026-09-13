@@ -1065,3 +1065,34 @@ export const oepnvBeispiele = cache((limit = 8) =>
     [limit],
   ),
 );
+
+/** Kreisfreie Städte gegen Landkreise — die Erklärung hinter dem Gefälle. */
+export const oepnvStadtLand = cache(() =>
+  q<{ art: string; plaetze: number; mit_halt: number; prozent: string; median: number }>(
+    `WITH n AS (${NAECHSTE_HALTESTELLE})
+     SELECT CASE WHEN k.typ = 'Kreisfreie Stadt' THEN 'kreisfreie Städte' ELSE 'Landkreise' END AS art,
+            count(*)::int AS plaetze, count(n.m)::int AS mit_halt,
+            round(100.0 * count(n.m) / count(*), 1)::text AS prozent,
+            percentile_cont(0.5) WITHIN GROUP (ORDER BY n.m)::int AS median
+       FROM n JOIN kreis k ON k.id = n.kreis_id
+      GROUP BY 1 ORDER BY 3 DESC`,
+  ),
+);
+
+/**
+ * Wo die meisten Ausgangspunkte ohne Haltestelle liegen — absolut, nicht
+ * anteilig. Ein Kreis mit 42 unerschlossenen Plätzen ist für eine
+ * Verkehrsplanung interessanter als einer mit drei bei schlechterer Quote.
+ */
+export const oepnvLuecken = cache((limit = 10) =>
+  q<{ name: string; slug: string; plaetze: number; ohne_halt: number }>(
+    `WITH n AS (${NAECHSTE_HALTESTELLE})
+     SELECT k.name, k.slug, count(*)::int AS plaetze,
+            count(*) FILTER (WHERE n.m IS NULL)::int AS ohne_halt
+       FROM n JOIN kreis k ON k.id = n.kreis_id
+      GROUP BY k.name, k.slug
+      ORDER BY count(*) FILTER (WHERE n.m IS NULL) DESC, count(*) DESC
+      LIMIT $1`,
+    [limit],
+  ),
+);
