@@ -49,19 +49,20 @@ export const pool =
 pool.on("error", (err) => console.error("Postgres-Pool:", err.message));
 
 /*
- * Ähnlichkeitsschwelle der Suche. Die Vorgabe von word_similarity ist 0.6 —
- * zu streng für deutsche Ortsnamen mit Umlauten ("abtskuche" statt
- * "abtskueche").
+ * Ähnlichkeitsschwelle der Suche. Die Vorgabe von word_similarity ist 0.6 und
+ * damit zu streng für Eingaben ohne Umlaut: "koeln" findet bei 0.6 noch drei
+ * Einträge, bei 0.42 dreiundvierzig; "schwaebisch" 26 gegenüber 221.
  *
- * Hier stand einmal ein Handler, der den Wert beim Verbindungsaufbau setzte,
- * ohne das Ergebnis abzuwarten. Die erste Abfrage auf einer frischen
- * Verbindung konnte deshalb noch mit 0.6 laufen und weniger finden, und pg
- * warnte bei jedem Seitenaufruf vor zwei gleichzeitigen Abfragen auf einer
- * Verbindung — ab pg 9 ein Fehler. Gesetzt wird der Wert jetzt als Vorgabe
- * der Datenbank, siehe pipeline/sql/011_suchschwelle.sql.
+ * Hier stand als Begründung das Beispiel "abtskuche". Das trägt nicht — der
+ * Wert liegt dort bei 0.615 und damit über beiden Schwellen, der Eintrag wird
+ * also ohnehin gefunden. Die obigen Zahlen sind gemessen.
  *
- * Die Zahl steht damit an zwei Stellen: dort für den Operator <%, hier für
- * den Vergleich des Punktwerts. Wer eine ändert, muss die andere mitziehen.
+ * Sie gilt für den Operator <% in der WHERE-Klausel. Ohne ihn ginge auch der
+ * GIN-Index verloren: word_similarity() ausgeschrieben kostet bei standort
+ * 177 statt 20 Millisekunden, und das ist die Abfrage hinter der
+ * Vervollständigung im Standortfeld.
+ *
+ * Gesetzt wird sie je Verbindung, siehe mitSchwelle() weiter unten.
  */
 export const AEHNLICHKEIT = 0.42;
 if (process.env.NODE_ENV !== "production") globalForPg.pgPool = pool;
@@ -81,6 +82,42 @@ function istVoruebergehend(err: unknown): boolean {
 
 const schlafe = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * Verbindungen, auf denen die Suchschwelle schon gesetzt ist.
+ *
+ * Der Wert gehört zur Verbindung, nicht zur Abfrage. Hier stand dafür ein
+ * Handler auf "connect", der das SET absetzte, ohne es abzuwarten. Die
+ * Reihenfolge stimmte dabei — pg reiht Abfragen einer Verbindung ein, das SET
+ * war zuerst dran —, aber die Bibliothek verwarnt zwei gleichzeitige Aufrufe
+ * seit Version 8 und lehnt sie ab Version 9 ab.
+ *
+ * Als Vorgabe der Datenbank ginge es auch, aber nur mit Rechten, die der
+ * Benutzer im automatischen Lauf nicht hat: ALTER DATABASE scheitert dort mit
+ * 42501. Also einmal je Verbindung, abgewartet, vor der ersten Abfrage.
+ *
+ * Ein WeakSet: Der Pool verwirft eine ausgefallene Verbindung und ersetzt sie.
+ * Die neue steht nicht darin und wird gesetzt, die alte wird eingesammelt.
+ */
+const geeicht = new WeakSet<object>();
+
+async function mitSchwelle(sql: string, params: unknown[]) {
+  const c = await pool.connect();
+  try {
+    if (!geeicht.has(c)) {
+      await c.query(`SET pg_trgm.word_similarity_threshold = ${AEHNLICHKEIT}`);
+      geeicht.add(c);
+    }
+    const res = await c.query(sql, params);
+    c.release();
+    return res;
+  } catch (err) {
+    // Wie pool.query: mit Fehler freigeben, damit eine kaputte Verbindung
+    // verworfen und nicht weitergereicht wird.
+    c.release(err as Error);
+    throw err;
+  }
+}
+
 export async function q<T = Record<string, unknown>>(
   sql: string,
   params: unknown[] = [],
@@ -92,7 +129,7 @@ export async function q<T = Record<string, unknown>>(
 
   for (let i = 1; ; i++) {
     try {
-      const res = await pool.query(sql, params);
+      const res = await mitSchwelle(sql, params);
       return res.rows as T[];
     } catch (err) {
       if (i < versuche && istVoruebergehend(err)) {
