@@ -8,12 +8,12 @@ export interface Datenzeile {
   name: string;
   slug: string;
   plaetze: number;
-  mit_halt: number;
+  mit: number;
   prozent: string;
   median: number | null;
 }
 
-type Spalte = "name" | "plaetze" | "mit_halt" | "prozent" | "median";
+type Spalte = "name" | "plaetze" | "mit" | "prozent" | "median";
 
 /**
  * Außerhalb des Renderkörpers definiert: Eine Komponente, die bei jedem
@@ -71,12 +71,17 @@ export default function Datentabelle({
   basis,
   duennAb = 10,
   regionWort = "Region",
+  mitTitel = "mit Haltestelle",
+  medianTitel = "Median",
 }: {
   zeilen: Datenzeile[];
   basis: "bundesland" | "kreis";
   /** Unter dieser Zahl ist ein Prozentwert nicht belastbar. */
   duennAb?: number;
   regionWort?: string;
+  /** Überschrift der Trefferspalte — je Auswertung eine andere Sache. */
+  mitTitel?: string;
+  medianTitel?: string;
 }) {
   const [suche, setSuche] = useState("");
   const [spalte, setSpalte] = useState<Spalte>("prozent");
@@ -148,10 +153,10 @@ export default function Datentabelle({
                 sortieren={sortieren}
               />
               <Kopfzelle
-                s="mit_halt"
-                text="mit Haltestelle"
+                s="mit"
+                text={mitTitel}
                 rechts
-                aktiv={spalte === "mit_halt"}
+                aktiv={spalte === "mit"}
                 absteigend={absteigend}
                 sortieren={sortieren}
               />
@@ -165,7 +170,7 @@ export default function Datentabelle({
               />
               <Kopfzelle
                 s="median"
-                text="Median"
+                text={medianTitel}
                 rechts
                 aktiv={spalte === "median"}
                 absteigend={absteigend}
@@ -189,7 +194,7 @@ export default function Datentabelle({
                     )}
                   </td>
                   <td className="py-2 pr-3 text-right tabular-nums">{nf.format(z.plaetze)}</td>
-                  <td className="py-2 pr-3 text-right tabular-nums">{nf.format(z.mit_halt)}</td>
+                  <td className="py-2 pr-3 text-right tabular-nums">{nf.format(z.mit)}</td>
                   <td
                     className={`py-2 pr-3 text-right tabular-nums font-medium ${duenn ? "text-muted" : ""}`}
                   >

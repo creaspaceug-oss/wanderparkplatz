@@ -851,14 +851,14 @@ export const umfeldImUmkreis = cache(
 export const oepnvImUmkreis = cache(
   async (lat: number, lon: number, radiusKm: number) =>
     (
-      await q<{ plaetze: number; mit_halt: number; prozent: string; median: number | null }>(
+      await q<{ plaetze: number; mit: number; prozent: string; median: number | null }>(
         `WITH n AS (
            SELECT p.id, min(x.distanz_m) AS m
              FROM parkplatz p
              LEFT JOIN parkplatz_nearby x ON x.parkplatz_id = p.id AND x.kategorie = 'oepnv'
             WHERE ${IM_UMKREIS("$1", "$2", "$3")}
             GROUP BY p.id)
-         SELECT count(*)::int AS plaetze, count(m)::int AS mit_halt,
+         SELECT count(*)::int AS plaetze, count(m)::int AS mit,
                 round(100.0 * count(m) / NULLIF(count(*), 0), 0)::text AS prozent,
                 percentile_cont(0.5) WITHIN GROUP (ORDER BY m)::int AS median
            FROM n`,
@@ -1047,16 +1047,228 @@ export const umfeldAmTrail = cache((trailId: number, limit = 14) =>
 // zählt die nächstgelegene. Ein LEFT JOIN ist Absicht — Plätze ohne jede
 // Haltestelle sind der halbe Befund und dürfen nicht herausfallen.
 
-const NAECHSTE_HALTESTELLE = `
+const NAECHSTES_UMFELD = (kategorie: string) => `
   SELECT p.id, p.bundesland_id, p.kreis_id, min(x.distanz_m) AS m
     FROM parkplatz p
-    LEFT JOIN parkplatz_nearby x ON x.parkplatz_id = p.id AND x.kategorie = 'oepnv'
+    LEFT JOIN parkplatz_nearby x ON x.parkplatz_id = p.id AND x.kategorie = '${kategorie}'
    WHERE p.aktiv
    GROUP BY p.id, p.bundesland_id, p.kreis_id`;
 
+const NAECHSTE_HALTESTELLE = NAECHSTES_UMFELD("oepnv");
+
+// ------------------------------------------------- Toiletten am Parkplatz
+//
+// Dieselbe Mechanik wie oben, andere Kategorie — und ein wichtiger
+// Unterschied im Suchradius: Haltestellen zählen bis 1.000 Meter, Toiletten
+// nur bis 500. Zu einem Klo geht man keinen Kilometer.
+const NAECHSTE_TOILETTE = NAECHSTES_UMFELD("wc");
+
+export interface WcGesamt {
+  plaetze: number;
+  mit: number;
+  prozent: string;
+  median: number;
+  b50: number;
+  b150: number;
+  ohne_alles: number;
+}
+
+export const wcGesamt = cache(
+  async (): Promise<WcGesamt> =>
+    (
+      await q<WcGesamt>(
+        `WITH n AS (${NAECHSTE_TOILETTE})
+         SELECT count(*)::int AS plaetze,
+                count(m)::int AS mit,
+                round(100.0 * count(m) / count(*), 1)::text AS prozent,
+                percentile_cont(0.5) WITHIN GROUP (ORDER BY m)::int AS median,
+                count(*) FILTER (WHERE m <= 50)::int  AS b50,
+                count(*) FILTER (WHERE m <= 150)::int AS b150,
+                -- Weder Toilette noch Gaststätte: der Fall, um den es geht.
+                --
+                -- coalesce ist nötig: Bei einem Platz ganz ohne Umfeldeintrag
+                -- liefert der LEFT JOIN eine Zeile voller NULL, bool_or darüber
+                -- ergibt NULL, und "NOT NULL" ist wieder NULL — der Platz fiele
+                -- aus der Zählung, obwohl er der Musterfall ist.
+                (SELECT count(*)::int FROM (
+                   SELECT p.id
+                     FROM parkplatz p
+                     LEFT JOIN parkplatz_nearby x ON x.parkplatz_id = p.id
+                    WHERE p.aktiv
+                    GROUP BY p.id
+                   HAVING NOT coalesce(bool_or(x.kategorie IN ('wc', 'einkehr')), false)) z
+                ) AS ohne_alles
+           FROM n`,
+      )
+    )[0],
+);
+
+/**
+ * Die Einträge selbst, nicht die Plätze.
+ *
+ * Für die Einordnung der Datenqualität: Ein Eintrag ohne Namen ist ein
+ * gesetzter Punkt und sonst nichts. Der Anteil sagt, wie beiläufig diese
+ * Kategorie kartiert wird — im Text steht das als Einschränkung, und fest
+ * eingetragen veraltete es mit dem nächsten Abgleich.
+ */
+export const wcEintraege = cache(
+  async () =>
+    (
+      await q<{ gesamt: number; ohne_namen: number }>(
+        `SELECT count(*)::int AS gesamt,
+                count(*) FILTER (WHERE x.name IS NULL)::int AS ohne_namen
+           FROM parkplatz_nearby x
+           JOIN parkplatz p ON p.id = x.parkplatz_id AND p.aktiv
+          WHERE x.kategorie = 'wc'`,
+      )
+    )[0],
+);
+
+export interface WcRegion {
+  name: string;
+  slug: string;
+  plaetze: number;
+  mit: number;
+  prozent: string;
+  median: number | null;
+}
+
+const wcNachBezug = (tabelle: "bundesland" | "kreis", spalte: string) =>
+  cache((mindestens = 1) =>
+    q<WcRegion>(
+      `WITH n AS (${NAECHSTE_TOILETTE})
+       SELECT r.name, r.slug, count(*)::int AS plaetze, count(n.m)::int AS mit,
+              round(100.0 * count(n.m) / count(*), 1)::text AS prozent,
+              percentile_cont(0.5) WITHIN GROUP (ORDER BY n.m)::int AS median
+         FROM n JOIN ${tabelle} r ON r.id = n.${spalte}
+        GROUP BY r.name, r.slug
+       HAVING count(*) >= $1
+        ORDER BY count(n.m)::numeric / count(*) DESC, count(*) DESC`,
+      [mindestens],
+    ),
+  );
+
+export const wcNachLand = wcNachBezug("bundesland", "bundesland_id");
+export const wcNachKreis = wcNachBezug("kreis", "kreis_id");
+
+/**
+ * Anteil nach Größe des Platzes.
+ *
+ * Der Kern der Auswertung — und bewusst nur auf Plätzen mit Stellplatzangabe
+ * gerechnet. Das ist zugleich die Gegenprobe: Wer die Stellplätze gezählt
+ * hat, hat den Platz genau angesehen. Der Anstieg über die Größenklassen
+ * lässt sich damit nicht allein als Kartierungsfleiß wegerklären.
+ */
+export const wcNachGroesse = cache(() =>
+  q<{ klasse: string; ab: number; plaetze: number; mit: number; prozent: string }>(
+    `WITH n AS (
+       SELECT p.id, p.stellplaetze, min(x.distanz_m) AS m
+         FROM parkplatz p
+         LEFT JOIN parkplatz_nearby x ON x.parkplatz_id = p.id AND x.kategorie = 'wc'
+        WHERE p.aktiv AND p.stellplaetze IS NOT NULL
+        GROUP BY p.id, p.stellplaetze)
+     SELECT CASE WHEN stellplaetze < 10 THEN 'unter 10'
+                 WHEN stellplaetze < 25 THEN '10 bis 24'
+                 WHEN stellplaetze < 50 THEN '25 bis 49'
+                 WHEN stellplaetze < 100 THEN '50 bis 99'
+                 ELSE '100 und mehr' END AS klasse,
+            min(stellplaetze)::int AS ab,
+            count(*)::int AS plaetze, count(m)::int AS mit,
+            round(100.0 * count(m) / count(*), 1)::text AS prozent
+       FROM n GROUP BY 1 ORDER BY min(stellplaetze)`,
+  ),
+);
+
+/** Anteil mit Toilette, aufgeteilt danach, was sonst in der Nähe liegt. */
+export const wcNachNachbarschaft = cache(() =>
+  q<{ merkmal: string; ohne: string; mit_merkmal: string }>(
+    `WITH f AS (
+       SELECT p.id,
+              bool_or(x.kategorie = 'wc')       AS wc,
+              bool_or(x.kategorie = 'einkehr')  AS einkehr,
+              bool_or(x.kategorie = 'aussicht') AS aussicht
+         FROM parkplatz p
+         LEFT JOIN parkplatz_nearby x ON x.parkplatz_id = p.id
+        WHERE p.aktiv
+        GROUP BY p.id)
+     SELECT 'Gaststätte in der Nähe' AS merkmal,
+            round(100.0 * count(*) FILTER (WHERE wc AND NOT coalesce(einkehr,false))
+                  / NULLIF(count(*) FILTER (WHERE NOT coalesce(einkehr,false)),0), 1)::text AS ohne,
+            round(100.0 * count(*) FILTER (WHERE wc AND einkehr)
+                  / NULLIF(count(*) FILTER (WHERE einkehr),0), 1)::text AS mit_merkmal
+       FROM f
+     UNION ALL
+     SELECT 'Aussichtspunkt in der Nähe',
+            round(100.0 * count(*) FILTER (WHERE wc AND NOT coalesce(aussicht,false))
+                  / NULLIF(count(*) FILTER (WHERE NOT coalesce(aussicht,false)),0), 1)::text,
+            round(100.0 * count(*) FILTER (WHERE wc AND aussicht)
+                  / NULLIF(count(*) FILTER (WHERE aussicht),0), 1)::text
+       FROM f`,
+  ),
+);
+
+export interface WcPlatz {
+  name: string;
+  slug: string;
+  kreis: string;
+  kreis_slug: string;
+  land: string;
+  distanz_m: number;
+  stellplaetze: number | null;
+}
+
+/** Alle Plätze mit Toilette — die eigentlich brauchbare Liste. */
+export const wcPlaetze = cache(() =>
+  q<WcPlatz>(
+    `SELECT p.name, p.slug, k.name AS kreis, k.slug AS kreis_slug,
+            b.name AS land, min(x.distanz_m)::int AS distanz_m, p.stellplaetze
+       FROM parkplatz p
+       JOIN parkplatz_nearby x ON x.parkplatz_id = p.id AND x.kategorie = 'wc'
+       LEFT JOIN kreis k      ON k.id = p.kreis_id
+       LEFT JOIN bundesland b ON b.id = p.bundesland_id
+      WHERE p.aktiv AND p.name IS NOT NULL
+      GROUP BY p.id, p.name, p.slug, k.name, k.slug, b.name, p.stellplaetze
+      ORDER BY k.name, p.name`,
+  ),
+);
+
+/** Kreise mit den meisten Plätzen ohne Toilette — absolut, nicht anteilig. */
+export const wcLuecken = cache((limit = 10) =>
+  q<{ name: string; slug: string; plaetze: number; ohne: number }>(
+    `WITH n AS (${NAECHSTE_TOILETTE})
+     SELECT k.name, k.slug, count(*)::int AS plaetze,
+            count(*) FILTER (WHERE n.m IS NULL)::int AS ohne
+       FROM n JOIN kreis k ON k.id = n.kreis_id
+      GROUP BY k.name, k.slug
+      ORDER BY count(*) FILTER (WHERE n.m IS NULL) DESC
+      LIMIT $1`,
+    [limit],
+  ),
+);
+
+/** Die Zahl einer einzelnen Region, für den Hinweis auf Kreis- und Landseiten. */
+export const wcFuerRegion = cache(
+  async (spalte: "kreis_id" | "bundesland_id", id: number) =>
+    (
+      await q<{ plaetze: number; mit: number; prozent: string; median: number | null }>(
+        `WITH n AS (
+           SELECT p.id, min(x.distanz_m) AS m
+             FROM parkplatz p
+             LEFT JOIN parkplatz_nearby x ON x.parkplatz_id = p.id AND x.kategorie = 'wc'
+            WHERE p.aktiv AND p.${spalte} = $1
+            GROUP BY p.id)
+         SELECT count(*)::int AS plaetze, count(m)::int AS mit,
+                round(100.0 * count(m) / NULLIF(count(*), 0), 0)::text AS prozent,
+                percentile_cont(0.5) WITHIN GROUP (ORDER BY m)::int AS median
+           FROM n`,
+        [id],
+      )
+    )[0],
+);
+
 export interface OepnvGesamt {
   plaetze: number;
-  mit_halt: number;
+  mit: number;
   prozent: string;
   median: number;
   b300: number;
@@ -1070,7 +1282,7 @@ export const oepnvGesamt = cache(
       await q<OepnvGesamt>(
         `WITH n AS (${NAECHSTE_HALTESTELLE})
          SELECT count(*)::int AS plaetze,
-                count(m)::int AS mit_halt,
+                count(m)::int AS mit,
                 round(100.0 * count(m) / count(*), 1)::text AS prozent,
                 percentile_cont(0.5) WITHIN GROUP (ORDER BY m)::int AS median,
                 count(*) FILTER (WHERE m <= 300)::int AS b300,
@@ -1087,7 +1299,7 @@ export interface OepnvRegion {
   name: string;
   slug: string;
   plaetze: number;
-  mit_halt: number;
+  mit: number;
   prozent: string;
   median: number | null;
 }
@@ -1095,7 +1307,7 @@ export interface OepnvRegion {
 export const oepnvNachLand = cache(() =>
   q<OepnvRegion>(
     `WITH n AS (${NAECHSTE_HALTESTELLE})
-     SELECT b.name, b.slug, count(*)::int AS plaetze, count(n.m)::int AS mit_halt,
+     SELECT b.name, b.slug, count(*)::int AS plaetze, count(n.m)::int AS mit,
             round(100.0 * count(n.m) / count(*), 1)::text AS prozent,
             percentile_cont(0.5) WITHIN GROUP (ORDER BY n.m)::int AS median
        FROM n JOIN bundesland b ON b.id = n.bundesland_id
@@ -1108,7 +1320,7 @@ export const oepnvNachLand = cache(() =>
 export const oepnvNachKreis = cache((mindestens = 5) =>
   q<OepnvRegion>(
     `WITH n AS (${NAECHSTE_HALTESTELLE})
-     SELECT k.name, k.slug, count(*)::int AS plaetze, count(n.m)::int AS mit_halt,
+     SELECT k.name, k.slug, count(*)::int AS plaetze, count(n.m)::int AS mit,
             round(100.0 * count(n.m) / count(*), 1)::text AS prozent,
             percentile_cont(0.5) WITHIN GROUP (ORDER BY n.m)::int AS median
        FROM n JOIN kreis k ON k.id = n.kreis_id
@@ -1156,10 +1368,10 @@ export const oepnvBeispiele = cache((limit = 8) =>
 
 /** Kreisfreie Städte gegen Landkreise — die Erklärung hinter dem Gefälle. */
 export const oepnvStadtLand = cache(() =>
-  q<{ art: string; plaetze: number; mit_halt: number; prozent: string; median: number }>(
+  q<{ art: string; plaetze: number; mit: number; prozent: string; median: number }>(
     `WITH n AS (${NAECHSTE_HALTESTELLE})
      SELECT CASE WHEN k.typ = 'Kreisfreie Stadt' THEN 'kreisfreie Städte' ELSE 'Landkreise' END AS art,
-            count(*)::int AS plaetze, count(n.m)::int AS mit_halt,
+            count(*)::int AS plaetze, count(n.m)::int AS mit,
             round(100.0 * count(n.m) / count(*), 1)::text AS prozent,
             percentile_cont(0.5) WITHIN GROUP (ORDER BY n.m)::int AS median
        FROM n JOIN kreis k ON k.id = n.kreis_id
@@ -1195,14 +1407,14 @@ export const oepnvLuecken = cache((limit = 10) =>
 export const oepnvFuerRegion = cache(
   async (spalte: "kreis_id" | "bundesland_id", id: number) =>
     (
-      await q<{ plaetze: number; mit_halt: number; prozent: string; median: number | null }>(
+      await q<{ plaetze: number; mit: number; prozent: string; median: number | null }>(
         `WITH n AS (
            SELECT p.id, min(x.distanz_m) AS m
              FROM parkplatz p
              LEFT JOIN parkplatz_nearby x ON x.parkplatz_id = p.id AND x.kategorie = 'oepnv'
             WHERE p.aktiv AND p.${spalte} = $1
             GROUP BY p.id)
-         SELECT count(*)::int AS plaetze, count(m)::int AS mit_halt,
+         SELECT count(*)::int AS plaetze, count(m)::int AS mit,
                 round(100.0 * count(m) / NULLIF(count(*), 0), 0)::text AS prozent,
                 percentile_cont(0.5) WITHIN GROUP (ORDER BY m)::int AS median
            FROM n`,

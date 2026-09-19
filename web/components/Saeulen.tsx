@@ -14,13 +14,27 @@ import { nf } from "@/lib/format";
 export default function Saeulen({
   daten,
   einheit = "",
+  nachkomma,
 }: {
   daten: { beschriftung: string; wert: number }[];
   einheit?: string;
+  /**
+   * Feste Nachkommastellen für die Werte über den Säulen. Ohne diese Angabe
+   * kürzt die Zahlformatierung "10,0" zu "10" — neben "6,1" und "22,5" sieht
+   * das nach Versehen aus.
+   */
+  nachkomma?: number;
 }) {
   if (!daten.length) return null;
 
   const hoechster = Math.max(...daten.map((d) => d.wert));
+  const zahl = (v: number) =>
+    nachkomma == null
+      ? nf.format(v)
+      : v.toLocaleString("de-DE", {
+          minimumFractionDigits: nachkomma,
+          maximumFractionDigits: nachkomma,
+        });
   const B = 100; // Breite je Säule im Koordinatensystem
   const H = 220; // Höhe der Zeichenfläche
   const breite = daten.length * B;
@@ -31,7 +45,7 @@ export default function Saeulen({
         viewBox={`0 0 ${breite} ${H + 56}`}
         className="w-full"
         role="img"
-        aria-label={`Säulenbild: ${daten.map((d) => `${d.beschriftung} ${nf.format(d.wert)}`).join(", ")}`}
+        aria-label={`Säulenbild: ${daten.map((d) => `${d.beschriftung} ${zahl(d.wert)}`).join(", ")}`}
       >
         {daten.map((d, i) => {
           const h = Math.round((d.wert / hoechster) * H);
@@ -52,7 +66,7 @@ export default function Saeulen({
                 textAnchor="middle"
                 className="fill-[var(--foreground)] text-[13px] font-medium"
               >
-                {nf.format(d.wert)}
+                {zahl(d.wert)}
               </text>
               <text
                 x={x + B / 2}

@@ -16,17 +16,17 @@ export default function OhneAuto({
   daten,
   region,
 }: {
-  daten: { plaetze: number; mit_halt: number; prozent: string; median: number | null };
+  daten: { plaetze: number; mit: number; prozent: string; median: number | null };
   /** Wie die Region im Satz steht, etwa "im Landkreis Reutlingen". */
   region: string;
 }) {
-  if (!daten || daten.plaetze < 10 || daten.mit_halt === 0) return null;
+  if (!daten || daten.plaetze < 10 || daten.mit === 0) return null;
 
   return (
     <section className="rounded-xl border border-line bg-accent-soft p-5 sm:p-6">
       <h2 className="text-lg font-semibold tracking-tight">Hinkommen ohne Auto</h2>
       <p className="mt-2 leading-relaxed">
-        {`An ${nf.format(daten.mit_halt)} der ${nf.format(daten.plaetze)} Wanderparkplätze ${region} liegt eine Haltestelle in Laufweite, das sind ${daten.prozent} Prozent.` +
+        {`An ${nf.format(daten.mit)} der ${nf.format(daten.plaetze)} Wanderparkplätze ${region} liegt eine Haltestelle in Laufweite, das sind ${daten.prozent} Prozent.` +
           (daten.median != null
             ? ` Im Mittel sind es ${nf.format(daten.median)} Meter bis dorthin.`
             : "")}

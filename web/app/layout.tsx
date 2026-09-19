@@ -79,9 +79,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               , lizenziert unter ODbL. Angaben zu Gebühren, Kapazität und Zufahrt können
               veralten — bitte vor Ort prüfen.
             </p>
-            <p className="mt-3 flex gap-4">
+            <p className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
               <Link href="/wandern-ohne-auto" className="hover:text-foreground">
                 Wandern ohne Auto
+              </Link>
+              <Link href="/toilette-am-wanderparkplatz" className="hover:text-foreground">
+                Toiletten
               </Link>
               <Link href="/ueber-uns" className="hover:text-foreground">Über uns</Link>
               <Link href="/impressum" className="hover:text-foreground">Impressum</Link>

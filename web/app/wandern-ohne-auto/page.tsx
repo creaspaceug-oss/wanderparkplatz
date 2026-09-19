@@ -51,7 +51,7 @@ export default async function WandernOhneAuto() {
     oepnvLuecken(10),
   ]);
 
-  const ohne = g.plaetze - g.mit_halt;
+  const ohne = g.plaetze - g.mit;
   const bahnProzent = ((g.mit_bahnhof / g.plaetze) * 100).toFixed(1).replace(".", ",");
   // Gesucht wird bis 1.000 m, deshalb fällt genau dieser Wert in einen
   // eigenen Korb. Er gehört an das Ende des letzten Bereichs, nicht daneben.
@@ -122,7 +122,7 @@ export default async function WandernOhneAuto() {
       <div className="mt-8 space-y-4 text-lg leading-relaxed">
         <p>
           Wandern gilt als Freizeitvergnügen, das ein Auto voraussetzt. Die Daten
-          widersprechen dem: An {nf.format(g.mit_halt)} der {nf.format(g.plaetze)} in
+          widersprechen dem: An {nf.format(g.mit)} der {nf.format(g.plaetze)} in
           OpenStreetMap ausgewiesenen Wanderparkplätze liegt eine Haltestelle des
           öffentlichen Nahverkehrs innerhalb von tausend Metern. Das sind{" "}
           {prozent(g.prozent)}.
@@ -143,7 +143,7 @@ export default async function WandernOhneAuto() {
       <Block
         klasse="mt-10"
         titel="Wie weit ist es zur Haltestelle?"
-        einleitung={`Entfernung vom Wanderparkplatz zur nächstgelegenen Haltestelle, in Metern. Nur die ${nf.format(g.mit_halt)} Plätze, die überhaupt eine haben.`}
+        einleitung={`Entfernung vom Wanderparkplatz zur nächstgelegenen Haltestelle, in Metern. Nur die ${nf.format(g.mit)} Plätze, die überhaupt eine haben.`}
       >
         <Saeulen daten={koerbe} einheit="Anzahl der Wanderparkplätze je Entfernungsbereich" />
       </Block>
@@ -206,7 +206,7 @@ export default async function WandernOhneAuto() {
                 <tr key={r.art} className="border-b border-line">
                   <td className="py-2 pr-3">{r.art}</td>
                   <td className="py-2 pr-3 text-right tabular-nums">{nf.format(r.plaetze)}</td>
-                  <td className="py-2 pr-3 text-right tabular-nums">{nf.format(r.mit_halt)}</td>
+                  <td className="py-2 pr-3 text-right tabular-nums">{nf.format(r.mit)}</td>
                   <td className="py-2 pr-3 text-right font-medium tabular-nums">
                     {prozent(r.prozent)}
                   </td>
@@ -311,6 +311,14 @@ export default async function WandernOhneAuto() {
             unterschiedlich vollständig. Ein niedriger Anteil kann bedeuten, dass es
             keine Haltestellen gibt — oder dass sie niemand eingetragen hat. Stand der
             Auswertung: {STAND}.
+          </p>
+          <p>
+            Verwandte Auswertung:{" "}
+            <Link href="/toilette-am-wanderparkplatz" className="underline hover:text-accent">
+              Toiletten am Wanderparkplatz
+            </Link>
+            , dieselben Ausgangspunkte, andere Frage — und mit einer deutlich
+            lückenhafteren Datenlage, was dort auch so dasteht.
           </p>
         </div>
       </Block>

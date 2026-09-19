@@ -288,7 +288,7 @@ export default async function Startseite() {
             Bahn angebunden?
           </h2>
           <p className="mt-3 max-w-2xl leading-relaxed text-muted">
-            An {nf.format(oepnv.mit_halt)} der {nf.format(oepnv.plaetze)} erfassten
+            An {nf.format(oepnv.mit)} der {nf.format(oepnv.plaetze)} erfassten
             Ausgangspunkte liegt eine Haltestelle in Laufweite, im Mittel{" "}
             {nf.format(oepnv.median)} Meter entfernt. Nur{" "}
             {((oepnv.mit_bahnhof / oepnv.plaetze) * 100).toFixed(1).replace(".", ",")}{" "}

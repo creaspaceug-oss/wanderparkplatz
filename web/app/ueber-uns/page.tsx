@@ -104,10 +104,12 @@ export default async function UeberUns() {
           Danach wird verknüpft, und zwar nach festen Entfernungen. Ein Wanderweg gilt als Weg
           ab diesem Platz, wenn er höchstens 200 Meter entfernt vorbeiführt. Bei Wanderzielen
           hängt die Grenze von der Art ab: fünf Kilometer bei Gipfeln, drei bei Burgen,
-          Wasserfällen, Höhlen und Aussichtstürmen, zweieinhalb bei Aussichtspunkten. Einkehr,
-          Toiletten, Schutzhütten und Haltestellen werden im Umkreis von anderthalb Kilometern
-          berücksichtigt. Alle Entfernungen sind Luftlinie, der tatsächliche Weg ist je nach
-          Gelände deutlich länger.
+          Wasserfällen, Höhlen und Aussichtstürmen, zweieinhalb bei Aussichtspunkten. Beim
+          Umfeld ebenso: Schutzhütten und Aussichtspunkte bis anderthalb Kilometer, eine
+          Gaststätte bis zwölfhundert Meter, eine Haltestelle bis tausend, eine Toilette bis
+          fünfhundert — dorthin geht man keinen Kilometer. Eine Infotafel muss innerhalb von
+          dreihundert Metern stehen, um überhaupt erwähnenswert zu sein. Alle Entfernungen
+          sind Luftlinie, der tatsächliche Weg ist je nach Gelände deutlich länger.
         </p>
       </Abschnitt>
 
