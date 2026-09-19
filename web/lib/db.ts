@@ -1207,30 +1207,57 @@ export const wcNachNachbarschaft = cache(() =>
   ),
 );
 
-export interface WcPlatz {
+export interface UmfeldPlatz {
   name: string;
   slug: string;
   kreis: string;
   kreis_slug: string;
   land: string;
   distanz_m: number;
-  stellplaetze: number | null;
+  /** Name des Eintrags, zu dem die Entfernung gilt — bei Toiletten meist leer. */
+  zusatz: string | null;
 }
 
-/** Alle Plätze mit Toilette — die eigentlich brauchbare Liste. */
-export const wcPlaetze = cache(() =>
-  q<WcPlatz>(
-    `SELECT p.name, p.slug, k.name AS kreis, k.slug AS kreis_slug,
-            b.name AS land, min(x.distanz_m)::int AS distanz_m, p.stellplaetze
-       FROM parkplatz p
-       JOIN parkplatz_nearby x ON x.parkplatz_id = p.id AND x.kategorie = 'wc'
-       LEFT JOIN kreis k      ON k.id = p.kreis_id
-       LEFT JOIN bundesland b ON b.id = p.bundesland_id
-      WHERE p.aktiv AND p.name IS NOT NULL
-      GROUP BY p.id, p.name, p.slug, k.name, k.slug, b.name, p.stellplaetze
-      ORDER BY k.name, p.name`,
-  ),
-);
+/**
+ * Plätze mit einem Eintrag dieser Kategorie in Reichweite — die eigentlich
+ * brauchbare Liste.
+ *
+ * Je Platz der nächstgelegene Eintrag, samt dessen Namen: Bei Haltestellen
+ * ist der fast immer gesetzt und die eigentliche Auskunft ("Forbach Bahnhof,
+ * 40 m"), bei Toiletten fast nie. DISTINCT ON statt GROUP BY, weil der Name
+ * aus derselben Zeile kommen muss wie das Minimum — ein min() über die
+ * Entfernung und ein beliebiger Name daneben wären nicht zwingend derselbe
+ * Eintrag.
+ */
+const plaetzeMitUmfeld = (kategorie: string) =>
+  cache((maxM = 100000) =>
+    q<UmfeldPlatz>(
+      `SELECT * FROM (
+         SELECT DISTINCT ON (p.id)
+                p.name, p.slug, k.name AS kreis, k.slug AS kreis_slug,
+                b.name AS land, x.distanz_m, x.name AS zusatz
+           FROM parkplatz p
+           JOIN parkplatz_nearby x ON x.parkplatz_id = p.id AND x.kategorie = '${kategorie}'
+           LEFT JOIN kreis k      ON k.id = p.kreis_id
+           LEFT JOIN bundesland b ON b.id = p.bundesland_id
+          WHERE p.aktiv AND p.name IS NOT NULL AND x.distanz_m <= $1
+          ORDER BY p.id, x.distanz_m
+       ) z
+       ORDER BY kreis, name`,
+      [maxM],
+    ),
+  );
+
+export const wcPlaetze = plaetzeMitUmfeld("wc");
+
+/**
+ * Plätze, an denen die Haltestelle praktisch danebensteht.
+ *
+ * Das Gegenstück zur Toilettenliste: Der Gesamtanteil beantwortet eine Frage
+ * über Deutschland, diese Liste die Frage, mit der die meisten ankommen —
+ * wohin komme ich ohne Auto, ohne einen Fußmarsch einzuplanen.
+ */
+export const oepnvNahePlaetze = plaetzeMitUmfeld("oepnv");
 
 /** Kreise mit den meisten Plätzen ohne Toilette — absolut, nicht anteilig. */
 export const wcLuecken = cache((limit = 10) =>

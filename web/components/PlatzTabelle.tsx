@@ -11,10 +11,11 @@ export interface PlatzZeile {
   kreis_slug: string;
   land: string;
   distanz_m: number;
-  stellplaetze: number | null;
+  /** Der Eintrag, zu dem die Entfernung gilt — bei Haltestellen ihr Name. */
+  zusatz: string | null;
 }
 
-type Spalte = "name" | "kreis" | "land" | "distanz_m";
+type Spalte = "name" | "kreis" | "land" | "distanz_m" | "zusatz";
 
 /**
  * Außerhalb des Renderkörpers: Eine Komponente, die bei jedem Durchlauf neu
@@ -56,18 +57,30 @@ function Kopfzelle({
 }
 
 /**
- * Die Liste der Plätze mit Toilette, durchsuchbar.
+ * Durchsuchbare Liste von Wanderparkplätzen mit einer Entfernungsangabe.
  *
- * Der Grund für diese Tabelle ist schlichter Gebrauchswert: Wer wissen will,
- * ob am Ausgangspunkt seiner Tour ein Klo steht, sucht nach dem Ort oder dem
- * Landkreis und hat die Antwort. Die Auswertung darüber beantwortet eine
- * andere Frage als die, mit der die meisten hier ankommen.
+ * Der Grund für diese Tabelle ist schlichter Gebrauchswert. Eine Auswertung
+ * beantwortet eine Frage über Deutschland; wer hier ankommt, hat meist eine
+ * über den eigenen Landkreis. Ob am Ausgangspunkt ein Klo steht oder ein Bus
+ * hält, findet man mit drei Buchstaben im Suchfeld.
  *
  * Die Zeilen kommen fertig vom Server und stehen vollständig im Quelltext.
  * Suchen und Sortieren ordnen nur um, was ohnehin da ist — ohne JavaScript
  * bleibt die Liste lesbar, nur eben unsortierbar.
  */
-export default function PlatzTabelle({ zeilen }: { zeilen: PlatzZeile[] }) {
+export default function PlatzTabelle({
+  zeilen,
+  zusatzTitel,
+  platzhalter = "Platz, Landkreis oder Bundesland …",
+}: {
+  zeilen: PlatzZeile[];
+  /**
+   * Überschrift der Zusatzspalte. Ohne Angabe entfällt die Spalte — bei
+   * Toiletten steht dort fast nie etwas, bei Haltestellen fast immer.
+   */
+  zusatzTitel?: string;
+  platzhalter?: string;
+}) {
   const [suche, setSuche] = useState("");
   const [spalte, setSpalte] = useState<Spalte>("kreis");
   const [absteigend, setAbsteigend] = useState(false);
@@ -79,12 +92,14 @@ export default function PlatzTabelle({ zeilen }: { zeilen: PlatzZeile[] }) {
           (z) =>
             z.name.toLowerCase().includes(q) ||
             z.kreis.toLowerCase().includes(q) ||
-            z.land.toLowerCase().includes(q),
+            z.land.toLowerCase().includes(q) ||
+            (z.zusatz?.toLowerCase().includes(q) ?? false),
         )
       : zeilen;
 
     return [...liste].sort((a, b) => {
-      const v = (z: PlatzZeile) => (spalte === "distanz_m" ? z.distanz_m : z[spalte]);
+      const v = (z: PlatzZeile) =>
+        spalte === "distanz_m" ? z.distanz_m : (z[spalte] ?? "");
       const x = v(a);
       const y = v(b);
       const r =
@@ -104,12 +119,12 @@ export default function PlatzTabelle({ zeilen }: { zeilen: PlatzZeile[] }) {
   return (
     <div>
       <label className="block">
-        <span className="sr-only">Platz, Landkreis oder Bundesland suchen</span>
+        <span className="sr-only">{platzhalter.replace(" …", " suchen")}</span>
         <input
           type="search"
           value={suche}
           onChange={(e) => setSuche(e.target.value)}
-          placeholder="Platz, Landkreis oder Bundesland …"
+          placeholder={platzhalter}
           className="w-full rounded-lg border border-line bg-background px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-accent sm:w-80"
         />
       </label>
@@ -138,6 +153,15 @@ export default function PlatzTabelle({ zeilen }: { zeilen: PlatzZeile[] }) {
                 absteigend={absteigend}
                 sortieren={sortieren}
               />
+              {zusatzTitel && (
+                <Kopfzelle
+                  s="zusatz"
+                  text={zusatzTitel}
+                  aktiv={spalte === "zusatz"}
+                  absteigend={absteigend}
+                  sortieren={sortieren}
+                />
+              )}
               <Kopfzelle
                 s="distanz_m"
                 text="Entfernung"
@@ -161,6 +185,9 @@ export default function PlatzTabelle({ zeilen }: { zeilen: PlatzZeile[] }) {
                     {z.kreis}
                   </Link>
                 </td>
+                {zusatzTitel && (
+                  <td className="py-2 pr-3 text-muted">{z.zusatz ?? "—"}</td>
+                )}
                 <td className="py-2 pr-3 text-right tabular-nums">{nf.format(z.distanz_m)} m</td>
               </tr>
             ))}

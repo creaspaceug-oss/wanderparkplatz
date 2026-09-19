@@ -4,9 +4,10 @@ import Brotkrumen from "@/components/Brotkrumen";
 import Block from "@/components/Block";
 import Saeulen from "@/components/Saeulen";
 import Datentabelle from "@/components/Datentabelle";
+import PlatzTabelle from "@/components/PlatzTabelle";
 import {
   oepnvGesamt, oepnvNachLand, oepnvNachKreis, oepnvVerteilung, oepnvBeispiele,
-  oepnvStadtLand, oepnvLuecken,
+  oepnvStadtLand, oepnvLuecken, oepnvNahePlaetze,
 } from "@/lib/db";
 import { bestand } from "@/lib/queries";
 import { jsonLd, nf } from "@/lib/format";
@@ -54,8 +55,17 @@ const prozent = (v: string) => `${String(v).replace(".", ",")} %`;
 /** Unter zehn Plätzen ist ein Prozentwert eine Zufallszahl. */
 const DUENN = 10;
 
+/**
+ * Grenze für die Liste "ohne Fußmarsch".
+ *
+ * Dreihundert Meter sind drei, vier Minuten. Darüber beginnt der Bereich, in
+ * dem man den Weg einplanen muss — und damit eine andere Auskunft.
+ */
+const NAH_M = 300;
+
 export default async function WandernOhneAuto() {
-  const [g, laender, kreise, verteilung, beispiele, stadtLand, luecken, b] = await Promise.all([
+  const [g, laender, kreise, verteilung, beispiele, stadtLand, luecken, b, nah] =
+    await Promise.all([
     oepnvGesamt(),
     oepnvNachLand(),
     oepnvNachKreis(5),
@@ -64,6 +74,7 @@ export default async function WandernOhneAuto() {
     oepnvStadtLand(),
     oepnvLuecken(10),
     bestand(),
+    oepnvNahePlaetze(NAH_M),
   ]);
 
   const STAND = datum(b.lauf) ?? "dem jüngsten Abgleich";
@@ -270,10 +281,23 @@ export default async function WandernOhneAuto() {
         <Datentabelle zeilen={kreise} basis="kreis" duennAb={DUENN} regionWort="Landkreis" />
       </Block>
 
+      <Block
+        klasse="mt-6"
+        titel={`Die ${nf.format(nah.length)} Plätze, an denen die Haltestelle danebensteht`}
+        einleitung={`Ausgangspunkte mit einer Haltestelle innerhalb von ${NAH_M} Metern — drei, vier Minuten zu Fuß. Suchfeld nimmt Platz, Landkreis, Bundesland oder den Namen der Haltestelle.`}
+        fussnote="Entfernung ist Luftlinie zur nächstgelegenen Haltestelle. Ob und wie oft dort ein Bus fährt, steht in den Daten nicht."
+      >
+        <PlatzTabelle
+          zeilen={nah}
+          zusatzTitel="Haltestelle"
+          platzhalter="Platz, Landkreis oder Haltestelle …"
+        />
+      </Block>
+
       {beispiele.length > 0 && (
         <Block
           klasse="mt-6"
-          titel="Wo die Haltestelle direkt am Parkplatz steht"
+          titel="Am allernächsten"
           einleitung="Acht Ausgangspunkte, an denen zwischen Bushalt und Parkplatz kaum ein Schritt liegt."
         >
           <ul className="divide-y divide-line">
