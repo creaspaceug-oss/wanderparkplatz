@@ -597,7 +597,11 @@ export default async function Trinkblase() {
           Die Maße entscheiden mehr als die Literangabe. Die Deuter misst laut Hersteller 35 × 17
           Zentimeter, in der 3-Liter-Ausführung 40 × 20, die Source 35,5 × 19,2 — das Fach sollte
           ein paar Zentimeter mehr haben, sonst schiebst du eine volle Blase gegen den Widerstand
-          hinein.
+          hinein. Wie man den passenden Rucksack findet, steht im{" "}
+          <Link href="/ausruestung/wanderrucksack" className="underline hover:text-accent">
+            Rucksack-Vergleich
+          </Link>
+          .
         </p>
         <Merksatz>
           Füll die Blase, bevor du den Rucksack packst. Eine volle Blase in einen vollen Rucksack zu
@@ -768,8 +772,8 @@ export default async function Trinkblase() {
             <p className="text-sm text-muted">Länge, Verschluss, faltbar oder Teleskop.</p>
           </li>
           <li>
-            <Link href="/toilette-am-wanderparkplatz" className="font-medium hover:text-accent">Toilette am Wanderparkplatz</Link>
-            <p className="text-sm text-muted">Wer viel trinkt, stellt sich auch diese Frage.</p>
+            <Link href="/ausruestung/wanderrucksack" className="font-medium hover:text-accent">Wanderrucksack im Vergleich</Link>
+            <p className="text-sm text-muted">Liter, Rückenlänge, Damen oder Herren.</p>
           </li>
           <li>
             <Link href="/wandern-ohne-auto" className="font-medium hover:text-accent">Wandern ohne Auto</Link>

@@ -516,3 +516,195 @@ export function OeffnungenBild() {
     </div>
   );
 }
+
+/**
+ * Rückenlänge messen: vom siebten Halswirbel bis zur Oberkante des
+ * Beckenkamms. Rückansicht, weil man genau so misst — zu zweit, von hinten.
+ * Links die Messung, rechts, wo der Hüftgurt danach sitzen muss.
+ */
+export function RueckenlaengeBild() {
+  return (
+    <figure className="grid gap-6 rounded-2xl border border-line bg-card p-5 sm:grid-cols-[minmax(0,18rem)_1fr] sm:items-center sm:p-6">
+      <svg
+        viewBox="0 0 290 290"
+        className="mx-auto h-auto w-full max-w-[18rem] text-foreground"
+        role="img"
+        aria-label="Rückansicht: Gemessen wird vom hervorstehenden siebten Halswirbel entlang der Wirbelsäule bis zur Oberkante des Beckenkamms, auf Höhe eines Gürtels."
+      >
+        <defs>
+          <marker id="rl-pfeil" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="var(--accent)" />
+          </marker>
+        </defs>
+        {/* Kopf, Hals, Rumpf */}
+        <circle cx="100" cy="36" r="24" fill="currentColor" fillOpacity=".12" stroke="currentColor" strokeOpacity=".35" strokeWidth="2" />
+        <path
+          d="M88 58 L88 70 C60 74 34 80 30 100 L40 190 C44 214 52 226 56 240 L144 240 C148 226 156 214 160 190 L170 100 C166 80 140 74 112 70 L112 58 Z"
+          fill="currentColor"
+          fillOpacity=".08"
+          stroke="currentColor"
+          strokeOpacity=".35"
+          strokeWidth="2"
+        />
+        {/* Becken angedeutet */}
+        <path d="M50 232 C70 214 130 214 150 232" fill="none" stroke="currentColor" strokeOpacity=".5" strokeWidth="3" strokeLinecap="round" />
+        {/* Wirbelsäule */}
+        <line x1="100" y1="72" x2="100" y2="236" stroke="currentColor" strokeOpacity=".25" strokeWidth="2" strokeDasharray="3 5" />
+        {/* Gürtel auf Höhe des Beckenkamms */}
+        <rect x="36" y="216" width="128" height="10" rx="3" fill="var(--warn)" fillOpacity=".55" />
+        {/* Messstrecke entlang der Wirbelsäule */}
+        <line x1="100" y1="80" x2="100" y2="213" stroke="var(--accent)" strokeWidth="3" markerStart="url(#rl-pfeil)" markerEnd="url(#rl-pfeil)" />
+        <circle cx="100" cy="74" r="5" fill="var(--accent)" />
+        {/* Beschriftung rechts, mit Hinweislinien */}
+        <line x1="108" y1="74" x2="182" y2="74" stroke="currentColor" strokeOpacity=".35" strokeWidth="1" />
+        <text x="186" y="78" fontSize="12" fill="currentColor">7. Halswirbel</text>
+        <line x1="104" y1="148" x2="182" y2="148" stroke="var(--accent)" strokeOpacity=".5" strokeWidth="1" />
+        <text x="186" y="153" fontSize="14" fontWeight="700" fill="var(--accent)">Rückenlänge</text>
+        <line x1="166" y1="221" x2="182" y2="221" stroke="currentColor" strokeOpacity=".35" strokeWidth="1" />
+        <text x="186" y="219" fontSize="12" fill="currentColor">Oberkante</text>
+        <text x="186" y="233" fontSize="12" fill="currentColor">Beckenkamm</text>
+        <text x="186" y="248" fontSize="11" fill="var(--warn)">Gürtel als Marke</text>
+      </svg>
+      <figcaption className="space-y-3 text-[0.97rem] leading-relaxed">
+        <ol className="space-y-2.5">
+          {[
+            ["Kopf nach vorn neigen.", "Der Wirbel, der dann am Nackenansatz am deutlichsten heraustritt, ist der siebte Halswirbel. Dort beginnt die Messung."],
+            ["Gürtel umlegen.", "Mit den Fingern die Hüftknochen seitlich ertasten und den Gürtel genau auf ihre Oberkante legen."],
+            ["Entlang der Wirbelsäule messen.", "Vom Halswirbel bis zur Linie des Gürtels. Aufrecht stehen, nicht ins Hohlkreuz."],
+          ].map(([t, x], i) => (
+            <li key={t} className="flex gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-semibold text-accent">
+                {i + 1}
+              </span>
+              <span>
+                <strong>{t}</strong> {x}
+              </span>
+            </li>
+          ))}
+        </ol>
+        <p className="text-sm text-muted">
+          Allein geht es kaum. Zu zweit, mit einem weichen Maßband, dauert es eine Minute.
+        </p>
+      </figcaption>
+    </figure>
+  );
+}
+
+/**
+ * Netzrücken und Kontaktrücken im Schnitt, von der Seite. Der Abstand ist die
+ * Belüftung — und derselbe Abstand schiebt den Schwerpunkt nach hinten.
+ */
+export function RueckensystemBild() {
+  const tafel = (netz: boolean) => (
+    <svg
+      viewBox="0 0 200 220"
+      className="mx-auto h-52 w-auto text-foreground"
+      role="img"
+      aria-label={
+        netz
+          ? "Netzrücken im Schnitt: Zwischen Rücken und Rucksack liegt ein Luftspalt, der Rucksack sitzt weiter hinten."
+          : "Kontaktrücken im Schnitt: Der Rucksack liegt direkt am Rücken an, der Schwerpunkt liegt näher am Körper."
+      }
+    >
+      {/* Rücken im Profil */}
+      <path
+        d="M60 10 C52 40 48 70 54 100 C60 130 58 160 48 200"
+        fill="none"
+        stroke="currentColor"
+        strokeOpacity=".5"
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
+      {netz ? (
+        <>
+          {/* gespanntes Netz, dahinter der gebogene Rucksack */}
+          <path d="M64 30 C60 70 60 120 64 170" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeDasharray="4 3" />
+          <path d="M92 26 C80 70 80 130 92 176 L150 176 C160 130 160 70 150 26 Z" fill="currentColor" fillOpacity=".14" stroke="currentColor" strokeOpacity=".45" strokeWidth="2" />
+          {[60, 95, 130].map((y) => (
+            <path key={y} d={`M66 ${y} h14`} stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" opacity=".8" />
+          ))}
+          <circle cx="121" cy="104" r="6" fill="var(--warn)" />
+        </>
+      ) : (
+        <>
+          <path d="M60 26 C52 70 52 130 60 176 L128 176 C138 130 138 70 128 26 Z" fill="currentColor" fillOpacity=".14" stroke="currentColor" strokeOpacity=".45" strokeWidth="2" />
+          <circle cx="95" cy="104" r="6" fill="var(--warn)" />
+        </>
+      )}
+      <text x="100" y="206" textAnchor="middle" fontSize="11" fill="var(--warn)">● Schwerpunkt</text>
+    </svg>
+  );
+  return (
+    <figure className="grid gap-6 rounded-2xl border border-line bg-card p-5 sm:grid-cols-2 sm:p-6">
+      {[
+        {
+          netz: true,
+          titel: "Netzrücken",
+          text: "Ein gespanntes Netz liegt am Rücken, der Rucksack selbst steht ein paar Zentimeter dahinter. Die Luft zieht durch — der Rücken bleibt deutlich trockener. Dafür sitzt die Last weiter hinten.",
+        },
+        {
+          netz: false,
+          titel: "Kontaktrücken",
+          text: "Gepolsterte Flächen oder Schaumstoff mit Kanälen liegen direkt an. Der Rucksack geht jede Bewegung mit, der Schwerpunkt bleibt nah am Körper. Dafür schwitzt man mehr.",
+        },
+      ].map((x) => (
+        <div key={x.titel}>
+          {tafel(x.netz)}
+          <h3 className="mt-2 font-semibold">{x.titel}</h3>
+          <p className="mt-1 text-[0.95rem] leading-relaxed text-muted">{x.text}</p>
+        </div>
+      ))}
+    </figure>
+  );
+}
+
+/**
+ * Packzonen im Rucksack — nach der Empfehlung des Alpenvereins Südtirol:
+ * Schweres in die Mitte nah an den Rücken, selten Gebrauchtes nach unten,
+ * oft Gebrauchtes nach oben und in den Deckel.
+ */
+export function PackBild() {
+  const zonen: { y: number; h: number; farbe: string; deckkraft: number; titel: string; text: string }[] = [
+    { y: 18, h: 34, farbe: "var(--accent)", deckkraft: 0.25, titel: "Deckel", text: "Handy, Karte, Mütze, Riegel, Erste-Hilfe-Set — nichts Schweres, das gegen den Kopf schlägt" },
+    { y: 54, h: 52, farbe: "var(--accent)", deckkraft: 0.4, titel: "Oben", text: "Leichtes: die warme Schicht, Kleidung zum Wechseln unterwegs" },
+    { y: 108, h: 70, farbe: "var(--warn)", deckkraft: 0.55, titel: "Mitte, am Rücken", text: "Das Schwere, nah am Rücken: Trinkblase oder Thermosflasche, Verpflegung, Kocher" },
+    { y: 180, h: 46, farbe: "currentColor", deckkraft: 0.18, titel: "Unten", text: "Leicht und voluminös, erst abends gebraucht: Hüttenschlafsack, Wechselwäsche" },
+  ];
+  return (
+    <figure className="grid gap-6 rounded-2xl border border-line bg-card p-5 sm:grid-cols-[12rem_1fr] sm:items-center sm:p-6">
+      <svg viewBox="0 0 150 240" className="mx-auto h-64 w-auto text-foreground" role="img" aria-label="Packzonen: Deckel und oben für häufig Gebrauchtes, Mitte am Rücken für Schweres, unten für Dinge, die erst abends gebraucht werden.">
+        <clipPath id="pack-form">
+          <path d="M20 40 C20 20 40 14 75 14 C110 14 130 20 130 40 L134 206 C134 222 120 228 75 228 C30 228 16 222 16 206 Z" />
+        </clipPath>
+        <g clipPath="url(#pack-form)">
+          {zonen.map((z) => (
+            <rect key={z.titel} x="0" y={z.y} width="150" height={z.h} fill={z.farbe} fillOpacity={z.deckkraft} />
+          ))}
+          {/* Rücken ist links: das Schwere liegt nah dran */}
+          <rect x="16" y="108" width="12" height="70" fill="var(--warn)" fillOpacity=".5" />
+        </g>
+        <path d="M20 40 C20 20 40 14 75 14 C110 14 130 20 130 40 L134 206 C134 222 120 228 75 228 C30 228 16 222 16 206 Z" fill="none" stroke="currentColor" strokeOpacity=".5" strokeWidth="2" />
+        <text x="4" y="238" fontSize="10" fill="currentColor" fillOpacity=".7">← Rücken</text>
+        {zonen.map((z, i) => (
+          <text key={z.titel} x="75" y={z.y + z.h / 2 + 5} textAnchor="middle" fontSize="14" fontWeight="700" fill="currentColor">
+            {i + 1}
+          </text>
+        ))}
+      </svg>
+      <figcaption>
+        <ol className="space-y-3">
+          {zonen.map((z, i) => (
+            <li key={z.titel} className="flex gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-semibold text-accent">
+                {i + 1}
+              </span>
+              <span className="text-[0.97rem] leading-relaxed">
+                <strong>{z.titel}.</strong> <span className="text-muted">{z.text}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </figcaption>
+    </figure>
+  );
+}

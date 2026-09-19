@@ -20,6 +20,11 @@ export const metadata: Metadata = {
  */
 const SEITEN = [
   {
+    pfad: "/ausruestung/wanderrucksack",
+    titel: "Wanderrucksack",
+    text: "Wie viel Liter du brauchst, wie du die Rückenlänge misst, Damen oder Herren, und sieben Rucksäcke von Deuter, Vaude und Osprey.",
+  },
+  {
     pfad: "/ausruestung/wanderstoecke",
     titel: "Wanderstöcke",
     text: "Die richtige Länge nach Körpergröße, warum der Verschluss wichtiger ist als das Material, und sechs Stöcke vom Einstieg bis zum Warentest-Sieger.",

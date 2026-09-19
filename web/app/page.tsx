@@ -314,8 +314,14 @@ export default async function Startseite() {
         titel="Ausrüstung für die Tour"
         einleitung="Kaufberatungen, die zu jedem Produkt sagen, wogegen es spricht."
       >
-        <div className="grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {[
+            {
+              pfad: "/ausruestung/wanderrucksack",
+              titel: "Wanderrucksack im Vergleich",
+              text: "Wie viel Liter, wie du die Rückenlänge misst und was Damenmodelle anders machen.",
+              marke: "Literrechner · 7 Rucksäcke",
+            },
             {
               pfad: "/ausruestung/wanderstoecke",
               titel: "Wanderstöcke im Vergleich",

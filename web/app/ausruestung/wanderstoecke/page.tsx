@@ -910,8 +910,8 @@ export default async function Wanderstoecke() {
             <p className="text-sm text-muted">Größe, Öffnung, Reinigung — und sechs Blasen.</p>
           </li>
           <li>
-            <Link href="/wandern-ohne-auto" className="font-medium hover:text-accent">Wandern ohne Auto</Link>
-            <p className="text-sm text-muted">Welche Ausgangspunkte eine Haltestelle in Laufweite haben.</p>
+            <Link href="/ausruestung/wanderrucksack" className="font-medium hover:text-accent">Wanderrucksack im Vergleich</Link>
+            <p className="text-sm text-muted">Liter, Rückenlänge, Damen oder Herren.</p>
           </li>
           <li>
             <Link href="/toilette-am-wanderparkplatz" className="font-medium hover:text-accent">Toilette am Wanderparkplatz</Link>
