@@ -81,6 +81,7 @@ export function Produktbild({
   alt,
   gross,
   klein,
+  vorrang,
   href,
 }: {
   preis?: Preisstand;
@@ -88,17 +89,26 @@ export function Produktbild({
   gross?: boolean;
   /** Für Tabellenzeilen: hohe Bildflächen machen jede Zeile doppelt so hoch wie nötig. */
   klein?: boolean;
+  /**
+   * Für Bilder, die ohne Scrollen sichtbar sind. "lazy" wartet, bis das
+   * Layout steht und der Browser festgestellt hat, dass das Bild im Bild ist —
+   * oben auf der Seite ist das genau die Verzögerung, die man als Nachladen
+   * sieht.
+   */
+  vorrang?: boolean;
   href?: string;
 }) {
   const box = gross ? "h-56 sm:h-64" : klein ? "h-20 md:h-[5.5rem]" : "h-40";
-  const inhalt = preis?.bild ? (
+  const quelle = (klein ? preis?.bildKlein : null) ?? preis?.bild;
+  const inhalt = quelle ? (
     // Amazons Bild, nicht unseres: Die Programmbedingungen lassen für
     // gelistete Artikel keine eigenen Aufnahmen zu.
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={preis.bild}
+      src={quelle}
       alt={alt}
-      loading="lazy"
+      loading={vorrang ? "eager" : "lazy"}
+      fetchPriority={vorrang ? "high" : "auto"}
       decoding="async"
       referrerPolicy="no-referrer"
       className="max-h-full max-w-full object-contain mix-blend-multiply transition duration-300 group-hover:scale-[1.04]"
@@ -375,7 +385,7 @@ export function Uebersicht({
             }`}
           >
             <div className="row-span-2 md:row-span-1">
-              <Produktbild preis={preis} alt={`${s.marke} ${s.name}`} href={url} klein />
+              <Produktbild preis={preis} alt={`${s.marke} ${s.name}`} href={url} klein vorrang={i < 3} />
             </div>
             <div className="min-w-0">
               <p className="text-xs font-semibold text-accent">{fuer}</p>

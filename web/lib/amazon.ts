@@ -32,7 +32,14 @@ export interface Preisstand {
    * kommen, nie aus einer eigenen Rechnung oder einem gespeicherten Wert.
    */
   ersparnis: number | null;
+  /** 500 Pixel — für die großen Flächen im Bericht. */
   bild: string | null;
+  /**
+   * 160 Pixel — für Übersicht und Leiste. Dort wird ein Bild mit 72 Pixeln
+   * angezeigt; die große Fassung wäre siebenmal so groß wie nötig und vier-
+   * bis fünfmal so schwer (6–16 kB statt 2–3 kB).
+   */
+  bildKlein: string | null;
   url: string;
   /** Zeitpunkt des Abrufs — Amazon verlangt, dass er dabeisteht. */
   abgerufen: string;
@@ -67,7 +74,7 @@ async function zugang(): Promise<string> {
 interface AmazonTreffer {
   asin: string;
   detailPageURL: string;
-  images?: { primary?: { large?: { url?: string } } };
+  images?: { primary?: { large?: { url?: string }; medium?: { url?: string } } };
   itemInfo?: { title?: { displayValue?: string } };
   offersV2?: {
     listings?: {
@@ -121,7 +128,12 @@ export const preise = cache(async (asins: string[]): Promise<Map<string, Preisst
         itemIds: paket,
         partnerTag: tag,
         marketplace: MARKT,
-        resources: ["images.primary.large", "itemInfo.title", "offersV2.listings.price"],
+        resources: [
+          "images.primary.large",
+          "images.primary.medium",
+          "itemInfo.title",
+          "offersV2.listings.price",
+        ],
       }),
       next: { revalidate: 3600 },
     });
@@ -152,6 +164,7 @@ export const preise = cache(async (asins: string[]): Promise<Map<string, Preisst
         uvp: p?.savingBasis?.money?.amount ?? null,
         ersparnis: p?.savings?.percentage ?? null,
         bild: t.images?.primary?.large?.url ?? null,
+        bildKlein: t.images?.primary?.medium?.url ?? t.images?.primary?.large?.url ?? null,
         url: t.detailPageURL,
         abgerufen,
       });

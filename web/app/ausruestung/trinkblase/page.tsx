@@ -4,6 +4,7 @@ import Brotkrumen from "@/components/Brotkrumen";
 import Affiliatelink from "@/components/Affiliatelink";
 import Wasserrechner from "@/components/ausruestung/Wasserrechner";
 import Merkleiste from "@/components/ausruestung/Merkleiste";
+import Vorladen from "@/components/ausruestung/Vorladen";
 import {
   Kapitel,
   Merksatz,
@@ -137,6 +138,12 @@ export default async function Trinkblase() {
             })),
           },
         ])}
+      />
+
+      <Vorladen
+        bilder={PRODUKTE.slice(0, 3)
+          .map((x) => p.get(x.asin)?.bildKlein)
+          .filter((x): x is string => Boolean(x))}
       />
 
       <Brotkrumen
@@ -747,7 +754,7 @@ export default async function Trinkblase() {
         name={`${deuter.marke} ${deuter.name}`}
         preis={dp?.anzeige}
         zeit={zeitDeuter}
-        bild={dp?.bild}
+        bild={dp?.bildKlein}
         url={dp?.url ?? partnerUrl(deuter.asin)}
         oben="uebersicht"
         unten="methode"

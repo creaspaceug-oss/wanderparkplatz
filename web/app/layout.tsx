@@ -90,6 +90,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/toilette-am-wanderparkplatz" className="hover:text-foreground">
                 Toiletten
               </Link>
+              <Link href="/ausruestung" className="hover:text-foreground">
+                Ausrüstung
+              </Link>
               <Link href="/ueber-uns" className="hover:text-foreground">Über uns</Link>
               <Link href="/impressum" className="hover:text-foreground">Impressum</Link>
               <Link href="/datenschutz" className="hover:text-foreground">Datenschutz</Link>

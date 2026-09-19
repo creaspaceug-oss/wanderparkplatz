@@ -304,6 +304,47 @@ export default async function Startseite() {
         </div>
       </section>
 
+      {/* ------------------------------------------------------------ Ausrüstung */}
+      {/*
+        Nur Verweise auf die Vergleiche, keine Kaufknöpfe. Die Startseite gehört
+        zum Verzeichnis, und das Verzeichnis bleibt frei von Partnerlinks —
+        verlinkt wird von den Ausrüstungsseiten hinein, nicht umgekehrt.
+      */}
+      <Abschnitt
+        titel="Ausrüstung für die Tour"
+        einleitung="Kaufberatungen, die zu jedem Produkt sagen, wogegen es spricht."
+      >
+        <div className="grid gap-5 sm:grid-cols-2">
+          {[
+            {
+              pfad: "/ausruestung/wanderstoecke",
+              titel: "Wanderstöcke im Vergleich",
+              text: "Welche Länge zu deiner Körpergröße passt, warum der Verschluss wichtiger ist als Carbon, und was die Stiftung Warentest herausfand.",
+              marke: "Längenrechner · 6 Stöcke",
+            },
+            {
+              pfad: "/ausruestung/trinkblase",
+              titel: "Trinkblase fürs Wandern",
+              text: "2 oder 3 Liter, warum die Öffnung über die Reinigung entscheidet, und wie sie nicht verschimmelt.",
+              marke: "Wasserrechner · 6 Trinkblasen",
+            },
+          ].map((k) => (
+            <Link
+              key={k.pfad}
+              href={k.pfad}
+              className="group flex flex-col rounded-xl border border-line bg-card p-5 transition hover:border-accent hover:shadow-sm"
+            >
+              <span className="text-xs font-medium uppercase tracking-wide text-accent">{k.marke}</span>
+              <span className="mt-1.5 text-lg font-semibold group-hover:text-accent">{k.titel}</span>
+              <span className="mt-2 leading-relaxed text-muted">{k.text}</span>
+              <span className="mt-auto pt-4 text-sm font-medium text-accent">
+                Zum Vergleich <span aria-hidden>→</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </Abschnitt>
+
       {/* -------------------------------------------------- Auswertung des Bestands */}
       <Abschnitt
         titel="Was der Datenbestand zeigt"
