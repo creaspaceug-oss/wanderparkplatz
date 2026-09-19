@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Brotkrumen from "@/components/Brotkrumen";
 import { titel, beschreibung } from "@/lib/meta";
+import { sichtbar } from "@/lib/ausruestung/freigabe";
+
+/* Stündlich, damit zeitgesteuert freigegebene Seiten ohne neues Deployment erscheinen. */
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: titel("Wanderausrüstung: Vergleiche mit Schwächen"),
@@ -75,7 +79,7 @@ export default function Ausruestung() {
         Kaufberatungen, die zu jedem Produkt sagen, wogegen es spricht — mit Quellen für jede Angabe.
       </p>
       <ul className="mt-8 space-y-4">
-        {SEITEN.map((s) => (
+        {SEITEN.filter((s) => sichtbar(s.pfad)).map((s) => (
           <li key={s.pfad} className="rounded-xl border border-line bg-card p-5">
             <Link href={s.pfad} className="text-lg font-semibold hover:text-accent">
               {s.titel}

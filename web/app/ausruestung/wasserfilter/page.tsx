@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import Brotkrumen from "@/components/Brotkrumen";
 import Wasserberater, { type FilterAngebot } from "@/components/ausruestung/Wasserberater";
 import Merkleiste from "@/components/ausruestung/Merkleiste";
@@ -20,6 +21,7 @@ import { einkehrLuecke } from "@/lib/db";
 import { jsonLd, nf } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
+import { sichtbar } from "@/lib/ausruestung/freigabe";
 
 /*
  * Stündlich. Amazon erlaubt kein Zwischenspeichern von Preisen über 24
@@ -65,6 +67,8 @@ const FUER: Record<string, string> = {
 };
 
 export default async function Wasserfilter() {
+  // Erscheint erst zum Freigabezeitpunkt, bis dahin 404 (siehe lib/ausruestung/freigabe.ts).
+  if (!sichtbar("/ausruestung/wasserfilter")) notFound();
   const [p, einkehr] = await Promise.all([preise(FILTER.map((f) => f.asin)), einkehrLuecke()]);
   const PRODUKTE = FILTER.map(alsProdukt);
   const erste = PRODUKTE[0];

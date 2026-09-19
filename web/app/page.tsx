@@ -11,6 +11,7 @@ import { WANDERREGIONEN } from "@/lib/wanderregionen";
 import { jsonLd, nf } from "@/lib/format";
 import { SITE, SITE_NAME } from "@/lib/site";
 import { BETREIBER } from "@/lib/betreiber";
+import { sichtbar } from "@/lib/ausruestung/freigabe";
 
 export const revalidate = 86400;
 
@@ -370,7 +371,9 @@ export default async function Startseite() {
               text: "2 oder 3 Liter, warum die Öffnung über die Reinigung entscheidet, und wie sie nicht verschimmelt.",
               marke: "Wasserrechner · 6 Trinkblasen",
             },
-          ].map((k) => (
+          ]
+            .filter((k) => sichtbar(k.pfad))
+            .map((k) => (
             <Link
               key={k.pfad}
               href={k.pfad}

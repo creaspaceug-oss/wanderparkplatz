@@ -1,4 +1,5 @@
 import { q } from "./db";
+import { sichtbar } from "./ausruestung/freigabe";
 import { SITE } from "./site";
 import { MIN_AUSSAGEN } from "./inhalt";
 import { WANDERREGIONEN } from "./wanderregionen";
@@ -97,7 +98,7 @@ export async function eintraege(typ: SitemapTyp): Promise<SitemapEintrag[]> {
         { pfad: "/ausruestung/stirnlampe", frequenz: "weekly", gewicht: "0.8" },
         { pfad: "/ausruestung/gamaschen", frequenz: "weekly", gewicht: "0.8" },
         { pfad: "/ausruestung/wasserfilter", frequenz: "weekly", gewicht: "0.8" },
-      ];
+      ].filter((e) => sichtbar(e.pfad));
     case "regionen": {
       const bestaende = await regionBestaende(WANDERREGIONEN);
       const mitBestand = new Set(bestaende.filter((b) => b.n > 0).map((b) => b.slug));
