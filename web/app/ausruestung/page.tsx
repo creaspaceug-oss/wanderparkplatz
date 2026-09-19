@@ -22,7 +22,7 @@ const SEITEN = [
   {
     pfad: "/ausruestung/wanderstoecke",
     titel: "Wanderstöcke",
-    text: "Die richtige Länge nach Körpergröße, warum der Verschluss wichtiger ist als das Material, und fünf Stöcke von 29 bis 155 Euro.",
+    text: "Die richtige Länge nach Körpergröße, warum der Verschluss wichtiger ist als das Material, und sechs Stöcke vom Einstieg bis zum Warentest-Sieger.",
   },
 ];
 

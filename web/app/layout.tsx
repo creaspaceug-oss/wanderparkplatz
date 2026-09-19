@@ -28,7 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="de" className={`${geist.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
         <header className="border-b border-line">
-          <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4">
+          <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4 sm:gap-4">
             <Link href="/" className="flex items-center gap-2 font-semibold">
               <span aria-hidden className="text-xl">🥾</span>
               <span>
@@ -38,7 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <div className="hidden flex-1 justify-center px-4 sm:flex">
               <Suche />
             </div>
-            <nav className="flex gap-5 text-sm text-muted">
+            <nav className="flex shrink-0 gap-3.5 text-sm text-muted sm:gap-5">
               <Link href="/suche" className="hover:text-foreground sm:hidden">
                 Suche
               </Link>
@@ -51,14 +51,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Link href="/ziele" className="hidden hover:text-foreground sm:inline">
                 Ziele
               </Link>
-              <Link href="/bundeslaender" className="hover:text-foreground">
+              <Link href="/bundeslaender" className="hidden hover:text-foreground sm:inline">
                 Bundesländer
               </Link>
             </nav>
           </div>
         </header>
 
-        <main className="flex-1">{children}</main>
+        {/* min-w-0: body ist ein Flex-Container, und ein Flex-Element schrumpft
+            sonst nicht unter die Breite seines breitesten Inhalts. Tabellen in
+            scrollbaren Rahmen drückten dadurch die ganze Seite breiter, statt
+            selbst zu scrollen — auf dem Handy zoomte der Browser heraus. */}
+        <main className="min-w-0 flex-1">{children}</main>
 
         {/* Beide cookielos — kein Einwilligungsbanner nötig, damit auch kein
             Layoutsprung, der die Web Vitals verschlechtert. */}

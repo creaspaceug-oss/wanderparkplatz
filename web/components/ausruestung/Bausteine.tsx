@@ -69,33 +69,59 @@ export function Inhalt({ eintraege }: { eintraege: [string, string][] }) {
   );
 }
 
-/** Produktbild von Amazon, in einer ruhigen Fläche freigestellt. */
+/**
+ * Produktbild von Amazon, in einer ruhigen Fläche freigestellt.
+ *
+ * Mit `href` wird das Bild selbst zum Verweis. Leser klicken auf Bilder
+ * häufiger als auf Text — und wer auf das Bild eines Stocks klickt, will den
+ * Stock sehen, nicht zu einem Anker weiter unten springen. Als Anzeige
+ * ausgezeichnet wie jeder andere Partnerverweis.
+ */
 export function Produktbild({
   preis,
   alt,
   gross,
+  klein,
+  href,
 }: {
   preis?: Preisstand;
   alt: string;
   gross?: boolean;
+  /** Für Tabellenzeilen: hohe Bildflächen machen jede Zeile doppelt so hoch wie nötig. */
+  klein?: boolean;
+  href?: string;
 }) {
-  const box = gross ? "h-56 sm:h-64" : "h-40";
-  if (!preis?.bild)
-    return <div className={`${box} w-full rounded-xl bg-sand`} aria-hidden />;
+  const box = gross ? "h-56 sm:h-64" : klein ? "h-20 md:h-[5.5rem]" : "h-40";
+  const inhalt = preis?.bild ? (
+    // Amazons Bild, nicht unseres: Die Programmbedingungen lassen für
+    // gelistete Artikel keine eigenen Aufnahmen zu.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={preis.bild}
+      alt={alt}
+      loading="lazy"
+      decoding="async"
+      referrerPolicy="no-referrer"
+      className="max-h-full max-w-full object-contain mix-blend-multiply transition duration-300 group-hover:scale-[1.04]"
+    />
+  ) : null;
+  const flaeche = `${box} flex w-full items-center justify-center rounded-xl bg-white ${klein ? "p-2" : "p-4"}`;
+  const ziel = preis?.url ?? href;
+  if (!inhalt) return <div className={`${box} w-full rounded-xl bg-sand`} aria-hidden />;
+  if (!ziel) return <div className={flaeche}>{inhalt}</div>;
   return (
-    <div className={`${box} flex w-full items-center justify-center rounded-xl bg-white p-4`}>
-      {/* Amazons Bild, nicht unseres: Die Programmbedingungen lassen für
-          gelistete Artikel keine eigenen Aufnahmen zu. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={preis.bild}
-        alt={alt}
-        loading="lazy"
-        decoding="async"
-        referrerPolicy="no-referrer"
-        className="max-h-full max-w-full object-contain mix-blend-multiply"
-      />
-    </div>
+    <a
+      href={ziel}
+      rel="sponsored nofollow noopener"
+      target="_blank"
+      aria-label={`${alt} bei Amazon ansehen (Anzeige)`}
+      className={`group relative ${flaeche} ring-accent/40 transition hover:ring-2`}
+    >
+      {inhalt}
+      <span className="pointer-events-none absolute bottom-2 right-2 rounded-md bg-foreground/75 px-1.5 py-0.5 text-[0.65rem] font-medium text-background opacity-0 transition group-hover:opacity-100">
+        Anzeige · bei Amazon
+      </span>
+    </a>
   );
 }
 
@@ -137,7 +163,7 @@ export function Schnellkarte({
     <article className="flex flex-col rounded-2xl border border-line bg-card p-4 shadow-sm">
       <p className="text-sm font-semibold text-accent">{fuer}</p>
       <div className="mt-3">
-        <Produktbild preis={preis} alt={`${s.marke} ${s.name}`} />
+        <Produktbild preis={preis} alt={`${s.marke} ${s.name}`} href={preis?.url} />
       </div>
       <h3 className="mt-4 text-lg font-semibold leading-snug">
         {s.marke} {s.name}
@@ -186,7 +212,7 @@ export function Produktbericht({
     <article id={s.asin} className="scroll-mt-6 overflow-hidden rounded-2xl border border-line bg-card">
       <div className="grid gap-6 p-5 sm:grid-cols-[15rem_1fr] sm:p-7">
         <div>
-          <Produktbild preis={preis} alt={`${s.marke} ${s.name}`} gross />
+          <Produktbild preis={preis} alt={`${s.marke} ${s.name}`} gross href={urlErsatz} />
         </div>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -360,5 +386,107 @@ export function Kartenraster({
         </div>
       ))}
     </div>
+  );
+}
+
+/**
+ * Alle Stöcke auf einen Blick, direkt unter dem Titel.
+ *
+ * Das ist das Muster, das auf Vergleichsseiten am verlässlichsten trägt: Wer
+ * schon weiß, was er will, findet es sofort, und wer vergleichen will, sieht
+ * die ganze Auswahl, bevor er liest. Auf dem Handy werden die Zeilen zu
+ * Karten — eine Tabelle mit fünf Spalten ist dort nicht lesbar.
+ */
+export function Uebersicht({
+  zeilen,
+}: {
+  zeilen: { s: Stock; preis?: Preisstand; fuer: string; url: string }[];
+}) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-line bg-card shadow-sm">
+      <div className="hidden grid-cols-[6.5rem_1fr_11rem_12.5rem] gap-4 border-b border-line bg-sand px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted md:grid">
+        <span />
+        <span>Stock</span>
+        <span>Warentest</span>
+        <span className="text-right">Preis</span>
+      </div>
+      <ol>
+        {zeilen.map(({ s, preis, fuer, url }, i) => (
+          <li
+            key={s.asin}
+            className={`grid grid-cols-[5.5rem_1fr] items-center gap-x-4 gap-y-3 border-t border-line px-4 py-4 first:border-t-0 md:grid-cols-[6.5rem_1fr_11rem_12.5rem] md:px-5 ${
+              i === 0 ? "bg-accent-soft/60" : ""
+            }`}
+          >
+            <div className="row-span-2 md:row-span-1">
+              <Produktbild preis={preis} alt={`${s.marke} ${s.name}`} href={url} klein />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-accent">{fuer}</p>
+              <p className="mt-0.5 font-semibold leading-snug">
+                <a
+                  href={preis?.url ?? url}
+                  rel="sponsored nofollow noopener"
+                  target="_blank"
+                  className="hover:text-accent hover:underline"
+                >
+                  {s.marke} {s.name}
+                </a>
+              </p>
+              <p className="mt-0.5 text-sm text-muted">
+                {s.bauart} · {s.material}
+                {s.gramm_stueck ? ` · ${s.gramm_stueck} g` : ""} ·{" "}
+                <a href={`#${s.asin}`} className="underline hover:text-accent">
+                  Einschätzung
+                </a>
+              </p>
+            </div>
+            <div className="hidden text-sm md:block">
+              {s.warentest ? (
+                <>
+                  <span className="text-lg font-bold tabular-nums">{s.warentest.note}</span>{" "}
+                  <span className="text-muted">({s.warentest.urteil})</span>
+                  <span className="block text-xs text-muted">{s.warentest.rang}</span>
+                </>
+              ) : (
+                <span className="text-muted">keine zitierbare Note</span>
+              )}
+            </div>
+            <div className="md:text-right">
+              <Affiliatelink url={url} preis={preis} name={`${s.marke} ${s.name}`} knapp />
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+/** Der Kasten am Schluss: eine Entscheidung, nicht noch eine Liste. */
+export function Entscheidung({
+  s,
+  preis,
+  url,
+  children,
+}: {
+  s: Stock;
+  preis?: Preisstand;
+  url: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="mt-14 grid items-center gap-6 overflow-hidden rounded-3xl bg-accent-soft p-6 sm:grid-cols-[12rem_1fr] sm:p-8">
+      <Produktbild preis={preis} alt={`${s.marke} ${s.name}`} href={url} />
+      <div>
+        <p className="text-sm font-semibold uppercase tracking-wider text-accent">
+          Wenn du dich jetzt entscheiden musst
+        </p>
+        <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+          {s.marke} {s.name}
+        </h2>
+        <div className="mt-3 max-w-2xl text-[1.05rem] leading-relaxed">{children}</div>
+        <Affiliatelink url={url} preis={preis} name={`${s.marke} ${s.name}`} knapp />
+      </div>
+    </section>
   );
 }

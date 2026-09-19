@@ -3,18 +3,20 @@ import Link from "next/link";
 import Brotkrumen from "@/components/Brotkrumen";
 import Affiliatelink from "@/components/Affiliatelink";
 import Laengenrechner from "@/components/ausruestung/Laengenrechner";
+import Merkleiste from "@/components/ausruestung/Merkleiste";
 import {
   Kapitel,
   Merksatz,
   Inhalt,
-  Schnellkarte,
+  Uebersicht,
+  Entscheidung,
   Produktbericht,
   Produktbild,
   PackmassBild,
   SchlaufeBild,
   Kartenraster,
 } from "@/components/ausruestung/Bausteine";
-import { preise, partnerUrl } from "@/lib/amazon";
+import { preise, partnerUrl, PREISHINWEIS, HERKUNFT, PARTNER } from "@/lib/amazon";
 import {
   STOECKE,
   LAENGEN,
@@ -39,7 +41,7 @@ const TITEL = "Wanderstöcke im Vergleich: Länge, Verschluss, faltbar oder Tele
 export const metadata: Metadata = {
   title: titel(TITEL),
   description: beschreibung(
-    "Die richtige Stocklänge mit Rechner, faltbar oder Teleskop, was die Stiftung Warentest herausfand — und sechs Wanderstöcke von 29 bis 150 Euro mit ihren Schwächen.",
+    "Die richtige Stocklänge mit Rechner, faltbar oder Teleskop, was die Stiftung Warentest herausfand — und sechs Wanderstöcke mit ihren Schwächen, vom Einstieg bis zum Testsieger.",
   ),
   alternates: { canonical: "/ausruestung/wanderstoecke" },
 };
@@ -53,7 +55,7 @@ const KAPITEL: [string, string][] = [
   ["griff", "Griff und Schlaufe"],
   ["spitze", "Spitze, Teller, Gummipuffer"],
   ["warentest", "Was die Stiftung Warentest fand"],
-  ["vergleich", "Alle sechs im Vergleich"],
+  ["vergleich", "Technische Daten im Vergleich"],
   ["modelle", "Die Stöcke einzeln"],
   ["holz", "Und der Holzstock?"],
   ["discounter", "Stöcke von Lidl, Aldi, Tchibo"],
@@ -79,8 +81,20 @@ export default async function Wanderstoecke() {
   ]);
   const nach = (asin: string) => STOECKE.find((s) => s.asin === asin)!;
   const khumbu = nach("B0F63PVSJP");
-  const makalu = nach("B09RPP5R95");
-  const anykuu = nach("B0DPFQVN3X");
+  const FUER: Record<string, string> = {
+    B0F63PVSJP: "Unsere erste Wahl",
+    B09RPP5R95: "Wenn die Stöcke in den Rucksack müssen",
+    B01GKYKK2W: "Wenn jedes Gramm zählt",
+    B0CRVSPJXM: "Großer Verstellbereich",
+    B09N7VF4GK: "Für schnelle Touren",
+    B0DPFQVN3X: "Zum Ausprobieren",
+  };
+  const kp = p.get(khumbu.asin);
+  const zeitKhumbu = kp?.abgerufen
+    ? new Date(kp.abgerufen).toLocaleString("de-DE", {
+        day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin",
+      })
+    : null;
 
   const stand = new Date().toLocaleDateString("de-DE", { month: "long", year: "numeric" });
   const verstellbar = STOECKE.flatMap((s) => {
@@ -126,7 +140,7 @@ export default async function Wanderstoecke() {
       />
 
       {/* ─────────────────────────── Einstieg ─────────────────────────── */}
-      <header className="mt-4 overflow-hidden rounded-3xl bg-sand px-6 py-9 sm:px-10 sm:py-12">
+      <header className="mt-4 overflow-hidden rounded-3xl bg-sand px-6 py-8 sm:px-10 sm:py-10">
         <p className="text-sm font-semibold uppercase tracking-wider text-accent">
           Kaufberatung · Stand {stand}
         </p>
@@ -136,8 +150,8 @@ export default async function Wanderstoecke() {
         <p className="mt-5 max-w-2xl text-lg leading-relaxed sm:text-xl">
           Die meisten Kaufberatungen beantworten die falsche Frage. Welches Modell es wird,
           entscheidet weniger über den Nutzen als zwei Dinge, die in Ranglisten kaum vorkommen:
-          die Länge und der Verschluss. Ein Stock für 29 Euro in der richtigen Länge hilft mehr
-          als einer für 150 Euro, der zehn Zentimeter zu lang ist.
+          die Länge und der Verschluss. Der günstigste Stock in der richtigen Länge hilft mehr
+          als der teuerste, wenn der zehn Zentimeter zu lang ist.
         </p>
         <ul className="mt-6 flex flex-wrap gap-2 text-sm">
           {[
@@ -152,50 +166,33 @@ export default async function Wanderstoecke() {
           ))}
         </ul>
 
-        <div className="mt-8 grid grid-cols-3 gap-3 sm:grid-cols-6">
-          {STOECKE.map((s) => (
-            <a
-              key={s.asin}
-              href={`#${s.asin}`}
-              aria-label={`${s.marke} ${s.name}: zur Einschätzung`}
-              className="group block"
-            >
-              <div className="flex h-24 items-center justify-center rounded-xl bg-white p-2 transition group-hover:shadow-md sm:h-28">
-                {p.get(s.asin)?.bild && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={p.get(s.asin)!.bild!}
-                    alt=""
-                    className="max-h-full max-w-full object-contain mix-blend-multiply"
-                    referrerPolicy="no-referrer"
-                  />
-                )}
-              </div>
-              <p className="mt-1.5 truncate text-center text-xs text-muted">{s.marke}</p>
-            </a>
-          ))}
-        </div>
       </header>
 
-      <p className="mt-5 max-w-3xl text-sm leading-relaxed text-muted">
-        <strong className="text-foreground">Wie wir hier Geld verdienen:</strong> Die grünen
-        Knöpfe führen zu Amazon und tragen eine Partnerkennung. Kaufst du darüber, bekommen wir
-        eine Provision; der Preis ändert sich für dich nicht. Die Auswahl ist davon unabhängig:
-        Der günstigste Stock steht hier mit dem deutlichsten Vorbehalt, obwohl er sich am
-        leichtesten verkaufen ließe.
-      </p>
-
-      {/* ─────────────────────────── Schnellauswahl ─────────────────────────── */}
-      <section id="empfehlung" className="mt-10 scroll-mt-6">
-        <h2 className="text-2xl font-bold tracking-tight sm:text-[1.75rem]">Die kurze Antwort</h2>
-        <p className="mt-2 max-w-3xl text-lg leading-relaxed text-muted">
-          Wer nicht weiterlesen will: einer dieser drei. Warum, steht darunter.
-        </p>
-        <div className="mt-6 grid gap-5 md:grid-cols-3">
-          <Schnellkarte s={khumbu} preis={p.get(khumbu.asin)} fuer="Wenn es nur ein Paar sein soll" />
-          <Schnellkarte s={makalu} preis={p.get(makalu.asin)} fuer="Wenn die Stöcke in den Rucksack müssen" />
-          <Schnellkarte s={anykuu} preis={p.get(anykuu.asin)} fuer="Wenn du erst ausprobieren willst" />
+      {/* ─────────────────────────── Übersicht ─────────────────────────── */}
+      <section id="uebersicht" className="mt-8 scroll-mt-6">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <h2 className="text-2xl font-bold tracking-tight sm:text-[1.75rem]">Alle sechs auf einen Blick</h2>
+          <a href="#modelle" className="text-sm text-muted underline hover:text-accent">
+            Zu den ausführlichen Einschätzungen
+          </a>
         </div>
+        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted">
+          <strong className="text-foreground">Anzeige:</strong> Bilder, Namen und grüne Knöpfe
+          führen zu Amazon und tragen eine Partnerkennung. {PARTNER} Für dich ändert sich am Preis
+          nichts. Die Auswahl ist davon unabhängig: Der günstigste Stock steht hier mit dem
+          deutlichsten Vorbehalt, obwohl er sich am leichtesten verkaufen ließe.
+        </p>
+        <div className="mt-5">
+          <Uebersicht
+            zeilen={STOECKE.map((s) => ({
+              s,
+              preis: p.get(s.asin),
+              fuer: FUER[s.asin],
+              url: partnerUrl(s.asin),
+            }))}
+          />
+        </div>
+        <p className="mt-2 text-xs text-muted">{PREISHINWEIS}</p>
       </section>
 
       <div className="mt-12">
@@ -508,8 +505,12 @@ export default async function Wanderstoecke() {
       </Kapitel>
 
       {/* ─────────────────────────── 9 ─────────────────────────── */}
-      <Kapitel id="vergleich" titel="Alle sechs im Vergleich" breit>
-        <div className="overflow-x-auto rounded-2xl border border-line bg-card">
+      <Kapitel id="vergleich" titel="Technische Daten im Vergleich" breit>
+        {/* relative ist nicht Zierde: Ohne positionierten Rahmen werden die
+            absolut positionierten Vorlesetexte (sr-only) in den Kaufknöpfen
+            nicht abgeschnitten und ziehen die ganze Seite auf Handybreite
+            886 Pixel auseinander. */}
+        <div className="relative overflow-x-auto rounded-2xl border border-line bg-card">
           <table className="w-full min-w-[52rem] text-sm">
             <caption className="sr-only">Wanderstöcke im Vergleich</caption>
             <thead>
@@ -538,6 +539,20 @@ export default async function Wanderstoecke() {
                   ["Länge", (s) => s.laenge],
                   ["Verschluss", (s) => s.verschluss],
                   ["Griff", (s) => s.griff],
+                  [
+                    "Angebot",
+                    (s) => (
+                      <a
+                        href={p.get(s.asin)?.url ?? partnerUrl(s.asin)}
+                        rel="sponsored nofollow noopener"
+                        target="_blank"
+                        className="inline-block rounded-lg bg-accent px-2.5 py-1.5 text-xs font-semibold text-white hover:brightness-110 dark:text-background"
+                      >
+                        {preisVon(s.asin)} <span aria-hidden>→</span>
+                        <span className="sr-only"> {s.marke} {s.name} bei Amazon, Anzeige</span>
+                      </a>
+                    ),
+                  ],
                 ] as [string, (s: (typeof STOECKE)[number]) => React.ReactNode][]
               ).map(([k, f]) => (
                 <tr key={k} className="border-t border-line align-top">
@@ -598,7 +613,7 @@ export default async function Wanderstoecke() {
           </p>
         </div>
         <div className="grid max-w-3xl gap-6 rounded-2xl border border-line bg-card p-5 sm:grid-cols-[12rem_1fr] sm:p-6">
-          <Produktbild preis={p.get(HOLZSTOCK.asin)} alt={`${HOLZSTOCK.marke} ${HOLZSTOCK.name}`} />
+          <Produktbild preis={p.get(HOLZSTOCK.asin)} alt={`${HOLZSTOCK.marke} ${HOLZSTOCK.name}`} href={partnerUrl(HOLZSTOCK.asin)} />
           <div>
             <p className="text-sm font-semibold text-accent">Wenn es einer aus Holz sein soll</p>
             <h3 className="mt-1 text-xl font-bold tracking-tight">
@@ -789,6 +804,18 @@ export default async function Wanderstoecke() {
         </p>
       </Kapitel>
 
+      <Entscheidung s={khumbu} preis={kp} url={partnerUrl(khumbu.asin)}>
+        <p>
+          Bester Teleskopstock im Warentest, Klemmverschluss an allen Segmenten, ein
+          Verstellbereich von 110 bis 145 Zentimetern und Ersatzteile vom Hersteller. Er kann
+          nichts Besonderes — und genau deshalb ist er für die meisten die richtige Wahl.
+        </p>
+        <p className="mt-2 text-muted">
+          Nur wenn die Stöcke oft in den Rucksack müssen, nimm stattdessen den{" "}
+          <a href="#B09RPP5R95" className="underline hover:text-accent">Makalu FX Carbon</a>.
+        </p>
+      </Entscheidung>
+
       {/* ─────────────────────────── 18 ─────────────────────────── */}
       <Kapitel id="fragen" titel="Häufige Fragen">
         <div className="divide-y divide-line rounded-2xl border border-line bg-card">
@@ -840,7 +867,10 @@ export default async function Wanderstoecke() {
           </li>
           <li>
             Technische Angaben: Herstellerangaben zum jeweiligen Artikel. Preise und Bilder:
-            Amazon, stündlich abgerufen.
+            Amazon, stündlich abgerufen. {PREISHINWEIS}
+          </li>
+          <li>
+            {PARTNER} {HERKUNFT}
           </li>
           <li>
             Zahl der Ausgangspunkte mit Gipfel in Reichweite: eigener Datenbestand, aufbereitet aus
@@ -849,6 +879,17 @@ export default async function Wanderstoecke() {
           </li>
         </ul>
       </Kapitel>
+
+      <Merkleiste
+        name={`${khumbu.marke} ${khumbu.name}`}
+        note={khumbu.warentest?.note}
+        preis={kp?.anzeige}
+        zeit={zeitKhumbu}
+        bild={kp?.bild}
+        url={kp?.url ?? partnerUrl(khumbu.asin)}
+        oben="uebersicht"
+        unten="methode"
+      />
 
       <aside className="mt-14 rounded-2xl bg-sand p-6 sm:p-8">
         <h2 className="text-lg font-semibold">Passend dazu</h2>

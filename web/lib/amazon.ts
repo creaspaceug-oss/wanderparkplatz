@@ -24,6 +24,12 @@ export interface Preisstand {
   anzeige: string | null;
   /** Unverbindliche Preisempfehlung, falls Amazon eine nennt. */
   uvp: number | null;
+  /**
+   * Ersparnis gegenüber der UVP in Prozent — nur wenn Amazon sie im selben
+   * Abruf liefert. Rabatte dürfen laut Programmbedingungen nur aus der API
+   * kommen, nie aus einer eigenen Rechnung oder einem gespeicherten Wert.
+   */
+  ersparnis: number | null;
   bild: string | null;
   url: string;
   /** Zeitpunkt des Abrufs — Amazon verlangt, dass er dabeisteht. */
@@ -66,6 +72,7 @@ interface AmazonTreffer {
       price?: {
         money?: { amount?: number; displayAmount?: string };
         savingBasis?: { money?: { amount?: number } };
+        savings?: { percentage?: number };
       };
     }[];
   };
@@ -142,6 +149,7 @@ export const preise = cache(async (asins: string[]): Promise<Map<string, Preisst
       betrag: p?.money?.amount ?? null,
       anzeige: p?.money?.displayAmount ?? null,
       uvp: p?.savingBasis?.money?.amount ?? null,
+      ersparnis: p?.savings?.percentage ?? null,
       bild: t.images?.primary?.large?.url ?? null,
       url: t.detailPageURL,
       abgerufen,
@@ -156,5 +164,18 @@ export const preise = cache(async (asins: string[]): Promise<Map<string, Preisst
  * Nicht die schöne Variante — die URL aus der API trägt zusätzlich linkCode
  * und psc —, aber sie funktioniert und die Kennung ist drin.
  */
+/**
+ * Die Hinweise, die Amazon vorschreibt, an einer Stelle.
+ *
+ * PREISHINWEIS muss neben jeder Preisangabe stehen (oder per Verweis
+ * erreichbar sein) und nennt ausdrücklich auch die Verfügbarkeit — nicht nur
+ * den Preis. HERKUNFT und PARTNER sind die Pflichtsätze des Programms.
+ */
+export const PREISHINWEIS =
+  "Preise und Verfügbarkeit entsprechen dem angegebenen Zeitpunkt und können sich seitdem geändert haben.";
+export const HERKUNFT =
+  "Bestimmte Inhalte auf dieser Seite stammen von Amazon. Sie werden ohne Gewähr bereitgestellt und können jederzeit geändert oder entfernt werden.";
+export const PARTNER = "Als Amazon-Partner verdienen wir an qualifizierten Verkäufen.";
+
 export const partnerUrl = (asin: string) =>
   `https://www.amazon.de/dp/${asin}?tag=${process.env.AMAZON_PARTNER_TAG ?? ""}`;

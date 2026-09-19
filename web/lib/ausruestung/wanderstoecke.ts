@@ -82,7 +82,7 @@ export const STOECKE: Stock[] = [
     warentest: { note: "1,9", urteil: "gut", rang: "bester Teleskopstock" },
     dafuer: [
       "Bester Teleskopstock im Warentest, Gesamtnote 1,9.",
-      "Rund 66 Euro. Weniger kostet ein Markenstock mit Klemmverschluss kaum.",
+      "Einer der günstigsten Markenstöcke mit Klemmverschluss in diesem Vergleich.",
       "Klemmverschluss an allen Segmenten, von außen sichtbar offen oder zu.",
       "Leki verkauft Spitzen, Teller und Verschlussteile einzeln nach. Ein verbogenes Segment heißt nicht neuer Stock.",
     ],
@@ -116,7 +116,7 @@ export const STOECKE: Stock[] = [
       "Getestet wurde genau diese Ausführung ohne Dämpfung. Bei der Variante mit „AS“ im Namen gilt die Note nicht.",
     ],
     dagegen: [
-      "Rund 150 Euro. Für zwei Sonntagstouren im Jahr nicht zu rechtfertigen.",
+      "Der teuerste Stock hier. Für zwei Sonntagstouren im Jahr nicht zu rechtfertigen.",
       "Carbon bricht, wo Aluminium sich verbiegt. Zwischen Felsen verklemmt ist der Stock hin, nicht krumm.",
       "Verstellbereich nur 110 bis 130 cm. Über 1,90 m wird es knapp, siehe Längentabelle.",
     ],
@@ -130,7 +130,7 @@ export const STOECKE: Stock[] = [
     abzeichen: "Leichtgewicht",
     rolle: "Leichter als der Carbon-Faltstock — aus Aluminium und verstellbar.",
     einordnung:
-      "Komperdell baut seit 1922 in Österreich Stöcke, und das merkt man an Details: eine lange Griffverlängerung, eine Spitze aus Wolframcarbid, ein Verschluss aus geschmiedetem Metall statt Kunststoff. Im Warentest war er nicht.",
+      "Komperdell baut seit 1922 in Österreich Stöcke, und das merkt man an Details: eine lange Griffverlängerung, eine Spitze aus Wolframcarbid, ein Verschluss aus geschmiedetem Metall statt Kunststoff. Eine zitierbare Warentest-Note gibt es für ihn nicht.",
     bauart: "Teleskopstock",
     material: "Aluminium",
     gramm_stueck: 239,
@@ -145,7 +145,7 @@ export const STOECKE: Stock[] = [
     ],
     dagegen: [
       "Teurer als der Khumbu, und das für 38 g weniger je Stock.",
-      "Kein Warentest-Ergebnis. Die Einordnung hier stützt sich nur auf Herstellerangaben.",
+      "Keine zitierbare Warentest-Note. Die Einordnung stützt sich nur auf Herstellerangaben.",
       "Teleskop, also zusammengeschoben rund 65 cm lang.",
     ],
     nichtFuer:
@@ -167,7 +167,7 @@ export const STOECKE: Stock[] = [
     dafuer: [
       "FlickLock: mit Handschuhen bedienbar, mit einer Schraube nachstellbar, auf einen Blick offen oder zu.",
       "100 bis 140 cm reichen von 1,50 m bis 2,00 m Körpergröße. Als Stock, den sich mehrere im Haushalt teilen, praktisch.",
-      "Rund 65 Euro für einen Markenstock mit Klemmverschluss.",
+      "Markenstock mit Klemmverschluss in derselben Preisklasse wie der Khumbu.",
     ],
     dagegen: [
       "Black Diamond nennt beim Händler kein Produktgewicht, und schätzen wollen wir es nicht.",
@@ -175,7 +175,7 @@ export const STOECKE: Stock[] = [
       "Teleskop, also dieselbe Sperrigkeit wie beim Khumbu.",
     ],
     nichtFuer:
-      "Wer aufs Gramm achtet. Wer sich zwischen ihm und dem Khumbu entscheidet, nimmt den Khumbu — gleicher Preis, bekannte Note.",
+      "Wer aufs Gramm achtet. Wer sich zwischen ihm und dem Khumbu entscheidet, nimmt den Khumbu — ähnlicher Preis, bekannte Note.",
   },
   {
     asin: "B09N7VF4GK",
@@ -211,7 +211,7 @@ export const STOECKE: Stock[] = [
     abzeichen: "Günstigster",
     rolle: "Zum Ausprobieren, ob man Stöcke überhaupt mag — mehr nicht.",
     einordnung:
-      "Kein Markenname, keine Ersatzteile, keine Prüfung. Dafür rund 29 Euro. Wer zweimal im Jahr wandert und herausfinden will, ob Stöcke etwas für ihn sind, kann damit anfangen. Wer sich darauf verlassen muss, nicht.",
+      "Kein Markenname, keine Ersatzteile, keine bekannte Prüfung. Dafür mit Abstand der günstigste hier. Wer zweimal im Jahr wandert und herausfinden will, ob Stöcke etwas für ihn sind, kann damit anfangen. Wer sich darauf verlassen muss, nicht.",
     bauart: "Faltstock",
     material: "Aluminium",
     gramm_stueck: 290,
@@ -219,7 +219,7 @@ export const STOECKE: Stock[] = [
     verschluss: "vom Anbieter nicht angegeben",
     griff: "EVA-Schaumstoff",
     dafuer: [
-      "Rund 29 Euro, weniger als ein Fünftel des Testsiegers.",
+      "Mit Abstand der günstigste Stock in diesem Vergleich.",
       "Faltbar auf 36 cm.",
       "7075-Aluminium, dieselbe Legierung wie bei teureren Modellen.",
     ],
