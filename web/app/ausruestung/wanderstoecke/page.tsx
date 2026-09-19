@@ -24,6 +24,7 @@ import {
   FRAGEN,
   WARENTEST,
   HOLZSTOCK,
+  alsProdukt,
 } from "@/lib/ausruestung/wanderstoecke";
 import { gipfelReichweite } from "@/lib/db";
 import { jsonLd, nf } from "@/lib/format";
@@ -81,6 +82,7 @@ export default async function Wanderstoecke() {
   ]);
   const nach = (asin: string) => STOECKE.find((s) => s.asin === asin)!;
   const khumbu = nach("B0F63PVSJP");
+  const PRODUKTE = STOECKE.map(alsProdukt);
   const FUER: Record<string, string> = {
     B0F63PVSJP: "Unsere erste Wahl",
     B09RPP5R95: "Wenn die Stöcke in den Rucksack müssen",
@@ -184,7 +186,9 @@ export default async function Wanderstoecke() {
         </p>
         <div className="mt-5">
           <Uebersicht
-            zeilen={STOECKE.map((s) => ({
+            kennwertTitel="Warentest"
+            kennwertLeer="keine zitierbare Note"
+            zeilen={PRODUKTE.map((s) => ({
               s,
               preis: p.get(s.asin),
               fuer: FUER[s.asin],
@@ -585,7 +589,7 @@ export default async function Wanderstoecke() {
         breit
       >
         <div className="space-y-8">
-          {STOECKE.map((s, i) => (
+          {PRODUKTE.map((s, i) => (
             <Produktbericht key={s.asin} s={s} preis={p.get(s.asin)} nummer={i + 1} urlErsatz={partnerUrl(s.asin)} />
           ))}
         </div>
@@ -804,7 +808,7 @@ export default async function Wanderstoecke() {
         </p>
       </Kapitel>
 
-      <Entscheidung s={khumbu} preis={kp} url={partnerUrl(khumbu.asin)}>
+      <Entscheidung s={alsProdukt(khumbu)} preis={kp} url={partnerUrl(khumbu.asin)}>
         <p>
           Bester Teleskopstock im Warentest, Klemmverschluss an allen Segmenten, ein
           Verstellbereich von 110 bis 145 Zentimetern und Ersatzteile vom Hersteller. Er kann
@@ -893,7 +897,11 @@ export default async function Wanderstoecke() {
 
       <aside className="mt-14 rounded-2xl bg-sand p-6 sm:p-8">
         <h2 className="text-lg font-semibold">Passend dazu</h2>
-        <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+        <ul className="mt-3 grid gap-3 sm:grid-cols-3">
+          <li>
+            <Link href="/ausruestung/trinkblase" className="font-medium hover:text-accent">Trinkblase im Vergleich</Link>
+            <p className="text-sm text-muted">Größe, Öffnung, Reinigung — und sechs Blasen.</p>
+          </li>
           <li>
             <Link href="/wandern-ohne-auto" className="font-medium hover:text-accent">Wandern ohne Auto</Link>
             <p className="text-sm text-muted">Welche Ausgangspunkte eine Haltestelle in Laufweite haben.</p>

@@ -24,6 +24,11 @@ const SEITEN = [
     titel: "Wanderstöcke",
     text: "Die richtige Länge nach Körpergröße, warum der Verschluss wichtiger ist als das Material, und sechs Stöcke vom Einstieg bis zum Warentest-Sieger.",
   },
+  {
+    pfad: "/ausruestung/trinkblase",
+    titel: "Trinkblase",
+    text: "Wie viel Wasser du brauchst, warum die Öffnung über die Reinigung entscheidet, und sechs Trinkblasen von Deuter bis CamelBak.",
+  },
 ];
 
 export default function Ausruestung() {

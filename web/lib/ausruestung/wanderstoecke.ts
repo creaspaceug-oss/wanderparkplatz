@@ -20,6 +20,8 @@
  * Bezahlschranke, und die Sekundärquellen widersprechen sich darin.
  */
 
+import type { Produkt } from "./typen";
+
 export interface Warentest {
   note: string;
   urteil: string;
@@ -314,3 +316,27 @@ export const FRAGEN: { frage: string; antwort: string }[] = [
       "Nein. Sie kostet Gewicht und Geld, und beide Warentest-Sieger haben keine. Manche empfinden sie auf langen Asphaltabschnitten als angenehm, andere mögen das leichte Nachgeben beim Aufsetzen gar nicht.",
   },
 ];
+
+/** Ein Stock in der Form, die die gemeinsamen Bausteine verstehen. */
+export function alsProdukt(s: Stock): Produkt {
+  return {
+    ...s,
+    kurz: [s.bauart, s.material, s.gramm_stueck ? `${s.gramm_stueck} g` : null]
+      .filter(Boolean)
+      .join(" · "),
+    eckdaten: [
+      ["Bauart", s.bauart],
+      ["Material", s.material],
+      ["Länge", s.laenge],
+      ["Verschluss", s.verschluss],
+      ["Griff", s.griff],
+      ["Gewicht", s.gramm_stueck ? `${s.gramm_stueck} g je Stock` : "vom Hersteller nicht genannt"],
+    ],
+    kennwert: s.warentest
+      ? { wert: s.warentest.note, zusatz: s.warentest.urteil, unter: s.warentest.rang }
+      : undefined,
+    siegel: s.warentest
+      ? `Stiftung Warentest ${s.warentest.note} (${s.warentest.urteil})`
+      : undefined,
+  };
+}

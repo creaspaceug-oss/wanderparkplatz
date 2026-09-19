@@ -1257,6 +1257,37 @@ export const wcPlaetze = plaetzeMitUmfeld("wc");
  * und der ist in Deutschland die Regel, nicht die Ausnahme. Eine Zahl aus dem
  * eigenen Bestand statt einer Behauptung.
  */
+/**
+ * Wo man am Ausgangspunkt nichts nachfüllen kann.
+ *
+ * Für die Trinkblasenseite: Gezählt wird, an wie vielen Wanderparkplätzen im
+ * erfassten Umkreis keine Einkehr liegt — und wie viele davon trotzdem einen
+ * Gipfel in Reichweite haben, also Aufstieg ohne Nachschub. Der Umkreis ist
+ * der der Aufbereitung (UMFELD_MAX_M in pipeline/src/build.ts): 1.200 Meter.
+ * Eine Einkehr unterwegs auf der Tour erfasst diese Zahl nicht; sie sagt
+ * nur, was am Start fehlt.
+ */
+export const einkehrLuecke = cache(
+  async () =>
+    (
+      await q<{ gesamt: number; ohne: number; gipfelOhne: number }>(
+        `WITH e AS (
+           SELECT p.id,
+                  bool_or(x.kategorie = 'einkehr') AS einkehr,
+                  EXISTS (SELECT 1 FROM parkplatz_ziel pz JOIN ziel z ON z.id = pz.ziel_id
+                           WHERE pz.parkplatz_id = p.id AND z.art = 'gipfel') AS gipfel
+             FROM parkplatz p
+             LEFT JOIN parkplatz_nearby x ON x.parkplatz_id = p.id
+            WHERE p.aktiv
+            GROUP BY p.id)
+         SELECT count(*)::int AS gesamt,
+                count(*) FILTER (WHERE einkehr IS NOT TRUE)::int AS ohne,
+                count(*) FILTER (WHERE einkehr IS NOT TRUE AND gipfel)::int AS "gipfelOhne"
+           FROM e`,
+      )
+    )[0],
+);
+
 export const gipfelReichweite = cache(
   async () =>
     (

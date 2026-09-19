@@ -1,6 +1,5 @@
 import type { Preisstand } from "@/lib/amazon";
-import type { Stock } from "@/lib/ausruestung/wanderstoecke";
-import { nf } from "@/lib/format";
+import type { Produkt } from "@/lib/ausruestung/typen";
 import Affiliatelink from "@/components/Affiliatelink";
 
 /*
@@ -137,77 +136,29 @@ export function Abzeichen({ text, stark }: { text: string; stark?: boolean }) {
   );
 }
 
-export function Testnote({ s }: { s: Stock }) {
-  if (!s.warentest) return null;
+/** Hinweis-Chip im Bericht — etwa eine Testnote. Nur, wenn es einen gibt. */
+export function Siegel({ text }: { text?: string }) {
+  if (!text) return null;
   return (
     <span className="inline-flex items-baseline gap-1.5 rounded-lg border border-line bg-card px-2.5 py-1 text-sm">
-      <span className="text-muted">Stiftung Warentest</span>
-      <strong className="tabular-nums">{s.warentest.note}</strong>
-      <span className="text-muted">({s.warentest.urteil})</span>
+      {text}
     </span>
   );
 }
 
-/** Eine der drei Empfehlungen ganz oben. */
-export function Schnellkarte({
-  s,
-  preis,
-  fuer,
-}: {
-  s: Stock;
-  preis?: Preisstand;
-  /** Für wen — ein kurzer Satz über der Karte. */
-  fuer: string;
-}) {
-  return (
-    <article className="flex flex-col rounded-2xl border border-line bg-card p-4 shadow-sm">
-      <p className="text-sm font-semibold text-accent">{fuer}</p>
-      <div className="mt-3">
-        <Produktbild preis={preis} alt={`${s.marke} ${s.name}`} href={preis?.url} />
-      </div>
-      <h3 className="mt-4 text-lg font-semibold leading-snug">
-        {s.marke} {s.name}
-      </h3>
-      <p className="mt-1 text-sm leading-relaxed text-muted">{s.rolle}</p>
-      <ul className="mt-3 space-y-1 text-sm">
-        <li>{s.bauart} · {s.material}</li>
-        {s.gramm_stueck && <li>{nf.format(s.gramm_stueck)} g je Stock</li>}
-        {s.warentest && (
-          <li>
-            Warentest <strong>{s.warentest.note}</strong> — {s.warentest.rang}
-          </li>
-        )}
-      </ul>
-      <div className="mt-auto pt-3">
-        <a href={`#${s.asin}`} className="text-sm text-muted underline hover:text-accent">
-          Zur ausführlichen Einschätzung
-        </a>
-        <Affiliatelink url={preis?.url ?? ""} preis={preis} name={`${s.marke} ${s.name}`} knapp />
-      </div>
-    </article>
-  );
-}
-
-/** Der ausführliche Bericht zu einem Stock. */
+/** Der ausführliche Bericht zu einem Produkt. */
 export function Produktbericht({
   s,
   preis,
   nummer,
   urlErsatz,
 }: {
-  s: Stock;
+  s: Produkt;
   preis?: Preisstand;
   nummer: number;
   urlErsatz: string;
 }) {
-  const daten: [string, string][] = [
-    ["Bauart", s.bauart],
-    ["Material", s.material],
-    ["Länge", s.laenge],
-    ["Verschluss", s.verschluss],
-    ["Griff", s.griff],
-    ["Gewicht", s.gramm_stueck ? `${nf.format(s.gramm_stueck)} g je Stock` : "vom Hersteller nicht genannt"],
-  ];
+  const daten = s.eckdaten;
   return (
     <article id={s.asin} className="scroll-mt-6 overflow-hidden rounded-2xl border border-line bg-card">
       <div className="grid gap-6 p-5 sm:grid-cols-[15rem_1fr] sm:p-7">
@@ -218,7 +169,7 @@ export function Produktbericht({
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm tabular-nums text-muted">{nummer}.</span>
             {s.abzeichen && <Abzeichen text={s.abzeichen} stark={nummer === 1} />}
-            <Testnote s={s} />
+            <Siegel text={s.siegel} />
           </div>
           <h3 className="mt-2 text-2xl font-bold tracking-tight">
             {s.marke} {s.name}
@@ -399,15 +350,20 @@ export function Kartenraster({
  */
 export function Uebersicht({
   zeilen,
+  kennwertTitel,
+  kennwertLeer = "—",
 }: {
-  zeilen: { s: Stock; preis?: Preisstand; fuer: string; url: string }[];
+  zeilen: { s: Produkt; preis?: Preisstand; fuer: string; url: string }[];
+  /** Überschrift der dritten Spalte — bei Stöcken "Warentest". */
+  kennwertTitel: string;
+  kennwertLeer?: string;
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-card shadow-sm">
       <div className="hidden grid-cols-[6.5rem_1fr_11rem_12.5rem] gap-4 border-b border-line bg-sand px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted md:grid">
         <span />
-        <span>Stock</span>
-        <span>Warentest</span>
+        <span>Produkt</span>
+        <span>{kennwertTitel}</span>
         <span className="text-right">Preis</span>
       </div>
       <ol>
@@ -434,22 +390,21 @@ export function Uebersicht({
                 </a>
               </p>
               <p className="mt-0.5 text-sm text-muted">
-                {s.bauart} · {s.material}
-                {s.gramm_stueck ? ` · ${s.gramm_stueck} g` : ""} ·{" "}
+                {s.kurz} ·{" "}
                 <a href={`#${s.asin}`} className="underline hover:text-accent">
                   Einschätzung
                 </a>
               </p>
             </div>
             <div className="hidden text-sm md:block">
-              {s.warentest ? (
+              {s.kennwert ? (
                 <>
-                  <span className="text-lg font-bold tabular-nums">{s.warentest.note}</span>{" "}
-                  <span className="text-muted">({s.warentest.urteil})</span>
-                  <span className="block text-xs text-muted">{s.warentest.rang}</span>
+                  <span className="text-lg font-bold tabular-nums">{s.kennwert.wert}</span>{" "}
+                  {s.kennwert.zusatz && <span className="text-muted">({s.kennwert.zusatz})</span>}
+                  {s.kennwert.unter && <span className="block text-xs text-muted">{s.kennwert.unter}</span>}
                 </>
               ) : (
-                <span className="text-muted">keine zitierbare Note</span>
+                <span className="text-muted">{kennwertLeer}</span>
               )}
             </div>
             <div className="md:text-right">
@@ -469,7 +424,7 @@ export function Entscheidung({
   url,
   children,
 }: {
-  s: Stock;
+  s: Produkt;
   preis?: Preisstand;
   url: string;
   children: React.ReactNode;
@@ -488,5 +443,66 @@ export function Entscheidung({
         <Affiliatelink url={url} preis={preis} name={`${s.marke} ${s.name}`} knapp />
       </div>
     </section>
+  );
+}
+
+/**
+ * Die drei Arten, eine Trinkblase zu öffnen — und was das für die Reinigung
+ * heißt. Die Öffnung entscheidet mehr über den Alltag als jedes andere
+ * Merkmal, deshalb bekommt sie ein eigenes Bild.
+ */
+export function OeffnungenBild() {
+  const arten: { titel: string; urteil: string; gut: boolean | null; text: string; form: React.ReactNode }[] = [
+    {
+      titel: "Schraubdeckel",
+      urteil: "umständlich zu reinigen",
+      gut: false,
+      text: "Eine runde Öffnung von ein paar Zentimetern. Füllen geht gut, aber in die Ecken kommt nur eine Bürste.",
+      form: <circle cx="60" cy="26" r="11" fill="none" stroke="currentColor" strokeWidth="4" />,
+    },
+    {
+      titel: "Schiebeverschluss",
+      urteil: "einfach",
+      gut: true,
+      text: "Die ganze Oberkante öffnet sich, eine Schiene schiebt sich darüber. Die Blase lässt sich weit aufklappen, manche auf links drehen.",
+      form: (
+        <>
+          <line x1="22" y1="22" x2="98" y2="22" stroke="var(--accent)" strokeWidth="6" strokeLinecap="round" />
+          <rect x="14" y="16" width="16" height="12" rx="3" fill="var(--accent)" />
+        </>
+      ),
+    },
+    {
+      titel: "Weite Öffnung",
+      urteil: "am einfachsten",
+      gut: true,
+      text: "Eine große, feste Öffnung, in die eine ganze Hand passt. Reinigen wie bei einer Schüssel.",
+      form: <ellipse cx="60" cy="24" rx="30" ry="9" fill="none" stroke="var(--accent)" strokeWidth="4" />,
+    },
+  ];
+  return (
+    <div className="grid gap-4 md:grid-cols-3">
+      {arten.map((a) => (
+        <figure key={a.titel} className="rounded-xl border border-line bg-card p-5">
+          <svg viewBox="0 0 120 130" className="mx-auto h-28 w-auto text-foreground" aria-hidden>
+            <path
+              d="M18 18 H102 V96 C102 118 84 124 60 124 C36 124 18 118 18 96 Z"
+              fill="currentColor"
+              fillOpacity=".06"
+              stroke="currentColor"
+              strokeOpacity=".4"
+              strokeWidth="2"
+            />
+            {a.form}
+            <path d="M60 124 C60 128 64 130 70 130" fill="none" stroke="currentColor" strokeOpacity=".4" strokeWidth="3" />
+          </svg>
+          <figcaption className="mt-3">
+            <h3 className="font-semibold">{a.titel}</h3>
+            <p className={`text-sm font-medium ${a.gut ? "text-accent" : "text-warn"}`}>Reinigung: {a.urteil}</p>
+            <p className="mt-1.5 text-[0.95rem] leading-relaxed text-muted">{a.text}</p>
+          </figcaption>
+        </figure>
+      ))}
+    </div>
   );
 }
