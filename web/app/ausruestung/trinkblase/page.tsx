@@ -666,7 +666,11 @@ export default async function Trinkblase() {
           Brunnen am Weg sind nicht automatisch Trinkwasser — steht „Kein Trinkwasser“ dran, gilt
           das. Wer regelmäßig aus Quellen und Bächen nachfüllen will, braucht einen Wasserfilter.
           Die Deuter lässt sich laut Hersteller mit einem 28-mm-Filter kombinieren; welcher Filter
-          taugt, ist ein eigenes Thema und nicht Teil dieses Vergleichs.
+          taugt, steht im{" "}
+          <Link href="/ausruestung/wasserfilter" className="underline hover:text-accent">
+            Wasserfilter-Vergleich
+          </Link>
+          .
         </p>
       </Kapitel>
 

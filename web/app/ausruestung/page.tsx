@@ -20,6 +20,11 @@ export const metadata: Metadata = {
  */
 const SEITEN = [
   {
+    pfad: "/ausruestung/wasserfilter",
+    titel: "Wasserfilter",
+    text: "Was ein Outdoor-Filter zurückhält und was nicht, Filter, Tabletten oder Abkochen, Frost, und acht Lösungen von Katadyn bis LifeStraw.",
+  },
+  {
     pfad: "/ausruestung/gamaschen",
     titel: "Gamaschen",
     text: "Kurz, wadenlang oder lang, dicht oder atmungsaktiv, die richtige Größe, was das RKI zu Zecken sagt, und sechs Gamaschen.",

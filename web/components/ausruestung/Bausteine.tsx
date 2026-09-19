@@ -897,3 +897,72 @@ export function NotsignalBild() {
     </figure>
   );
 }
+
+/**
+ * Porengröße gegen Erreger, logarithmisch von 0,01 bis 10 Mikrometer.
+ *
+ * Nur Grenzen, die belegt sind: Die CDC schreibt, Filter bis 1 µm halten
+ * Parasiten zurück, bis 0,3 µm auch Bakterien, und Darmviren wie Norovirus
+ * messen im Mittel 0,03 µm. Die Porengrößen der Filter stammen von den
+ * Herstellern.
+ */
+export function PorenBild() {
+  const x0 = 40;
+  const breite = 540;
+  const px = (um: number) => x0 + ((Math.log10(um) + 2) / 3) * breite; // 0,01 … 10 µm
+  // Beschriftung links oder rechts der Linie, damit nah beieinanderliegende
+  // Marken (0,1 / 0,2 / 0,3 µm) sich nicht überdecken.
+  const marken: { um: number; text: string; farbe: string; oben: boolean; anker: "start" | "middle" | "end" }[] = [
+    { um: 0.03, text: "Viren, ~0,03 µm", farbe: "var(--warn)", oben: true, anker: "middle" },
+    { um: 0.1, text: "Hohlfaser 0,1 µm", farbe: "var(--accent)", oben: false, anker: "end" },
+    { um: 0.2, text: "Pumpe 0,2 µm", farbe: "var(--accent)", oben: false, anker: "start" },
+    { um: 0.3, text: "Grenze Bakterien, 0,3 µm", farbe: "currentColor", oben: true, anker: "end" },
+    { um: 1, text: "Grenze Parasiten, 1 µm", farbe: "currentColor", oben: true, anker: "start" },
+  ];
+  return (
+    <figure className="rounded-2xl border border-line bg-card p-5 sm:p-6">
+      <div className="overflow-x-auto">
+        <svg
+          viewBox="0 0 620 170"
+          className="mx-auto h-auto w-full min-w-[34rem] text-foreground"
+          role="img"
+          aria-label="Logarithmische Skala von 0,01 bis 10 Mikrometer: Viren um 0,03 µm liegen unter den Poren von Hohlfaserfiltern (0,1 µm) und Pumpfiltern (0,2 µm). Filter bis 0,3 µm halten Bakterien zurück, bis 1 µm Parasiten."
+        >
+          {/* Bereiche: was zurückgehalten wird */}
+          <rect x={px(0.3)} y="70" width={px(10) - px(0.3)} height="24" rx="4" fill="var(--accent)" fillOpacity=".12" />
+          <rect x={px(1)} y="70" width={px(10) - px(1)} height="24" rx="4" fill="var(--accent)" fillOpacity=".12" />
+          <rect x={px(0.01)} y="70" width={px(0.3) - px(0.01)} height="24" rx="4" fill="var(--warn)" fillOpacity=".1" />
+          <line x1={px(0.01)} x2={px(10)} y1="94" y2="94" stroke="currentColor" strokeOpacity=".4" />
+          {[0.01, 0.1, 1, 10].map((v) => (
+            <g key={v}>
+              <line x1={px(v)} x2={px(v)} y1="94" y2="100" stroke="currentColor" strokeOpacity=".4" />
+              <text x={px(v)} y="114" textAnchor="middle" fontSize="11" fill="currentColor" fillOpacity=".65">
+                {String(v).replace(".", ",")} µm
+              </text>
+            </g>
+          ))}
+          {marken.map((m) => (
+            <g key={m.text}>
+              <line x1={px(m.um)} x2={px(m.um)} y1={m.oben ? 40 : 70} y2={m.oben ? 94 : 136} stroke={m.farbe} strokeWidth="2" strokeOpacity={m.farbe === "currentColor" ? 0.5 : 1} />
+              <text
+                x={px(m.um) + (m.anker === "start" ? 4 : m.anker === "end" ? -4 : 0)}
+                y={m.oben ? 32 : 152}
+                textAnchor={m.anker}
+                fontSize="12"
+                fontWeight="600"
+                fill={m.farbe}
+                fillOpacity={m.farbe === "currentColor" ? 0.75 : 1}
+              >
+                {m.text}
+              </text>
+            </g>
+          ))}
+        </svg>
+      </div>
+      <figcaption className="mt-2 text-sm text-muted">
+        Logarithmische Skala. Grenzen nach der US-Gesundheitsbehörde CDC: Filter mit Poren bis 1 µm
+        halten Parasiten zurück, bis 0,3 µm auch Bakterien — Viren nicht. Porengrößen der Filter laut Hersteller.
+      </figcaption>
+    </figure>
+  );
+}

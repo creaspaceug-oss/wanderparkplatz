@@ -347,6 +347,12 @@ export default async function Startseite() {
               marke: "Berater · 6 Gamaschen",
             },
             {
+              pfad: "/ausruestung/wasserfilter",
+              titel: "Wasserfilter für unterwegs",
+              text: "Was ein Filter zurückhält, was nicht — und welcher für deine Tour reicht.",
+              marke: "Wasserberater · 8 Lösungen",
+            },
+            {
               pfad: "/ausruestung/wanderrucksack",
               titel: "Wanderrucksack im Vergleich",
               text: "Wie viel Liter, wie du die Rückenlänge misst und was Damenmodelle anders machen.",
