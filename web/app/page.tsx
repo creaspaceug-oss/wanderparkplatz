@@ -314,13 +314,19 @@ export default async function Startseite() {
         titel="Ausrüstung für die Tour"
         einleitung="Kaufberatungen, die zu jedem Produkt sagen, wogegen es spricht."
       >
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
               pfad: "/ausruestung/groedel",
               titel: "Grödel für den Winter",
               text: "Wann sie reichen, wann es Steigeisen braucht, und welche Größe passt.",
               marke: "Faustregel · 6 Grödel",
+            },
+            {
+              pfad: "/ausruestung/huettenschlafsack",
+              titel: "Hüttenschlafsack",
+              text: "Pflicht auf Alpenvereinshütten: Seide, Baumwolle oder Mikrofaser — und warum er in die Mikrowelle muss.",
+              marke: "Berater · 7 Modelle",
             },
             {
               pfad: "/ausruestung/wanderrucksack",

@@ -20,6 +20,11 @@ export const metadata: Metadata = {
  */
 const SEITEN = [
   {
+    pfad: "/ausruestung/huettenschlafsack",
+    titel: "Hüttenschlafsack",
+    text: "Warum er auf Alpenvereinshütten Pflicht ist, Seide, Baumwolle oder Mikrofaser, was Bettwanzen und die Mikrowelle damit zu tun haben, und sieben Modelle.",
+  },
+  {
     pfad: "/ausruestung/groedel",
     titel: "Grödel",
     text: "Wann Grödel reichen und wann es Steigeisen braucht, welche Größe passt, und sechs Grödel von Snowline bis Kahtoola.",

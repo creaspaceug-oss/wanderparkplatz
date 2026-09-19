@@ -255,7 +255,8 @@ export default async function Wanderrucksack() {
         <div className="max-w-3xl space-y-5">
           <p>
             Für eine Tagestour reichen 18 bis 25 Liter: Regenjacke, eine warme Schicht, Proviant,
-            Wasser, Erste Hilfe. Für eine Hütte mit ein, zwei Übernachtungen kommen Hüttenschlafsack,
+            Wasser, Erste Hilfe. Für eine Hütte mit ein, zwei Übernachtungen kommen{" "}
+            <Link href="/ausruestung/huettenschlafsack" className="underline hover:text-accent">Hüttenschlafsack</Link>,
             Wechselwäsche und Waschzeug dazu, das sind 25 bis 35 Liter. Die Bergführer von
             Alpinewelten nennen 40 Liter für eine ganze Woche von Hütte zu Hütte{" "}
             <a href={QUELLEN.bergfuehrer} className="underline hover:text-accent" rel="noopener" target="_blank">
@@ -873,8 +874,8 @@ export default async function Wanderrucksack() {
             <p className="text-sm text-muted">Länge, Verschluss, faltbar oder Teleskop.</p>
           </li>
           <li>
-            <Link href="/wandern-ohne-auto" className="font-medium hover:text-accent">Wandern ohne Auto</Link>
-            <p className="text-sm text-muted">Ausgangspunkte mit Haltestelle in Laufweite.</p>
+            <Link href="/ausruestung/huettenschlafsack" className="font-medium hover:text-accent">Hüttenschlafsack im Vergleich</Link>
+            <p className="text-sm text-muted">Pflicht auf jeder Alpenvereinshütte.</p>
           </li>
         </ul>
       </aside>

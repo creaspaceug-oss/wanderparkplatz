@@ -778,3 +778,72 @@ export function TraktionBild() {
     </div>
   );
 }
+
+/**
+ * Packmaße im Maßstab zueinander — nur für Angebote, die eines nennen. Ein
+ * Rechteck je Modell, dazu eine Trinkflasche als Größenvergleich, deren Maße
+ * als Richtwert gekennzeichnet sind.
+ */
+export function PackmassVergleich({
+  eintraege,
+  vergleich,
+}: {
+  eintraege: { name: string; zusatz?: string; b: number; h: number; gramm?: number | null }[];
+  vergleich?: { name: string; b: number; h: number };
+}) {
+  const alle = [...eintraege, ...(vergleich ? [{ ...vergleich, gramm: null, vergleich: true }] : [])] as {
+    name: string; zusatz?: string; b: number; h: number; gramm?: number | null; vergleich?: boolean;
+  }[];
+  const skala = 6; // Pixel je Zentimeter im viewBox
+  const spalte = 92;
+  const hoehe = Math.max(...alle.map((e) => e.h)) * skala + 74;
+  return (
+    <figure className="rounded-2xl border border-line bg-card p-5 sm:p-6">
+      <div className="overflow-x-auto">
+        <svg
+          viewBox={`0 0 ${alle.length * spalte} ${hoehe}`}
+          className="mx-auto h-auto w-full min-w-[30rem] max-w-3xl text-foreground"
+          role="img"
+          aria-label={`Packmaße im Vergleich: ${alle.map((e) => `${e.name}${e.zusatz ? ` ${e.zusatz}` : ""} ${e.b} × ${e.h} cm`).join(", ")}.`}
+        >
+          {alle.map((e, i) => {
+            const w = e.b * skala;
+            const h = e.h * skala;
+            const x = i * spalte + (spalte - w) / 2;
+            const y = hoehe - 58 - h;
+            return (
+              <g key={`${e.name}-${e.zusatz ?? ""}`}>
+                <rect
+                  x={x}
+                  y={y}
+                  width={w}
+                  height={h}
+                  rx={Math.min(w, h) / 3}
+                  fill={e.vergleich ? "none" : "var(--accent)"}
+                  fillOpacity={e.vergleich ? 0 : 0.8}
+                  stroke={e.vergleich ? "currentColor" : "none"}
+                  strokeOpacity=".45"
+                  strokeDasharray={e.vergleich ? "4 3" : undefined}
+                  strokeWidth="2"
+                />
+                <text x={i * spalte + spalte / 2} y={hoehe - 40} textAnchor="middle" fontSize="11" fontWeight="600" fill="currentColor">
+                  {e.name}
+                </text>
+                <text x={i * spalte + spalte / 2} y={hoehe - 26} textAnchor="middle" fontSize="10" fill="currentColor" fillOpacity=".8">
+                  {e.zusatz ?? ""}
+                </text>
+                <text x={i * spalte + spalte / 2} y={hoehe - 11} textAnchor="middle" fontSize="10" fill="currentColor" fillOpacity=".65">
+                  {e.b} × {e.h} cm{e.gramm ? ` · ${e.gramm} g` : ""}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+      <figcaption className="mt-2 text-sm text-muted">
+        Packmaße laut Hersteller, maßstabsgetreu zueinander. Gestrichelt zum Vergleich eine
+        Trinkflasche, Maße als Richtwert.
+      </figcaption>
+    </figure>
+  );
+}
