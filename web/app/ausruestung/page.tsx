@@ -24,6 +24,11 @@ export const metadata: Metadata = {
  */
 const SEITEN = [
   {
+    pfad: "/ausruestung/wandersocken",
+    titel: "Wandersocken",
+    text: "Welche Polsterung zu welchem Schuh, Merino oder Kunstfaser, die richtige Größe, Blasen vermeiden, und sechs Socken für Damen und Herren.",
+  },
+  {
     pfad: "/ausruestung/wasserfilter",
     titel: "Wasserfilter",
     text: "Was ein Outdoor-Filter zurückhält und was nicht, Filter, Tabletten oder Abkochen, Frost, und acht Lösungen von Katadyn bis LifeStraw.",

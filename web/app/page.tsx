@@ -354,6 +354,12 @@ export default async function Startseite() {
               marke: "Wasserberater · 8 Lösungen",
             },
             {
+              pfad: "/ausruestung/wandersocken",
+              titel: "Wandersocken",
+              text: "Welche Polsterung zu welchem Schuh passt — und wie du Blasen vermeidest.",
+              marke: "Sockenfinder · 6 Socken",
+            },
+            {
               pfad: "/ausruestung/wanderrucksack",
               titel: "Wanderrucksack im Vergleich",
               text: "Wie viel Liter, wie du die Rückenlänge misst und was Damenmodelle anders machen.",

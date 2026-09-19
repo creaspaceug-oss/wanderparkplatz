@@ -10,6 +10,7 @@
  */
 export const FREIGABE: Record<string, string> = {
   "/ausruestung/wasserfilter": "2026-09-23T09:00:00+02:00",
+  "/ausruestung/wandersocken": "2026-09-26T09:00:00+02:00",
 };
 
 export function sichtbar(pfad: string, jetzt = Date.now()): boolean {

@@ -98,6 +98,7 @@ export async function eintraege(typ: SitemapTyp): Promise<SitemapEintrag[]> {
         { pfad: "/ausruestung/stirnlampe", frequenz: "weekly", gewicht: "0.8" },
         { pfad: "/ausruestung/gamaschen", frequenz: "weekly", gewicht: "0.8" },
         { pfad: "/ausruestung/wasserfilter", frequenz: "weekly", gewicht: "0.8" },
+        { pfad: "/ausruestung/wandersocken", frequenz: "weekly", gewicht: "0.8" },
       ].filter((e) => sichtbar(e.pfad));
     case "regionen": {
       const bestaende = await regionBestaende(WANDERREGIONEN);
