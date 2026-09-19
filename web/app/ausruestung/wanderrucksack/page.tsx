@@ -42,7 +42,7 @@ export const revalidate = 3600;
 const TITEL = "Wanderrucksack: Wie viel Liter, welche Rückenlänge, Damen oder Herren";
 
 export const metadata: Metadata = {
-  title: titel("Wanderrucksack: Größe, Rückenlänge, Damen oder Herren — sieben im Vergleich"),
+  title: titel("Wanderrucksack: Liter, Rückenlänge, Damen oder Herren"),
   description: beschreibung(
     "Wie viel Liter du brauchst, wie du die Rückenlänge misst, was Damenmodelle anders machen, Netz- oder Kontaktrücken — und sieben Wanderrucksäcke von Deuter, Vaude und Osprey mit ihren Schwächen.",
   ),
@@ -58,7 +58,7 @@ const KAPITEL: [string, string][] = [
   ["packen", "Richtig packen"],
   ["regen", "Regen: Hülle, Packsack, wasserdicht"],
   ["gewicht", "Wie leicht muss er sein?"],
-  ["tests", "Was die Tests sagen"],
+  ["tests", "Wanderrucksack im Test: Was Saldo und dTest fanden"],
   ["vergleich", "Technische Daten im Vergleich"],
   ["modelle", "Die Rucksäcke einzeln"],
   ["trinkblase", "Trinkblase im Rucksack"],
@@ -567,7 +567,7 @@ export default async function Wanderrucksack() {
       {/* ─────────────────────────── 9 ─────────────────────────── */}
       <Kapitel
         id="tests"
-        titel="Was die Tests sagen"
+        titel="Wanderrucksack im Test: Was Saldo und dTest fanden"
         unterzeile="Die Stiftung Warentest hat keinen eigenen Rucksacktest — aber über zwei berichtet."
         breit
       >

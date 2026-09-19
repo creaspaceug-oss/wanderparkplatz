@@ -55,9 +55,9 @@ const KAPITEL: [string, string][] = [
   ["material", "Material und Geschmack"],
   ["vergleich", "Technische Daten im Vergleich"],
   ["modelle", "Die Blasen einzeln"],
-  ["reinigen", "Reinigen, trocknen, lagern"],
+  ["reinigen", "Trinkblase reinigen, trocknen, lagern"],
   ["ersatzteile", "Ersatzteile: Mundstück und Schlauch"],
-  ["rucksack", "Welcher Rucksack passt"],
+  ["rucksack", "Der passende Rucksack für die Trinkblase"],
   ["winter", "Im Winter"],
   ["nachfuellen", "Unterwegs nachfüllen"],
   ["nichts", "Wann eine Blase nichts bringt"],
@@ -489,7 +489,7 @@ export default async function Trinkblase() {
       {/* ─────────────────────────── 8 ─────────────────────────── */}
       <Kapitel
         id="reinigen"
-        titel="Reinigen, trocknen, lagern"
+        titel="Trinkblase reinigen, trocknen, lagern"
         unterzeile="Eine Blase, die nach jeder Tour ausgespült und offen getrocknet wird, braucht selten mehr."
         breit
       >
@@ -586,7 +586,7 @@ export default async function Trinkblase() {
       </Kapitel>
 
       {/* ─────────────────────────── 9 ─────────────────────────── */}
-      <Kapitel id="rucksack" titel="Welcher Rucksack passt">
+      <Kapitel id="rucksack" titel="Der passende Rucksack für die Trinkblase">
         <p>
           Der Rucksack braucht drei Dinge: ein Fach innen am Rücken, in dem die Blase aufrecht
           hängt, einen Haken oder Klett oben zum Aufhängen und eine Öffnung, durch die der Schlauch

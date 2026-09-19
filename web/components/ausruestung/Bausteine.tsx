@@ -708,3 +708,73 @@ export function PackBild() {
     </figure>
   );
 }
+
+/**
+ * Spikes, Grödel, Steigeisen — drei Sohlen von unten. Die Unterschiede sind
+ * sichtbar: wenige kurze Stifte, eine Kette mit Zacken, ein starrer Rahmen
+ * mit Frontzacken. Was die Zeichnung zeigt, steht darunter in Worten.
+ */
+export function TraktionBild() {
+  const sohle = "M40 12 C60 6 78 14 80 40 C82 70 74 88 72 110 C70 136 76 160 68 180 C62 194 34 196 28 180 C20 160 26 136 24 110 C22 88 16 64 18 40 C20 18 26 14 40 12 Z";
+  const arten: { titel: string; unter: string; text: string; inhalt: React.ReactNode }[] = [
+    {
+      titel: "Schuhspikes",
+      unter: "Gehweg, Glatteis",
+      text: "Ein Gummirahmen mit wenigen kurzen Stiften. Für flache, vereiste Wege im Alltag.",
+      inhalt: (
+        <>
+          <path d={sohle} fill="none" stroke="currentColor" strokeOpacity=".35" strokeWidth="6" />
+          {[[38, 40], [62, 44], [44, 76], [52, 150], [40, 170], [60, 168]].map(([x, y]) => (
+            <circle key={`${x}-${y}`} cx={x} cy={y} r="4" fill="currentColor" fillOpacity=".7" />
+          ))}
+        </>
+      ),
+    },
+    {
+      titel: "Grödel",
+      unter: "Winterwanderweg, vereister Pfad",
+      text: "Zacken von rund einem Zentimeter an Ketten, gehalten von einem Gummirahmen. Passen über fast jeden Schuh.",
+      inhalt: (
+        <>
+          <path d={sohle} fill="none" stroke="currentColor" strokeOpacity=".35" strokeWidth="6" />
+          <path d="M30 40 L50 58 L72 40 M26 78 L50 58 L74 78 M28 150 L48 164 L70 150 M34 180 L48 164 L64 180" fill="none" stroke="currentColor" strokeOpacity=".5" strokeWidth="2" />
+          {[[30, 40], [72, 40], [26, 78], [74, 78], [50, 58], [28, 150], [70, 150], [48, 164], [34, 180], [64, 180]].map(([x, y]) => (
+            <path key={`${x}-${y}`} d={`M${x - 4} ${y + 3} L${x} ${y - 5} L${x + 4} ${y + 3} Z`} fill="var(--accent)" />
+          ))}
+        </>
+      ),
+    },
+    {
+      titel: "Steigeisen",
+      unter: "Firn, steile Schneefelder, Gletscher",
+      text: "Ein starrer Rahmen aus Stahl oder Aluminium mit langen Zacken und zwei Frontzacken. Braucht eine Bindung und den passenden Schuh.",
+      inhalt: (
+        <>
+          <path d={sohle} fill="currentColor" fillOpacity=".05" stroke="currentColor" strokeOpacity=".2" strokeWidth="2" />
+          <path d="M26 30 H74 V92 H26 Z M30 142 H70 V184 H30 Z" fill="none" stroke="var(--warn)" strokeWidth="4" strokeLinejoin="round" />
+          <path d="M50 92 V142" stroke="var(--warn)" strokeWidth="4" />
+          {[[26, 30], [74, 30], [26, 92], [74, 92], [30, 142], [70, 142], [30, 184], [70, 184]].map(([x, y]) => (
+            <path key={`${x}-${y}`} d={`M${x - 5} ${y + 4} L${x} ${y - 7} L${x + 5} ${y + 4} Z`} fill="var(--warn)" />
+          ))}
+          <path d="M40 30 L38 4 L46 30 M54 30 L62 4 L60 30" fill="var(--warn)" stroke="var(--warn)" strokeWidth="2" strokeLinejoin="round" />
+        </>
+      ),
+    },
+  ];
+  return (
+    <div className="grid gap-4 md:grid-cols-3">
+      {arten.map((a) => (
+        <figure key={a.titel} className="rounded-xl border border-line bg-card p-5">
+          <svg viewBox="0 0 100 200" className="mx-auto h-40 w-auto text-foreground" aria-hidden>
+            {a.inhalt}
+          </svg>
+          <figcaption className="mt-3">
+            <h3 className="font-semibold">{a.titel}</h3>
+            <p className="text-sm font-medium text-accent">{a.unter}</p>
+            <p className="mt-1.5 text-[0.95rem] leading-relaxed text-muted">{a.text}</p>
+          </figcaption>
+        </figure>
+      ))}
+    </div>
+  );
+}

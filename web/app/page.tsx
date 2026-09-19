@@ -314,8 +314,14 @@ export default async function Startseite() {
         titel="Ausrüstung für die Tour"
         einleitung="Kaufberatungen, die zu jedem Produkt sagen, wogegen es spricht."
       >
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {[
+            {
+              pfad: "/ausruestung/groedel",
+              titel: "Grödel für den Winter",
+              text: "Wann sie reichen, wann es Steigeisen braucht, und welche Größe passt.",
+              marke: "Faustregel · 6 Grödel",
+            },
             {
               pfad: "/ausruestung/wanderrucksack",
               titel: "Wanderrucksack im Vergleich",

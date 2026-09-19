@@ -20,6 +20,11 @@ export const metadata: Metadata = {
  */
 const SEITEN = [
   {
+    pfad: "/ausruestung/groedel",
+    titel: "Grödel",
+    text: "Wann Grödel reichen und wann es Steigeisen braucht, welche Größe passt, und sechs Grödel von Snowline bis Kahtoola.",
+  },
+  {
     pfad: "/ausruestung/wanderrucksack",
     titel: "Wanderrucksack",
     text: "Wie viel Liter du brauchst, wie du die Rückenlänge misst, Damen oder Herren, und sieben Rucksäcke von Deuter, Vaude und Osprey.",

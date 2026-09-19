@@ -1501,3 +1501,45 @@ export const oepnvFuerRegion = cache(
       )
     )[0],
 );
+
+/**
+ * Wo es vom Parkplatz aus hoch hinaufgeht.
+ *
+ * Für die Grödelseite: Der DAV warnt vor Altschneefeldern auf 1.300 bis 1.600
+ * Metern, die im Frühjahr noch liegen, wenn unten längst Frühling ist. Gezählt
+ * wird, an wie vielen Ausgangspunkten ein Gipfel ab einer Höhe im erfassten
+ * Umkreis liegt (höchstens 5 km, siehe pipeline/src/build.ts) — und je
+ * Landkreis, wo solche Ausgangspunkte liegen. Die Höhe des Parkplatzes
+ * selbst ist in OpenStreetMap fast nie eingetragen; die des Gipfels meistens.
+ */
+export const hoheGipfel = cache(async () => {
+  const [stufen, kreise] = await Promise.all([
+    q<{ schwelle: number; plaetze: number }>(
+      `SELECT s.schwelle, count(DISTINCT p.id)::int AS plaetze
+         FROM (VALUES (1000), (1300), (1500)) s(schwelle)
+         JOIN ziel z            ON z.art = 'gipfel' AND z.hoehe_m >= s.schwelle
+         JOIN parkplatz_ziel pz ON pz.ziel_id = z.id
+         JOIN parkplatz p       ON p.id = pz.parkplatz_id AND p.aktiv
+        GROUP BY 1 ORDER BY 1`,
+    ),
+    // Je Kreis: wie viele Ausgangspunkte einen Gipfel ab 1.300 m in Reichweite
+    // haben, und welcher der höchste ist. Eine Liste einzelner Parkplätze wäre
+    // zwölfmal Garmisch-Partenkirchen.
+    q<{ kreis: string; slug: string; plaetze: number; gipfel: string; hoehe_m: number }>(
+      `WITH t AS (
+         SELECT p.id, p.kreis_id, z.name, z.hoehe_m
+           FROM parkplatz p
+           JOIN parkplatz_ziel pz ON pz.parkplatz_id = p.id
+           JOIN ziel z            ON z.id = pz.ziel_id AND z.art = 'gipfel' AND z.hoehe_m >= 1300
+          WHERE p.aktiv AND p.kreis_id IS NOT NULL
+       )
+       SELECT k.name AS kreis, k.slug, count(DISTINCT t.id)::int AS plaetze,
+              (array_agg(t.name ORDER BY t.hoehe_m DESC))[1] AS gipfel,
+              max(t.hoehe_m)::int AS hoehe_m
+         FROM t JOIN kreis k ON k.id = t.kreis_id
+        GROUP BY k.id, k.name, k.slug
+        ORDER BY plaetze DESC, hoehe_m DESC`,
+    ),
+  ]);
+  return { stufen, kreise };
+});

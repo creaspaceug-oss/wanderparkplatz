@@ -50,16 +50,16 @@ export const metadata: Metadata = {
 
 const KAPITEL: [string, string][] = [
   ["brauchst-du", "Brauchst du überhaupt Stöcke?"],
-  ["laenge", "Die richtige Länge"],
-  ["bauart", "Faltbar oder Teleskop"],
+  ["laenge", "Die richtige Länge: Wanderstöcke einstellen"],
+  ["bauart", "Wanderstöcke faltbar oder Teleskop"],
   ["verschluss", "Der Verschluss"],
   ["material", "Aluminium, Carbon, Dämpfung"],
   ["griff", "Griff und Schlaufe"],
   ["spitze", "Spitze, Teller, Gummipuffer"],
-  ["warentest", "Was die Stiftung Warentest fand"],
+  ["warentest", "Wanderstöcke im Test: Was die Stiftung Warentest fand"],
   ["vergleich", "Technische Daten im Vergleich"],
   ["modelle", "Die Stöcke einzeln"],
-  ["holz", "Und der Holzstock?"],
+  ["holz", "Wanderstöcke aus Holz"],
   ["discounter", "Stöcke von Lidl, Aldi, Tchibo"],
   ["technik", "Richtig gehen mit Stöcken"],
   ["aeltere", "Für Ältere und bei Knieproblemen"],
@@ -245,7 +245,7 @@ export default async function Wanderstoecke() {
       {/* ─────────────────────────── 2 ─────────────────────────── */}
       <Kapitel
         id="laenge"
-        titel="Die richtige Länge"
+        titel="Die richtige Länge: Wanderstöcke einstellen"
         unterzeile="Der meistgesuchte und am häufigsten falsch beantwortete Punkt zum Thema."
         breit
       >
@@ -303,7 +303,7 @@ export default async function Wanderstoecke() {
       </Kapitel>
 
       {/* ─────────────────────────── 3 ─────────────────────────── */}
-      <Kapitel id="bauart" titel="Faltbar oder Teleskop" unterzeile="Eine Frage des Rucksacks, nicht der Qualität.">
+      <Kapitel id="bauart" titel="Wanderstöcke faltbar oder Teleskop" unterzeile="Eine Frage des Rucksacks, nicht der Qualität.">
         <p>
           <strong>Teleskopstöcke</strong> werden ineinandergeschoben, meist in drei Segmenten.
           Zusammengeschoben bleiben sie rund 65 Zentimeter lang. Dafür lassen sie sich über einen
@@ -448,7 +448,7 @@ export default async function Wanderstoecke() {
       {/* ─────────────────────────── 8 ─────────────────────────── */}
       <Kapitel
         id="warentest"
-        titel="Was die Stiftung Warentest fand"
+        titel="Wanderstöcke im Test: Was die Stiftung Warentest fand"
         unterzeile={`Zwölf Stöcke im Labor und auf dem Weg, veröffentlicht in ${WARENTEST.heft}.`}
       >
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -603,7 +603,7 @@ export default async function Wanderstoecke() {
       </Kapitel>
 
       {/* ─────────────────────────── 11 ─────────────────────────── */}
-      <Kapitel id="holz" titel="Und der Holzstock?" unterzeile="Ein anderes Werkzeug für eine andere Art zu gehen." breit>
+      <Kapitel id="holz" titel="Wanderstöcke aus Holz" unterzeile="Ein anderes Werkzeug für eine andere Art zu gehen." breit>
         <div className="max-w-3xl space-y-5">
           <p>
             Nach dem klassischen Wanderstock aus Holz wird in Deutschland häufiger gesucht als nach
@@ -914,8 +914,8 @@ export default async function Wanderstoecke() {
             <p className="text-sm text-muted">Liter, Rückenlänge, Damen oder Herren.</p>
           </li>
           <li>
-            <Link href="/toilette-am-wanderparkplatz" className="font-medium hover:text-accent">Toilette am Wanderparkplatz</Link>
-            <p className="text-sm text-muted">Die Frage, die sich vor der Tour genauso stellt.</p>
+            <Link href="/ausruestung/groedel" className="font-medium hover:text-accent">Grödel im Vergleich</Link>
+            <p className="text-sm text-muted">Mit Stöcken und Grödeln über vereiste Wege.</p>
           </li>
         </ul>
       </aside>
