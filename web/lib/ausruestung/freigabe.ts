@@ -3,10 +3,14 @@
  *
  * Eine Seite kann fertig im Code liegen und trotzdem erst zu einem festen
  * Zeitpunkt erscheinen. Bis dahin liefert sie 404, und alle Verweise darauf —
- * Startseite, Übersicht, Querverweise, Sitemap — bleiben ausgeblendet. Da die
- * Seiten per ISR neu erzeugt werden, erscheint alles spätestens mit der
- * nächsten Revalidierung nach dem Zeitpunkt: die Seite und die Übersicht
- * innerhalb einer Stunde, Startseite und Sitemap innerhalb eines Tages.
+ * Startseite, Übersicht, Querverweise, Sitemap — bleiben ausgeblendet.
+ *
+ * Freigegeben wird von selbst: Ein täglicher Vercel-Cron um 07:15 UTC
+ * (09:15 Uhr Sommerzeit) ruft /api/freigabe auf. Die Route erzeugt Seite,
+ * Übersicht, Startseite und Sitemap neu und meldet die Seite bei IndexNow.
+ * Fällt der Cron aus, erscheint alles trotzdem mit der nächsten
+ * Revalidierung — Seite und Übersicht binnen einer Stunde, Startseite und
+ * Sitemap binnen eines Tages. Freigabezeiten also auf 09:00 Uhr legen.
  */
 export const FREIGABE: Record<string, string> = {
   "/ausruestung/wasserfilter": "2026-09-23T09:00:00+02:00",
