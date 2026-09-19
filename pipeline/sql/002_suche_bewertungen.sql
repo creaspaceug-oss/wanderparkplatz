@@ -18,8 +18,13 @@ CREATE EXTENSION IF NOT EXISTS unaccent;
 -- ---------------------------------------------------------------- Suche
 -- Ein gemeinsamer Index über alle Seitentypen: eine Abfrage bedient die
 -- Vorschlagsliste für Parkplätze, Orte, Kreise und Bundesländer.
-DROP TABLE IF EXISTS suchindex;
-CREATE TABLE suchindex (
+--
+-- Anlegen, nicht neu anlegen. Hier stand ein DROP, und im Ablauf des Imports
+-- fiel das nie auf: db:setup läuft unmittelbar vor dem Import, der die
+-- Tabelle ohnehin leert und neu füllt. Wer db:setup einzeln aufruft — etwa
+-- um eine neue Migration einzuspielen — legte damit die Suche der laufenden
+-- Seite still, ohne eine Fehlermeldung zu sehen. Genau das ist passiert.
+CREATE TABLE IF NOT EXISTS suchindex (
   id          serial PRIMARY KEY,
   typ         text NOT NULL,          -- parkplatz | ort | kreis | bundesland
   slug        text NOT NULL,
@@ -29,8 +34,8 @@ CREATE TABLE suchindex (
   such_text   text NOT NULL,                -- kleingeschrieben, ohne Umlaute
   UNIQUE (typ, slug)
 );
-CREATE INDEX suchindex_trgm_idx ON suchindex USING gin (such_text gin_trgm_ops);
-CREATE INDEX suchindex_praefix_idx ON suchindex (such_text text_pattern_ops);
+CREATE INDEX IF NOT EXISTS suchindex_trgm_idx ON suchindex USING gin (such_text gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS suchindex_praefix_idx ON suchindex (such_text text_pattern_ops);
 
 -- ----------------------------------------------------------- Bewertungen
 CREATE TABLE IF NOT EXISTS bewertung (
