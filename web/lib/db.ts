@@ -1251,6 +1251,27 @@ const plaetzeMitUmfeld = (kategorie: string) =>
 export const wcPlaetze = plaetzeMitUmfeld("wc");
 
 /**
+ * Wie viele Ausgangspunkte einen Gipfel in Reichweite haben.
+ *
+ * Für die Ausrüstungsseiten: Ob Stöcke etwas bringen, hängt am Höhenunterschied,
+ * und der ist in Deutschland die Regel, nicht die Ausnahme. Eine Zahl aus dem
+ * eigenen Bestand statt einer Behauptung.
+ */
+export const gipfelReichweite = cache(
+  async () =>
+    (
+      await q<{ plaetze: number; gesamt: number }>(
+        `SELECT (SELECT count(DISTINCT p.id)
+                   FROM parkplatz p
+                   JOIN parkplatz_ziel pz ON pz.parkplatz_id = p.id
+                   JOIN ziel z            ON z.id = pz.ziel_id
+                  WHERE p.aktiv AND z.art = 'gipfel')::int AS plaetze,
+                (SELECT count(*) FROM parkplatz WHERE aktiv)::int AS gesamt`,
+      )
+    )[0],
+);
+
+/**
  * Plätze, an denen die Haltestelle praktisch danebensteht.
  *
  * Das Gegenstück zur Toilettenliste: Der Gesamtanteil beantwortet eine Frage

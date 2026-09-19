@@ -119,10 +119,32 @@ export default function Datenschutz() {
         </p>
       </Abschnitt>
 
+      <Abschnitt titel="Amazon-Partnerprogramm">
+        <p>
+          Auf den Seiten unter <em>/ausruestung/</em> verweisen wir auf Produkte bei Amazon.
+          Diese Verweise tragen eine Partnerkennung; kommt darüber ein Kauf zustande, erhalten
+          wir eine Provision. Für dich ändert sich der Preis dadurch nicht. Solche Verweise sind
+          an Ort und Stelle als Anzeige gekennzeichnet.
+        </p>
+        <p>
+          Die Produktbilder werden von <em>m.media-amazon.com</em> geladen (Amazon Europe Core
+          S.à r.l., 38 avenue John F. Kennedy, 1855 Luxemburg). Dabei wird deine IP-Adresse
+          dorthin übertragen, ebenso Angaben zu Browser und Betriebssystem. Die
+          Programmbedingungen lassen für gelistete Artikel keine eigenen Aufnahmen zu.
+          Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO; das berechtigte Interesse liegt darin,
+          Produkte überhaupt abbilden zu können. Preise und Verfügbarkeit fragen wir serverseitig
+          ab — dabei werden keine Daten von dir übermittelt.
+        </p>
+        <p>
+          Erst wenn du einen solchen Verweis anklickst, gelangst du zu Amazon, wo dann deren
+          Datenschutzbestimmungen gelten.
+        </p>
+      </Abschnitt>
+
       <Abschnitt titel="Cookies und Dienste Dritter">
         <p>
-          Diese Website setzt keine Cookies und bindet keine Werbe- oder
-          Social-Media-Dienste ein. Schriftarten werden vom eigenen Server ausgeliefert; es
+          Diese Website setzt keine Cookies und bindet keine Werbenetzwerke oder
+          Social-Media-Dienste ein; zum Amazon-Partnerprogramm siehe den Abschnitt darüber. Schriftarten werden vom eigenen Server ausgeliefert; es
           besteht keine Verbindung zu Google Fonts.
         </p>
         <p>

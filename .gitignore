@@ -6,3 +6,5 @@ data/out/
 .env.local
 .DS_Store
 data/sicherung/
+.vercel
+.env*
