@@ -335,6 +335,12 @@ export default async function Startseite() {
               marke: "Set-Check · 7 Sets",
             },
             {
+              pfad: "/ausruestung/stirnlampe",
+              titel: "Stirnlampe zum Wandern",
+              text: "Was Lumen wirklich sagen und wann es auf deiner Tour dunkel wird.",
+              marke: "Dunkelheits-Rechner · 7 Lampen",
+            },
+            {
               pfad: "/ausruestung/wanderrucksack",
               titel: "Wanderrucksack im Vergleich",
               text: "Wie viel Liter, wie du die Rückenlänge misst und was Damenmodelle anders machen.",

@@ -1543,3 +1543,23 @@ export const hoheGipfel = cache(async () => {
   ]);
   return { stufen, kreise };
 });
+
+/**
+ * Ob Wanderparkplätze beleuchtet sind — laut OpenStreetMap.
+ *
+ * Für die Stirnlampenseite: Wer nach Sonnenuntergang zum Auto zurückkommt,
+ * findet dort fast nie Licht. Das Merkmal ist in OSM selten eingetragen;
+ * deshalb werden "ja", "nein" und "unbekannt" getrennt gezählt, statt
+ * Unbekanntes als unbeleuchtet auszugeben.
+ */
+export const beleuchtung = cache(
+  async () =>
+    (
+      await q<{ gesamt: number; ja: number; nein: number }>(
+        `SELECT count(*)::int AS gesamt,
+                count(*) FILTER (WHERE beleuchtet IS TRUE)::int  AS ja,
+                count(*) FILTER (WHERE beleuchtet IS FALSE)::int AS nein
+           FROM parkplatz WHERE aktiv`,
+      )
+    )[0],
+);

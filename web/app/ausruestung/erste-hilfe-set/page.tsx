@@ -396,7 +396,14 @@ export default async function ErsteHilfeSet() {
           eintraege={[
             {
               titel: "Stirnlampe",
-              text: "Ein Unfall kostet immer Zeit, und es wird schnell dunkel. Für Touren ohne Nachtaufbruch genügt laut DAV eine kleine Notfallstirnlampe ab etwa 30 Gramm — mit ihr gibt man auch das Notsignal.",
+              text: (
+                <>
+                  Ein Unfall kostet immer Zeit, und es wird schnell dunkel. Für Touren ohne Nachtaufbruch
+                  genügt laut DAV eine kleine Notfallstirnlampe ab etwa 30 Gramm — mit ihr gibt man auch
+                  das Notsignal. Welche Lampe für Wanderungen taugt, steht im{" "}
+                  <Link href="/ausruestung/stirnlampe" className="underline hover:text-accent">Stirnlampen-Vergleich</Link>.
+                </>
+              ),
             },
             {
               titel: "Fettgaze",

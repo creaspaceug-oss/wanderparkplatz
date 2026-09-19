@@ -20,6 +20,11 @@ export const metadata: Metadata = {
  */
 const SEITEN = [
   {
+    pfad: "/ausruestung/stirnlampe",
+    titel: "Stirnlampe",
+    text: "Was Lumen, Leuchtweite und Leuchtdauer wirklich bedeuten, wann es auf deiner Tour dunkel wird, und sieben Stirnlampen von Petzl bis Ledlenser.",
+  },
+  {
     pfad: "/ausruestung/erste-hilfe-set",
     titel: "Erste-Hilfe-Set",
     text: "Was laut Alpenverein hineingehört, welche Größe, welche Seite der Rettungsdecke nach außen, und sieben Sets an der DAV-Liste gemessen.",
