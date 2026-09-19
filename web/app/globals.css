@@ -8,6 +8,12 @@
   --card: #ffffff;
   --accent: #2f6b3f;
   --accent-soft: #eaf2ec;
+  /* Für Einwände und Warnhinweise — warm statt alarmrot, damit ein
+     "Dagegen" nach Abwägung aussieht und nicht nach Fehlermeldung. */
+  --warn: #9a3412;
+  --warn-soft: #fbf0e6;
+  /* Für Flächen, die sich vom Seitengrund absetzen sollen, ohne Karte zu sein. */
+  --sand: #f3efe6;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,6 +25,9 @@
     --card: #1b1f23;
     --accent: #6cbf82;
     --accent-soft: #1e2a22;
+    --warn: #f0a878;
+    --warn-soft: #2a1f18;
+    --sand: #1f2226;
   }
 }
 
@@ -30,6 +39,9 @@
   --color-card: var(--card);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-sand: var(--sand);
   --font-sans: var(--font-geist-sans);
 }
 
