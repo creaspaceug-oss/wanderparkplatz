@@ -35,7 +35,8 @@ function Abschnitt({ titel, children }: { titel: string; children: React.ReactNo
 
 export default async function UeberUns() {
   const [zahlen, b] = await Promise.all([kennzahlen(), bestand()]);
-  const stand = datum(b.stand);
+  const lauf = datum(b.lauf);
+  const abruf = datum(b.abruf);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -116,8 +117,19 @@ export default async function UeberUns() {
           Die Parkplätze selbst werden nach 30 Tagen erneuert, Wanderwege, Ziele und das
           Umfeld nach 90 Tagen, Ortsangaben nach 180 und Postleitzahlen nach einem Jahr.
           Bestehende Seiten behalten dabei ihre Adresse, und Bewertungen bleiben erhalten.
-          {stand ? ` Der jüngste Datenstand ist der ${stand}.` : ""}
+          {lauf ? ` Zuletzt gelaufen ist der Abgleich am ${lauf}.` : ""}
         </p>
+        {/* Lauf und Abruf getrennt nennen, sonst behauptet die Seite eine
+            Frische, die sie nicht hat: Ein Lauf, der nichts Überfälliges
+            findet, fragt OpenStreetMap gar nicht erst und kommt vollständig
+            aus dem Zwischenspeicher. */}
+        {abruf && (
+          <p>
+            Ein Lauf heißt nicht, dass neue Daten geholt wurden — er prüft zuerst, was
+            überhaupt fällig ist. Die Angaben zu den Parkplätzen selbst stammen aus einem
+            Abruf vom {abruf}.
+          </p>
+        )}
       </Abschnitt>
 
       <Abschnitt titel="Was dieses Verzeichnis nicht leisten kann">

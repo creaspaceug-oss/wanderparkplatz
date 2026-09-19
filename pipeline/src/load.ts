@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import pg from "pg";
 import { datenbankUrl } from "./db-url.ts";
-import { out } from "./paths.ts";
+import { out, raw } from "./paths.ts";
 import { suchform } from "./geo.ts";
 import { kennung } from "./ident.ts";
 
@@ -465,6 +465,22 @@ await client.query(`
     + (p.betreiber IS NOT NULL)::int + (p.hoehe_m IS NOT NULL)::int
     + (SELECT count(*) FROM parkplatz_trail t  WHERE t.parkplatz_id = p.id)
     + (SELECT count(*) FROM parkplatz_nearby n WHERE n.parkplatz_id = p.id)`);
+
+/*
+ * Abgleichzeitpunkt festhalten — in derselben Transaktion wie die Daten.
+ *
+ * Außerhalb geschrieben würde die Seite bei einem Abbruch zwischen COMMIT und
+ * diesem INSERT einen Lauf behaupten, den es nicht gab, oder umgekehrt.
+ *
+ * Der Abrufstand kommt aus dem Kachelspeicher und kann fehlen — etwa bei
+ * einem Import von Hand aus vorhandenen Dateien. Dann bleibt die Spalte leer,
+ * und die Seite nennt nur den Lauf.
+ */
+const abrufstand = await readFile(raw("_status.json"), "utf8").catch(() => null);
+await client.query(
+  "INSERT INTO import_lauf (parkplaetze, abrufstand) VALUES ($1, $2::jsonb)",
+  [parkplaetze.length, abrufstand],
+);
 
 await client.query("COMMIT");
 await client.query("ANALYZE");

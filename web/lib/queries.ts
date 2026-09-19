@@ -144,7 +144,10 @@ export interface Bestand {
   ziele: number;
   wanderwege: number;
   bewertungen: number;
-  stand: string | null;
+  /** Tag des letzten Abgleichlaufs. */
+  lauf: string | null;
+  /** Tag, an dem die Parkplatzdaten zuletzt bei Overpass geholt wurden. */
+  abruf: string | null;
 }
 
 /**
@@ -159,7 +162,15 @@ export const bestand = cache(
         `SELECT (SELECT count(*) FROM ziel  WHERE eigene_seite)::int   AS ziele,
                 (SELECT count(*) FROM trail WHERE eigene_seite)::int   AS wanderwege,
                 (SELECT count(*) FROM bewertung WHERE status = 'frei')::int AS bewertungen,
-                (SELECT max(aktualisiert)::date::text FROM parkplatz)   AS stand`,
+                -- Nicht max(parkplatz.aktualisiert): diese Spalte rückt nur bei
+                -- inhaltlicher Änderung vor, damit das lastmod in der Sitemap
+                -- belastbar bleibt. Als Datenstand gelesen ließ sie die Seite
+                -- altern, sobald in OpenStreetMap eine Woche nichts passierte.
+                (SELECT gelaufen::date::text FROM import_lauf
+                  ORDER BY gelaufen DESC LIMIT 1)                        AS lauf,
+                (SELECT (abrufstand -> 'pois' ->> 'stand')::timestamptz::date::text
+                   FROM import_lauf WHERE abrufstand -> 'pois' IS NOT NULL
+                  ORDER BY gelaufen DESC LIMIT 1)                        AS abruf`,
       )
     )[0],
 );
