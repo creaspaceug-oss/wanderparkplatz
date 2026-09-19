@@ -48,14 +48,22 @@ export const pool =
 // Ein Verbindungsfehler im Hintergrund darf den Prozess nicht beenden.
 pool.on("error", (err) => console.error("Postgres-Pool:", err.message));
 
-// Standardschwelle von word_similarity ist 0.6 — zu streng für deutsche
-// Ortsnamen mit Umlauten ("abtskuche" statt "abtskueche"). Pro Verbindung
-// gesetzt statt per ALTER DATABASE, damit jede Deployment-Datenbank
-// dasselbe Verhalten zeigt.
+/*
+ * Ähnlichkeitsschwelle der Suche. Die Vorgabe von word_similarity ist 0.6 —
+ * zu streng für deutsche Ortsnamen mit Umlauten ("abtskuche" statt
+ * "abtskueche").
+ *
+ * Hier stand einmal ein Handler, der den Wert beim Verbindungsaufbau setzte,
+ * ohne das Ergebnis abzuwarten. Die erste Abfrage auf einer frischen
+ * Verbindung konnte deshalb noch mit 0.6 laufen und weniger finden, und pg
+ * warnte bei jedem Seitenaufruf vor zwei gleichzeitigen Abfragen auf einer
+ * Verbindung — ab pg 9 ein Fehler. Gesetzt wird der Wert jetzt als Vorgabe
+ * der Datenbank, siehe pipeline/sql/011_suchschwelle.sql.
+ *
+ * Die Zahl steht damit an zwei Stellen: dort für den Operator <%, hier für
+ * den Vergleich des Punktwerts. Wer eine ändert, muss die andere mitziehen.
+ */
 export const AEHNLICHKEIT = 0.42;
-pool.on("connect", (c) => {
-  void c.query(`SET pg_trgm.word_similarity_threshold = ${AEHNLICHKEIT}`);
-});
 if (process.env.NODE_ENV !== "production") globalForPg.pgPool = pool;
 
 /**
@@ -248,7 +256,7 @@ export const alleSlugs = (tabelle: "parkplatz" | "bundesland" | "kreis" | "ort",
   );
 
 export interface Suchtreffer {
-  typ: "parkplatz" | "ort" | "kreis" | "bundesland";
+  typ: "parkplatz" | "ort" | "kreis" | "bundesland" | "region";
   slug: string;
   titel: string;
   untertitel: string | null;
@@ -260,6 +268,7 @@ export const PFAD: Record<Suchtreffer["typ"], string> = {
   ort: "/ort",
   kreis: "/kreis",
   bundesland: "/bundesland",
+  region: "/region",
 };
 
 /**

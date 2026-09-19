@@ -4,6 +4,18 @@ import { datenbankUrl } from "./db-url.ts";
 import { out, raw } from "./paths.ts";
 import { suchform } from "./geo.ts";
 import { kennung } from "./ident.ts";
+/*
+ * Die Wanderregionen stehen nicht in der Datenbank, sondern als kuratierte
+ * Liste in der Web-Anwendung: Sie sind Mittelpunkt und Radius, keine
+ * Verwaltungseinheit, und es gibt keine Spalte, über die ein Parkplatz ihnen
+ * zugeordnet wäre. Von dort gelesen statt hier verdoppelt — zwei Listen
+ * derselben Regionen liefen binnen eines Monats auseinander.
+ *
+ * Node meldet beim Laden einen Hinweis auf die fehlende Typangabe in
+ * web/package.json. Der bleibt so: dort "type": "module" einzutragen ginge
+ * Next.js an, für einen Import je Woche ist das der falsche Preis.
+ */
+import { WANDERREGIONEN } from "../../web/lib/wanderregionen.ts";
 
 const DB = datenbankUrl();
 const readJson = async (p: string) => JSON.parse(await readFile(p, "utf8"));
@@ -424,6 +436,40 @@ for (const [typ, sql] of [
     ]);
   }
 }
+/*
+ * Wanderregionen in die Suche aufnehmen.
+ *
+ * Ohne sie fand "fränkische schweiz" im Suchfeld nichts, obwohl es die Seite
+ * gibt. Der Bestand wird hier gezählt wie auf der Regionsseite selbst:
+ * Rechteck als Vorfilter, dann die genaue Entfernung.
+ */
+const IM_UMKREIS = `
+  p.aktiv
+  AND p.lat BETWEEN $1 - ($3 / 111.32) AND $1 + ($3 / 111.32)
+  AND p.lon BETWEEN $2 - ($3 / (111.32 * cos(radians($1))))
+                AND $2 + ($3 / (111.32 * cos(radians($1))))
+  AND 6371 * acos(LEAST(1, GREATEST(-1,
+        cos(radians($1)) * cos(radians(p.lat)) * cos(radians(p.lon) - radians($2))
+        + sin(radians($1)) * sin(radians(p.lat))))) <= $3`;
+
+for (const r of WANDERREGIONEN) {
+  const n = (
+    await client.query(`SELECT count(*)::int AS n FROM parkplatz p WHERE ${IM_UMKREIS}`, [
+      r.lat, r.lon, r.radiusKm,
+    ])
+  ).rows[0].n as number;
+  // Eine Region ohne Bestand liefert ein 404 — die gehört nicht in die Suche.
+  if (n === 0) continue;
+  suchZeilen.push([
+    "region", r.slug, r.name,
+    ["Wanderregion", r.laender.join(", ")].join(" · "),
+    // Gleiche Staffel wie Orte, Kreise und Länder: Regionen ranken über der
+    // Einzelseite, untereinander nach Bestand.
+    200 + Math.min(n, 500),
+    suchform([r.name, ...r.laender].join(" ")),
+  ]);
+}
+
 await insertMany(
   "suchindex",
   ["typ", "slug", "titel", "untertitel", "gewicht", "such_text"],
