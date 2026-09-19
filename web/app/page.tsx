@@ -354,6 +354,12 @@ export default async function Startseite() {
               marke: "Wasserberater · 8 Lösungen",
             },
             {
+              pfad: "/ausruestung/schuhe-impraegnieren",
+              titel: "Schuhe imprägnieren",
+              text: "Wachs oder Spray, was Gore-Tex-Schuhe brauchen und was der Test empfiehlt.",
+              marke: "Pflegeplaner · 7 Mittel",
+            },
+            {
               pfad: "/ausruestung/wandersocken",
               titel: "Wandersocken",
               text: "Welche Polsterung zu welchem Schuh passt — und wie du Blasen vermeidest.",

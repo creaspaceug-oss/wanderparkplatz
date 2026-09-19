@@ -24,6 +24,11 @@ export const metadata: Metadata = {
  */
 const SEITEN = [
   {
+    pfad: "/ausruestung/schuhe-impraegnieren",
+    titel: "Schuhe imprägnieren",
+    text: "Wachs oder Spray je nach Leder, was Gore-Tex-Schuhe brauchen, was die Stiftung Warentest fand, sicher sprühen, und sieben Mittel.",
+  },
+  {
     pfad: "/ausruestung/wandersocken",
     titel: "Wandersocken",
     text: "Welche Polsterung zu welchem Schuh, Merino oder Kunstfaser, die richtige Größe, Blasen vermeiden, und sechs Socken für Damen und Herren.",
