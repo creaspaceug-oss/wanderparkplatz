@@ -847,3 +847,53 @@ export function PackmassVergleich({
     </figure>
   );
 }
+
+/**
+ * Das alpine Notsignal als Zeitleiste: sechs Zeichen in einer Minute, eine
+ * Minute Pause, dann von vorn. Die Antwort der Retter: drei Zeichen pro
+ * Minute. So beschreibt es der DAV; das Bild macht den Rhythmus sichtbar,
+ * den man sich im Ernstfall merken muss.
+ */
+export function NotsignalBild() {
+  const x0 = 90;
+  const breite = 520; // zwei Minuten
+  const px = (s: number) => x0 + (s / 120) * breite;
+  const reihe = (y: number, sekunden: number[], farbe: string) =>
+    sekunden.map((s) => <circle key={`${y}-${s}`} cx={px(s)} cy={y} r="9" fill={farbe} />);
+  return (
+    <figure className="rounded-2xl border border-line bg-card p-5 sm:p-6">
+      <div className="overflow-x-auto">
+        <svg
+          viewBox="0 0 640 170"
+          className="mx-auto h-auto w-full min-w-[32rem] text-foreground"
+          role="img"
+          aria-label="Alpines Notsignal: sechs Zeichen innerhalb einer Minute, also alle zehn Sekunden, dann eine Minute Pause und wiederholen. Antwort: drei Zeichen pro Minute, alle zwanzig Sekunden."
+        >
+          {/* Zeitachse */}
+          <line x1={px(0)} y1="136" x2={px(120)} y2="136" stroke="currentColor" strokeOpacity=".35" />
+          {[0, 30, 60, 90, 120].map((s) => (
+            <g key={s}>
+              <line x1={px(s)} y1="131" x2={px(s)} y2="141" stroke="currentColor" strokeOpacity=".35" />
+              <text x={px(s)} y="158" textAnchor="middle" fontSize="12" fill="currentColor" fillOpacity=".7">
+                {s === 0 ? "0" : `${s} s`}
+              </text>
+            </g>
+          ))}
+          {/* Minute eins: Signal, Minute zwei: Pause */}
+          <rect x={px(60)} y="22" width={px(120) - px(60)} height="44" rx="8" fill="currentColor" fillOpacity=".05" />
+          <text x={px(90)} y="49" textAnchor="middle" fontSize="12" fill="currentColor" fillOpacity=".6">
+            eine Minute Pause
+          </text>
+          <text x="0" y="49" fontSize="13" fontWeight="700" fill="var(--warn)">Notsignal</text>
+          {reihe(44, [0, 10, 20, 30, 40, 50], "var(--warn)")}
+          <text x="0" y="104" fontSize="13" fontWeight="700" fill="var(--accent)">Antwort</text>
+          {reihe(99, [0, 20, 40, 60, 80, 100], "var(--accent)")}
+        </svg>
+      </div>
+      <figcaption className="mt-2 text-sm text-muted">
+        Sechs Zeichen pro Minute — rufen, pfeifen, mit der Stirnlampe blinken —, dann eine Minute
+        Pause, dann von vorn. Die Retter antworten mit drei Zeichen pro Minute.
+      </figcaption>
+    </figure>
+  );
+}

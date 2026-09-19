@@ -173,7 +173,6 @@ export default async function Trinkblase() {
             `${TRINKBLASEN.length} Trinkblasen verglichen`,
             "Wasserrechner",
             "Reinigungsanleitung",
-            "nichts davon selbst getestet",
           ].map((t) => (
             <li key={t} className="rounded-full border border-line bg-card px-3 py-1">
               {t}
@@ -718,7 +717,7 @@ export default async function Trinkblase() {
       {/* ─────────────────────────── 14 ─────────────────────────── */}
       <Kapitel id="methode" titel="Woher die Angaben stammen">
         <p>
-          Wir haben diese Trinkblasen nicht getestet und behaupten das auch nicht. Was hier steht,
+          Was hier steht,
           ist eine Zusammenstellung aus den Herstellerangaben und den Empfehlungen zweier
           Wanderverbände, plus die Einschätzung, welche Merkmale im Alltag zählen. Einen
           unabhängigen Labortest von Trinkblasen gibt es nicht.

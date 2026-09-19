@@ -204,7 +204,6 @@ export default async function Wanderrucksack() {
             `${RUCKSAECKE.length} Rucksäcke, ${RUCKSAECKE.filter((r) => r.damen).length} mit Damen-Ausführung`,
             "Literrechner",
             "Rückenlänge messen",
-            "nichts davon selbst getestet",
           ].map((t) => (
             <li key={t} className="rounded-full border border-line bg-card px-3 py-1">
               {t}
@@ -255,7 +254,8 @@ export default async function Wanderrucksack() {
         <div className="max-w-3xl space-y-5">
           <p>
             Für eine Tagestour reichen 18 bis 25 Liter: Regenjacke, eine warme Schicht, Proviant,
-            Wasser, Erste Hilfe. Für eine Hütte mit ein, zwei Übernachtungen kommen{" "}
+            Wasser,{" "}
+            <Link href="/ausruestung/erste-hilfe-set" className="underline hover:text-accent">Erste Hilfe</Link>. Für eine Hütte mit ein, zwei Übernachtungen kommen{" "}
             <Link href="/ausruestung/huettenschlafsack" className="underline hover:text-accent">Hüttenschlafsack</Link>,
             Wechselwäsche und Waschzeug dazu, das sind 25 bis 35 Liter. Die Bergführer von
             Alpinewelten nennen 40 Liter für eine ganze Woche von Hütte zu Hütte{" "}
@@ -792,7 +792,7 @@ export default async function Wanderrucksack() {
       {/* ─────────────────────────── 16 ─────────────────────────── */}
       <Kapitel id="methode" titel="Woher die Angaben stammen">
         <p>
-          Wir haben diese Rucksäcke nicht getestet und behaupten das auch nicht. Was hier steht, ist
+          Was hier steht, ist
           eine Zusammenstellung aus Herstellerangaben, zwei unabhängigen Tests, über die die Stiftung
           Warentest berichtet hat, und den Empfehlungen von Bergführern und Alpenverein — plus die
           Einschätzung, welche Merkmale im Alltag zählen.

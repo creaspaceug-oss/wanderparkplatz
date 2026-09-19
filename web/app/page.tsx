@@ -329,6 +329,12 @@ export default async function Startseite() {
               marke: "Berater · 7 Modelle",
             },
             {
+              pfad: "/ausruestung/erste-hilfe-set",
+              titel: "Erste-Hilfe-Set zum Wandern",
+              text: "Was laut Alpenverein hineingehört — und sieben Sets an dieser Liste gemessen.",
+              marke: "Set-Check · 7 Sets",
+            },
+            {
               pfad: "/ausruestung/wanderrucksack",
               titel: "Wanderrucksack im Vergleich",
               text: "Wie viel Liter, wie du die Rückenlänge misst und was Damenmodelle anders machen.",

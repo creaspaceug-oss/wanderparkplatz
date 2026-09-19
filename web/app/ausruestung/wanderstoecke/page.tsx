@@ -167,7 +167,6 @@ export default async function Wanderstoecke() {
             `${STOECKE.length} Stöcke verglichen`,
             `Stiftung Warentest ${WARENTEST.heft} ausgewertet`,
             "Längenrechner",
-            "nichts davon selbst getestet",
           ].map((t) => (
             <li key={t} className="rounded-full border border-line bg-card px-3 py-1">
               {t}
@@ -845,7 +844,7 @@ export default async function Wanderstoecke() {
       {/* ─────────────────────────── 19 ─────────────────────────── */}
       <Kapitel id="methode" titel="Woher die Angaben stammen">
         <p>
-          Wir haben diese Stöcke nicht getestet und behaupten das auch nicht. Was hier steht, ist
+          Was hier steht, ist
           eine Zusammenstellung — aus den Herstellerangaben, aus dem Labortest der Stiftung
           Warentest und aus der Forschung zur Kniebelastung — plus die Einschätzung, welche davon
           im Gelände zählen.

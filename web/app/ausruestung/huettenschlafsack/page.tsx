@@ -158,7 +158,6 @@ export default async function Huettenschlafsack() {
             `${HUETTENSCHLAFSAECKE.length} Hüttenschlafsäcke verglichen`,
             "Seide, Baumwolle, Mikrofaser",
             "Berater",
-            "nichts davon selbst getestet",
           ].map((t) => (
             <li key={t} className="rounded-full border border-line bg-card px-3 py-1">
               {t}
@@ -589,7 +588,7 @@ export default async function Huettenschlafsack() {
       {/* ─────────────────────────── 13 ─────────────────────────── */}
       <Kapitel id="methode" titel="Woher die Angaben stammen">
         <p>
-          Wir haben diese Hüttenschlafsäcke nicht getestet und behaupten das auch nicht. Einen
+          Einen
           unabhängigen Test gibt es nicht. Was hier steht, ist eine Zusammenstellung aus der
           Hüttenordnung, Angaben des Alpenvereins, einer dpa-Meldung, dem Ratgeber des
           Umweltbundesamts und den Herstellerangaben.

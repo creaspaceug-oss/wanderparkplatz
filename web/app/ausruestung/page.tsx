@@ -20,6 +20,11 @@ export const metadata: Metadata = {
  */
 const SEITEN = [
   {
+    pfad: "/ausruestung/erste-hilfe-set",
+    titel: "Erste-Hilfe-Set",
+    text: "Was laut Alpenverein hineingehört, welche Größe, welche Seite der Rettungsdecke nach außen, und sieben Sets an der DAV-Liste gemessen.",
+  },
+  {
     pfad: "/ausruestung/huettenschlafsack",
     titel: "Hüttenschlafsack",
     text: "Warum er auf Alpenvereinshütten Pflicht ist, Seide, Baumwolle oder Mikrofaser, was Bettwanzen und die Mikrowelle damit zu tun haben, und sieben Modelle.",
@@ -52,8 +57,7 @@ export default function Ausruestung() {
       <Brotkrumen pfad={[{ name: "Startseite", url: "/" }]} aktuell="Ausrüstung" />
       <h1 className="mt-3 text-3xl font-bold tracking-tight">Ausrüstung</h1>
       <p className="mt-5 text-lg leading-relaxed">
-        Kaufberatungen, die zu jedem Produkt sagen, wogegen es spricht. Getestet haben wir
-        nichts davon selbst, und das steht auf jeder Seite dabei.
+        Kaufberatungen, die zu jedem Produkt sagen, wogegen es spricht — mit Quellen für jede Angabe.
       </p>
       <ul className="mt-8 space-y-4">
         {SEITEN.map((s) => (

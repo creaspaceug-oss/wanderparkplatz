@@ -190,7 +190,6 @@ export default async function Groedel() {
             `${GROEDEL.length} Grödel verglichen`,
             "Grödel oder Steigeisen: Faustregel",
             "Größenfinder",
-            "nichts davon selbst getestet",
           ].map((t) => (
             <li key={t} className="rounded-full border border-line bg-card px-3 py-1">
               {t}
@@ -691,7 +690,7 @@ export default async function Groedel() {
       {/* ─────────────────────────── 14 ─────────────────────────── */}
       <Kapitel id="methode" titel="Woher die Angaben stammen">
         <p>
-          Wir haben diese Grödel nicht getestet und behaupten das auch nicht. Was hier steht, ist
+          Was hier steht, ist
           eine Zusammenstellung aus Herstellerangaben, dem Praxistest eines Händlers, einem
           Verbrauchertest aus der Schweiz und den Empfehlungen des Deutschen Alpenvereins — plus
           die Einschätzung, welche Merkmale im Alltag zählen.
