@@ -13,6 +13,7 @@ import { jsonLd, nf } from "@/lib/format";
 import { beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
 import { BETREIBER } from "@/lib/betreiber";
+import { bestand } from "@/lib/queries";
 
 export const revalidate = 604800;
 
@@ -39,7 +40,7 @@ const prozent = (v: string) => `${String(v).replace(".", ",")} %`;
 const DUENN = 10;
 
 export default async function ToiletteAmWanderparkplatz() {
-  const [g, laender, kreise, groesse, nachbarschaft, plaetze, luecken, eintraege] =
+  const [g, laender, kreise, groesse, nachbarschaft, plaetze, luecken, eintraege, b] =
     await Promise.all([
     wcGesamt(),
     wcNachLand(),
@@ -49,7 +50,15 @@ export default async function ToiletteAmWanderparkplatz() {
     wcPlaetze(),
     wcLuecken(8),
     wcEintraege(),
+    bestand(),
   ]);
+
+  const stand = b.lauf
+    ? new Date(`${b.lauf}T00:00:00Z`).toLocaleDateString("de-DE", {
+        dateStyle: "long",
+        timeZone: "UTC",
+      })
+    : null;
 
   const ohne = g.plaetze - g.mit;
   const kleinste = groesse[0];
@@ -372,8 +381,14 @@ export default async function ToiletteAmWanderparkplatz() {
             zweihundert Metern schnell einen Kilometer.
           </p>
           <p>
-            Die Zahlen werden mit jedem Datenabgleich neu berechnet und können sich daher von
-            früheren Fassungen unterscheiden. Verwandte Auswertung:{" "}
+            Die Angaben in OpenStreetMap sind ehrenamtlich erfasst und regional
+            unterschiedlich vollständig — bei Toiletten stärker als bei allem anderen, was
+            hier ausgewertet wird. Die Zahlen werden mit jedem Datenabgleich neu berechnet
+            und können sich daher von früheren Fassungen unterscheiden.
+            {stand ? ` Stand der Auswertung: ${stand}.` : ""}
+          </p>
+          <p>
+            Verwandte Auswertung:{" "}
             <Link href="/wandern-ohne-auto" className="underline hover:text-accent">
               Wandern ohne Auto
             </Link>

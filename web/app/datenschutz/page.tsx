@@ -123,8 +123,34 @@ export default function Datenschutz() {
         <p>
           Diese Website setzt keine Cookies und bindet keine Werbe- oder
           Social-Media-Dienste ein. Schriftarten werden vom eigenen Server ausgeliefert; es
-          besteht keine Verbindung zu Google Fonts. Kartendienste sind nicht eingebettet — die
-          Links zu Google Maps, Apple Karten und OpenStreetMap führen erst nach einem Klick zum
+          besteht keine Verbindung zu Google Fonts.
+        </p>
+        <p>
+          <strong className="font-semibold">Karten von OpenStreetMap.</strong> Auf den
+          Parkplatzseiten ist ein Kartenausschnitt der OpenStreetMap Foundation (St John’s
+          Innovation Centre, Cowley Road, Cambridge, CB4 0WS, Vereinigtes Königreich)
+          eingebettet. Er wird beim Aufruf der Seite geladen; dabei wird deine IP-Adresse an
+          OpenStreetMap übertragen, ebenso Angaben zu Browser und Betriebssystem. Ohne diese
+          Übertragung lässt sich die Karte technisch nicht ausliefern.
+        </p>
+        <p>
+          Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Das berechtigte Interesse liegt in
+          der Darstellung der Lage eines Parkplatzes — für ein Parkplatzverzeichnis ist sie
+          nicht Beiwerk, sondern der Gegenstand des Angebots. Die Einbettung setzt keine
+          Cookies. Übertragen wird nur, was für den Abruf nötig ist; die Herkunftsseite wird
+          nicht mitgeschickt. Es gelten die{" "}
+          <a
+            href="https://osmfoundation.org/wiki/Privacy_Policy"
+            rel="noopener"
+            target="_blank"
+            className="underline hover:text-accent"
+          >
+            Datenschutzbestimmungen der OpenStreetMap Foundation
+          </a>
+          .
+        </p>
+        <p>
+          Die Links zu Google Maps und Apple Karten führen erst nach einem Klick zum
           jeweiligen Anbieter, wo dann dessen Datenschutzbestimmungen gelten.
         </p>
       </Abschnitt>

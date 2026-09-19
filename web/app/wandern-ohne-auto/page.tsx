@@ -8,6 +8,7 @@ import {
   oepnvGesamt, oepnvNachLand, oepnvNachKreis, oepnvVerteilung, oepnvBeispiele,
   oepnvStadtLand, oepnvLuecken,
 } from "@/lib/db";
+import { bestand } from "@/lib/queries";
 import { jsonLd, nf } from "@/lib/format";
 import { beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
@@ -15,7 +16,20 @@ import { BETREIBER } from "@/lib/betreiber";
 
 export const revalidate = 604800;
 
-const STAND = "13. September 2026";
+/**
+ * Der Stand kommt aus dem Abgleichlauf, nicht aus einer Zeile Quelltext.
+ *
+ * Fest eingetragen stand hier der 13. September, während die Daten längst vom
+ * 19. waren — eine Auswertung, die ihr eigenes Datum falsch angibt, gibt das
+ * schlechteste denkbare Signal ab.
+ */
+const datum = (iso: string | null) =>
+  iso
+    ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("de-DE", {
+        dateStyle: "long",
+        timeZone: "UTC",
+      })
+    : null;
 
 // Fest eingetragene Zahlen veralten mit dem nächsten Import. Die Beschreibung
 // holt sie deshalb aus derselben Abfrage wie die Seite.
@@ -41,7 +55,7 @@ const prozent = (v: string) => `${String(v).replace(".", ",")} %`;
 const DUENN = 10;
 
 export default async function WandernOhneAuto() {
-  const [g, laender, kreise, verteilung, beispiele, stadtLand, luecken] = await Promise.all([
+  const [g, laender, kreise, verteilung, beispiele, stadtLand, luecken, b] = await Promise.all([
     oepnvGesamt(),
     oepnvNachLand(),
     oepnvNachKreis(5),
@@ -49,7 +63,10 @@ export default async function WandernOhneAuto() {
     oepnvBeispiele(8),
     oepnvStadtLand(),
     oepnvLuecken(10),
+    bestand(),
   ]);
+
+  const STAND = datum(b.lauf) ?? "dem jüngsten Abgleich";
 
   const ohne = g.plaetze - g.mit;
   const bahnProzent = ((g.mit_bahnhof / g.plaetze) * 100).toFixed(1).replace(".", ",");

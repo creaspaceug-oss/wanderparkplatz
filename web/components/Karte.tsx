@@ -1,25 +1,32 @@
-"use client";
-
-import { useState } from "react";
-
 /**
  * Kartenausschnitt um einen Punkt, über die offizielle Einbettung von
- * OpenStreetMap — geladen erst auf Klick.
+ * OpenStreetMap.
  *
- * Zwei Gründe gegen das sofortige Einbinden, und der zweite wiegt schwerer:
+ * Hier stand einmal eine Klickschranke. Zwei Gründe sprachen dafür, und beide
+ * gelten weiter — sie sind gegen die Einfachheit abgewogen worden und haben
+ * verloren:
  *
- * Das JavaScript der Einbettung ist 1,37 MB unkomprimiert, je Aufruf gehen
- * rund 360 kB über die Leitung. Die Seite selbst wiegt 14 kB. `loading="lazy"`
- * half nicht, weil das Fenster im sichtbaren Bereich liegt — auf dem Handy
- * sogar weit oben.
+ * Erstens der Umfang: Das JavaScript der Einbettung ist unkomprimiert 1,37 MB,
+ * je Aufruf gehen rund 360 kB über die Leitung, die Seite selbst wiegt 14 kB.
+ * `loading="lazy"` mildert das nur, wo die Karte unterhalb des sichtbaren
+ * Bereichs liegt; auf dem Handy steht sie weiter oben.
  *
- * Vor allem aber überträgt jeder Aufruf die IP-Adresse der Besucher an einen
- * Dritten, bevor irgendjemand eine Karte angefordert hat. Auf Klick geladen
- * entscheidet das jede Person selbst, und der Hinweis darauf steht daneben.
+ * Zweitens der Datenschutz: Jeder Aufruf überträgt die IP-Adresse der
+ * Besucher an einen Dritten. Rechtsgrundlage dafür ist das berechtigte
+ * Interesse (Art. 6 Abs. 1 lit. f DSGVO) — für ein Parkplatzverzeichnis ist
+ * die Lage auf der Karte kein Beiwerk, sondern der Gegenstand. Das steht so
+ * auch in der Datenschutzerklärung; wer diese Komponente ändert, muss dort
+ * nachziehen.
  *
- * Bewusst keine Kartenbibliothek: Leaflet oder MapLibre kosten ebenfalls
- * JavaScript und brauchen zusätzlich einen Kachelanbieter, also einen Vertrag
- * und ein Budget.
+ * Abgeschwächt wird beides, so weit es geht: `loading="lazy"` nimmt mit, was
+ * unterhalb des Bildschirms liegt, und `referrerPolicy="no-referrer"` sorgt
+ * dafür, dass OpenStreetMap wenigstens nicht erfährt, welche Seite jemand
+ * gerade liest.
+ *
+ * Keine Kartenbibliothek: Leaflet oder MapLibre kosten ebenfalls JavaScript
+ * und brauchen zusätzlich einen Kachelanbieter, also einen Vertrag und ein
+ * Budget. Ohne Zustand braucht die Komponente auch kein "use client" mehr —
+ * das ist der Teil des Umfangs, den wir zurückbekommen.
  */
 export default function Karte({
   lat,
@@ -32,8 +39,6 @@ export default function Karte({
   titel: string;
   hoeheKm?: number;
 }) {
-  const [geladen, setGeladen] = useState(false);
-
   // Ein Grad Länge ist je nach Breitengrad unterschiedlich lang, daher der
   // Kosinus — ohne ihn wäre der Ausschnitt in Norddeutschland verzerrt.
   const dLat = hoeheKm / 111.32 / 2;
@@ -49,46 +54,23 @@ export default function Karte({
 
   return (
     <figure className="mt-4">
-      {/* Gleiche Höhe in beiden Zuständen, damit beim Laden nichts springt. */}
+      {/* Feste Höhe, damit beim Laden nichts springt. */}
       <div className="h-[340px] overflow-hidden rounded-xl border border-line bg-card">
-        {geladen ? (
-          <iframe
-            src={einbettung}
-            title={`Lage: ${titel}`}
-            referrerPolicy="no-referrer-when-downgrade"
-            className="block h-full w-full border-0"
-          />
-        ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-3 px-5 text-center">
-            <p className="text-sm text-muted">
-              Die Karte kommt von OpenStreetMap. Beim Laden wird deine
-              IP-Adresse dorthin übertragen.
-            </p>
-            <button
-              type="button"
-              onClick={() => setGeladen(true)}
-              className="rounded-lg border border-accent bg-accent-soft px-4 py-2 text-sm font-medium hover:border-foreground"
-            >
-              Karte laden
-            </button>
-            {/* Ohne JavaScript bleibt der Weg nach draußen offen. */}
-            <a
-              href={gross}
-              rel="noopener nofollow"
-              target="_blank"
-              className="text-sm text-muted underline hover:text-accent"
-            >
-              Stattdessen bei OpenStreetMap ansehen
-            </a>
-          </div>
-        )}
+        <iframe
+          src={einbettung}
+          title={`Lage: ${titel}`}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          className="block h-full w-full border-0"
+        />
       </div>
       <figcaption className="mt-1.5 text-xs text-muted">
         Karte:{" "}
         <a href={gross} rel="noopener nofollow" target="_blank" className="underline hover:text-accent">
           OpenStreetMap
         </a>{" "}
-        — der Marker zeigt die erfasste Position, nicht zwingend die Einfahrt.
+        — der Marker zeigt die erfasste Position, nicht zwingend die Einfahrt. Beim Laden
+        der Karte wird deine IP-Adresse an OpenStreetMap übertragen.
       </figcaption>
     </figure>
   );
