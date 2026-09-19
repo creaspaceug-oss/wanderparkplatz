@@ -14,7 +14,9 @@ import { cache } from "react";
  */
 
 const TOKEN_URL = "https://api.amazon.co.uk/auth/o2/token";
-const SUCHE_URL = "https://creatorsapi.amazon/catalog/v1/searchItems";
+const ITEMS_URL = "https://creatorsapi.amazon/catalog/v1/getItems";
+/** Mehr nimmt getItems nicht an — ab elf ASINs antwortet Amazon mit 400. */
+const JE_ABRUF = 10;
 const MARKT = "www.amazon.de";
 
 export interface Preisstand {
@@ -101,16 +103,13 @@ export const preise = cache(async (asins: string[]): Promise<Map<string, Preisst
 
   const abgerufen = new Date().toISOString();
 
-  // Die API sucht nach Stichworten, nicht nach ASIN-Listen. Die ASIN im
-  // Suchbegriff findet das Produkt zuverlässig; der Abgleich unten stellt
-  // sicher, dass kein Nachbartreffer durchrutscht.
-  //
-  // Nacheinander, nicht gleichzeitig: Bei fünf parallelen Anfragen drosselt
-  // Amazon, und eine davon kam ohne Ergebnis zurück — beim ersten Aufbau der
-  // Stockseite fehlte deshalb ausgerechnet der Distance Z. Ein zweiter Versuch
-  // nach kurzer Pause fängt die Drosselung ab.
-  const hole = async (asin: string) => {
-    const res = await fetch(SUCHE_URL, {
+  // getItems nimmt bis zu zehn ASINs auf einmal. Bis hierher lief jede ASIN
+  // als eigene Stichwortsuche, nacheinander, weil Amazon parallele Anfragen
+  // drosselt — auf der Trinkblasenseite mit 20 Produkten dauerte das 25
+  // Sekunden, und Next.js bricht das Erzeugen einer Seite nach 60 ab. Jetzt
+  // sind es zwei Abrufe mit zusammen unter zwei Sekunden.
+  const hole = async (paket: string[]) => {
+    const res = await fetch(ITEMS_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${kopf}`,
@@ -119,9 +118,7 @@ export const preise = cache(async (asins: string[]): Promise<Map<string, Preisst
         "x-marketplace": MARKT,
       },
       body: JSON.stringify({
-        keywords: asin,
-        searchIndex: "All",
-        itemCount: 3,
+        itemIds: paket,
         partnerTag: tag,
         marketplace: MARKT,
         resources: ["images.primary.large", "itemInfo.title", "offersV2.listings.price"],
@@ -129,31 +126,36 @@ export const preise = cache(async (asins: string[]): Promise<Map<string, Preisst
       next: { revalidate: 3600 },
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const d = (await res.json()) as { searchResult?: { items?: AmazonTreffer[] } };
-    return (d.searchResult?.items ?? []).find((x) => x.asin === asin) ?? null;
+    const d = (await res.json()) as { itemsResult?: { items?: AmazonTreffer[] } };
+    return d.itemsResult?.items ?? [];
   };
 
-  for (const asin of asins) {
-    let t: AmazonTreffer | null = null;
-    for (let versuch = 1; versuch <= 2 && !t; versuch++) {
+  const eindeutig = [...new Set(asins)];
+  for (let i = 0; i < eindeutig.length; i += JE_ABRUF) {
+    const paket = eindeutig.slice(i, i + JE_ABRUF);
+    let treffer: AmazonTreffer[] = [];
+    for (let versuch = 1; versuch <= 2; versuch++) {
       try {
-        t = await hole(asin);
+        treffer = await hole(paket);
+        break;
       } catch (err) {
-        if (versuch === 2) console.error(`Amazon ${asin}:`, (err as Error).message);
+        if (versuch === 2) console.error(`Amazon ${paket.join(",")}:`, (err as Error).message);
         else await new Promise((r) => setTimeout(r, 1200));
       }
     }
-    if (!t) continue;
-    const p = t.offersV2?.listings?.[0]?.price;
-    map.set(asin, {
-      betrag: p?.money?.amount ?? null,
-      anzeige: p?.money?.displayAmount ?? null,
-      uvp: p?.savingBasis?.money?.amount ?? null,
-      ersparnis: p?.savings?.percentage ?? null,
-      bild: t.images?.primary?.large?.url ?? null,
-      url: t.detailPageURL,
-      abgerufen,
-    });
+    for (const t of treffer) {
+      if (!paket.includes(t.asin)) continue;
+      const p = t.offersV2?.listings?.[0]?.price;
+      map.set(t.asin, {
+        betrag: p?.money?.amount ?? null,
+        anzeige: p?.money?.displayAmount ?? null,
+        uvp: p?.savingBasis?.money?.amount ?? null,
+        ersparnis: p?.savings?.percentage ?? null,
+        bild: t.images?.primary?.large?.url ?? null,
+        url: t.detailPageURL,
+        abgerufen,
+      });
+    }
   }
   return map;
 });

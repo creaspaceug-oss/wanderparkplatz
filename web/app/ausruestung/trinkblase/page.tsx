@@ -19,6 +19,7 @@ import { preise, partnerUrl, PREISHINWEIS, HERKUNFT, PARTNER } from "@/lib/amazo
 import {
   TRINKBLASEN,
   ZUBEHOER,
+  ERSATZTEILE,
   FRAGEN,
   QUELLEN,
   LITER_JE_STUNDE,
@@ -54,6 +55,7 @@ const KAPITEL: [string, string][] = [
   ["vergleich", "Technische Daten im Vergleich"],
   ["modelle", "Die Blasen einzeln"],
   ["reinigen", "Reinigen, trocknen, lagern"],
+  ["ersatzteile", "Ersatzteile: Mundstück und Schlauch"],
   ["rucksack", "Welcher Rucksack passt"],
   ["winter", "Im Winter"],
   ["nachfuellen", "Unterwegs nachfüllen"],
@@ -73,7 +75,14 @@ const FUER: Record<string, string> = {
 
 export default async function Trinkblase() {
   const [p, einkehr] = await Promise.all([
-    preise([...TRINKBLASEN.map((t) => t.asin), ZUBEHOER.isolierung.asin, ZUBEHOER.reinigung.asin]),
+    preise([
+      ...new Set([
+        ...TRINKBLASEN.flatMap((t) => [t.asin, ...(t.groessen ?? []).map((g) => g.asin)]),
+        ...ERSATZTEILE.map((e) => e.asin),
+        ZUBEHOER.isolierung.asin,
+        ZUBEHOER.reinigung.asin,
+      ]),
+    ]),
     einkehrLuecke(),
   ]);
   const PRODUKTE = TRINKBLASEN.map(alsProdukt);
@@ -86,6 +95,21 @@ export default async function Trinkblase() {
     : null;
   const stand = new Date().toLocaleDateString("de-DE", { month: "long", year: "numeric" });
   const preisVon = (asin: string) => p.get(asin)?.anzeige ?? "—";
+  const zeitVon = (asin: string) => {
+    const a = p.get(asin)?.abgerufen;
+    return a
+      ? new Date(a).toLocaleString("de-DE", {
+          day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin",
+        })
+      : null;
+  };
+  const MIT_GROESSEN = TRINKBLASEN.filter((t) => t.groessen?.length);
+  const deuterGroessen = Object.fromEntries(
+    (TRINKBLASEN.find((t) => t.asin === "B0D5R98FL3")?.groessen ?? []).map((g) => [
+      String(g.liter),
+      { url: p.get(g.asin)?.url ?? partnerUrl(g.asin), anzeige: p.get(g.asin)?.anzeige ?? null, zeit: zeitVon(g.asin) },
+    ]),
+  );
 
   return (
     <div className="mx-auto max-w-5xl px-4 pb-16 pt-8">
@@ -176,7 +200,7 @@ export default async function Trinkblase() {
             }))}
           />
         </div>
-        <p className="mt-2 text-xs text-muted">{PREISHINWEIS} Ein Strich beim Gewicht heißt: Der Hersteller nennt keines.</p>
+        <p className="mt-2 text-xs text-muted">{PREISHINWEIS} Ein Strich beim Gewicht heißt: Der Hersteller nennt keines, oder nur eines, das für alle Größen gleich lautet und deshalb nicht stimmen kann.</p>
       </section>
 
       <div className="mt-12">
@@ -236,7 +260,13 @@ export default async function Trinkblase() {
             eine Blasengröße:
           </p>
         </div>
-        <Wasserrechner jeStunde={LITER_JE_STUNDE} ohneEinkehr={einkehr.ohne} gesamt={einkehr.gesamt} />
+        <Wasserrechner
+          jeStunde={LITER_JE_STUNDE}
+          ohneEinkehr={einkehr.ohne}
+          gesamt={einkehr.gesamt}
+          angebotName="Deuter Streamer II"
+          angebote={deuterGroessen}
+        />
         <div className="max-w-3xl space-y-5">
           <p>
             <strong>2 Liter</strong> sind die richtige Größe für die meisten Tagestouren.{" "}
@@ -247,7 +277,61 @@ export default async function Trinkblase() {
             Eine volle 3-Liter-Blase wiegt drei Kilo. Wer sie meistens nur halb füllt, trägt eine
             größere Blase, als er braucht — und eine halb volle schwappt.
           </Merksatz>
+          <p>
+            Drei der Blasen aus diesem Vergleich gibt es in allen drei Größen. Aufbau, Öffnung
+            und Ventil sind jeweils dieselben — nur Inhalt, Maße und Gewicht ändern sich.
+          </p>
         </div>
+        {/* relative: absolut positionierte Vorlesetexte müssen im Scrollrahmen bleiben. */}
+        <div className="relative overflow-x-auto rounded-2xl border border-line bg-card">
+          <table className="w-full min-w-[36rem] text-sm">
+            <caption className="sr-only">Trinkblasen in 1,5, 2 und 3 Litern</caption>
+            <thead className="bg-sand text-left text-muted">
+              <tr>
+                <th scope="col" className="sticky left-0 z-10 bg-sand px-4 py-3 font-medium">Blase</th>
+                {[1.5, 2, 3].map((l) => (
+                  <th key={l} scope="col" className="px-4 py-3 font-medium">
+                    {l.toLocaleString("de-DE")} Liter
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {MIT_GROESSEN.map((t) => (
+                <tr key={t.asin} className="border-t border-line align-top">
+                  <th scope="row" className="sticky left-0 z-10 bg-card px-4 py-3 text-left font-semibold">
+                    <a href={`#${t.asin}`} className="hover:text-accent">
+                      <span className="block text-xs font-normal text-muted">{t.marke}</span>
+                      {t.name.replace(/\s*\d.*$/, "")}
+                    </a>
+                  </th>
+                  {[1.5, 2, 3].map((l) => {
+                    const g = t.groessen!.find((x) => x.liter === l);
+                    if (!g) return <td key={l} className="px-4 py-3 text-muted">—</td>;
+                    return (
+                      <td key={l} className="px-4 py-3">
+                        <a
+                          href={p.get(g.asin)?.url ?? partnerUrl(g.asin)}
+                          rel="sponsored nofollow noopener"
+                          target="_blank"
+                          className="inline-block rounded-lg bg-accent px-2.5 py-1.5 text-xs font-semibold text-white hover:brightness-110 dark:text-background"
+                        >
+                          {preisVon(g.asin)} <span aria-hidden>→</span>
+                          <span className="sr-only"> {t.marke} {l.toLocaleString("de-DE")} Liter bei Amazon, Anzeige</span>
+                        </a>
+                        {g.hinweis && <span className="mt-1 block text-xs text-muted">{g.hinweis}</span>}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="max-w-3xl text-xs text-muted">
+          Anzeige. Alle Knöpfe führen zu Amazon und tragen eine Partnerkennung. {PREISHINWEIS} Maße
+          und Gewichte, soweit der Hersteller sie je Größe nennt.
+        </p>
       </Kapitel>
 
       {/* ─────────────────────────── 3 ─────────────────────────── */}
@@ -406,7 +490,7 @@ export default async function Trinkblase() {
           {[
             ["Sofort leeren und ausspülen.", "Nach der Tour, nicht am nächsten Tag. Zwölf Stunden Restwasser im warmen Auto sind ein guter Anfang für Schimmel."],
             ["Zucker sofort raus.", "Saft, Tee mit Zucker, Iso-Getränke: danach gründlich klar spülen. Reines Wasser verzeiht mehr."],
-            ["Alle paar Touren gründlich.", "Warmes Wasser mit etwas Spülmittel oder Natron. Nicht heißer, als der Hersteller erlaubt — bei Deuter sind es 40 Grad."],
+            ["Alle paar Touren gründlich.", "Warmes Wasser mit etwas Spülmittel oder Natron. Nicht heißer, als der Hersteller erlaubt — steht nichts dabei, handwarm."],
             ["Schlauch und Ventil einzeln.", "Den Schlauch mit einer langen Bürste durchziehen, das Mundstück abnehmen und separat reinigen. Dort setzt sich gern Belag fest."],
             ["Klar spülen, bis nichts mehr riecht.", "Kein Spülmittel, kein Natron, kein Geruch mehr."],
             ["Offen trocknen.", "Kopfüber, und so, dass die Folie nicht zusammenklebt — mit einem Trockenbügel, einem Kochlöffel oder einem zusammengerollten Küchentuch darin."],
@@ -440,6 +524,60 @@ export default async function Trinkblase() {
         </div>
       </Kapitel>
 
+      {/* ─────────────────────────── Ersatzteile ─────────────────────────── */}
+      <Kapitel
+        id="ersatzteile"
+        titel="Ersatzteile: Mundstück und Schlauch"
+        unterzeile="Die Blase hält lange. Das Mundstück nicht."
+        breit
+      >
+        <div className="max-w-3xl space-y-5">
+          <p>
+            Meist gibt zuerst das Beißventil nach: Das Silikon wird weich, reißt am
+            Schlitz ein, schließt nicht mehr richtig. Danach der Schlauch, in dem sich trotz
+            Bürste irgendwann ein Belag hält. Beides lässt sich einzeln tauschen — wenn man das
+            passende Teil findet.
+          </p>
+          <p>
+            Genau da liegt die Falle. Die Kupplungen zwischen Blase und Schlauch sind meist
+            herstellereigen, und auch die Mundstücke haben unterschiedliche Durchmesser. Sogenannte
+            universelle Mundstücke vom Marktplatz passen manchmal, zusagen tut es niemand. Sicher
+            ist nur das Originalteil:
+          </p>
+        </div>
+        <div className="overflow-hidden rounded-2xl border border-line bg-card">
+          <ul className="divide-y divide-line">
+            {ERSATZTEILE.map((e) => (
+              <li key={e.asin} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5">
+                <div>
+                  <p className="font-medium">{e.teil}</p>
+                  <p className="text-sm text-muted">passt an: {e.zu}</p>
+                </div>
+                <a
+                  href={p.get(e.asin)?.url ?? partnerUrl(e.asin)}
+                  rel="sponsored nofollow noopener"
+                  target="_blank"
+                  className="inline-block rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-white hover:brightness-110 dark:text-background"
+                >
+                  {preisVon(e.asin)} <span aria-hidden>→</span>
+                  <span className="sr-only"> {e.teil} bei Amazon, Anzeige</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <p className="max-w-3xl text-xs text-muted">
+          Anzeige. Alle Knöpfe führen zu Amazon und tragen eine Partnerkennung. {PREISHINWEIS} Die
+          Zuordnung folgt den Produktnamen der Hersteller; für die SASMO gibt es einen eigenen
+          isolierten Ersatzschlauch, siehe <a href="#winter" className="underline">Im Winter</a>.
+        </p>
+        <p className="max-w-3xl text-muted">
+          Ein Tipp für den Kauf: Wer einen Ersatzschlauch braucht, nimmt gleich ein zweites
+          Mundstück dazu. Es wiegt ein paar Gramm, und ein eingerissenes Ventil auf Tour heißt
+          sonst: tropfen bis zum Parkplatz.
+        </p>
+      </Kapitel>
+
       {/* ─────────────────────────── 9 ─────────────────────────── */}
       <Kapitel id="rucksack" titel="Welcher Rucksack passt">
         <p>
@@ -449,9 +587,10 @@ export default async function Trinkblase() {
           genau diesen drei Dingen.
         </p>
         <p>
-          Die Maße entscheiden mehr als die Literangabe. Die Deuter misst 33 × 17 Zentimeter, die
-          Source 35,5 × 19,2 — das Fach sollte ein paar Zentimeter mehr haben, sonst schiebst du
-          eine volle Blase gegen den Widerstand hinein.
+          Die Maße entscheiden mehr als die Literangabe. Die Deuter misst laut Hersteller 35 × 17
+          Zentimeter, in der 3-Liter-Ausführung 40 × 20, die Source 35,5 × 19,2 — das Fach sollte
+          ein paar Zentimeter mehr haben, sonst schiebst du eine volle Blase gegen den Widerstand
+          hinein.
         </p>
         <Merksatz>
           Füll die Blase, bevor du den Rucksack packst. Eine volle Blase in einen vollen Rucksack zu
@@ -478,9 +617,9 @@ export default async function Trinkblase() {
             </li>
           </ul>
           <p className="text-muted">
-            Bei starkem Frost ist eine Thermoskanne die zuverlässigere Reserve. Die Deuter ist laut
-            Hersteller frostbeständig — das heißt, dass sie nicht kaputtgeht, nicht, dass das Wasser
-            flüssig bleibt.
+            Bei starkem Frost ist eine Thermoskanne die zuverlässigere Reserve. „Frostbeständig“, wie
+            es in manchen Produkttexten steht, heißt, dass die Blase nicht kaputtgeht — nicht, dass
+            das Wasser flüssig bleibt.
           </p>
         </div>
         <div className="grid max-w-3xl gap-5 rounded-2xl border border-line bg-card p-5 sm:grid-cols-[9rem_1fr] sm:p-6">
@@ -515,8 +654,9 @@ export default async function Trinkblase() {
         </p>
         <p>
           Brunnen am Weg sind nicht automatisch Trinkwasser — steht „Kein Trinkwasser“ dran, gilt
-          das. Wer regelmäßig aus Quellen und Bächen nachfüllen will, braucht einen Wasserfilter;
-          das ist ein eigenes Thema und nicht Teil dieses Vergleichs.
+          das. Wer regelmäßig aus Quellen und Bächen nachfüllen will, braucht einen Wasserfilter.
+          Die Deuter lässt sich laut Hersteller mit einem 28-mm-Filter kombinieren; welcher Filter
+          taugt, ist ein eigenes Thema und nicht Teil dieses Vergleichs.
         </p>
       </Kapitel>
 
@@ -538,9 +678,9 @@ export default async function Trinkblase() {
 
       <Entscheidung s={deuter} preis={dp} url={partnerUrl(deuter.asin)}>
         <p>
-          Schiebeverschluss über die ganze Breite, auf links drehbar zum Reinigen, frostbeständig,
-          130 Gramm. Nichts davon ist aufregend, aber alles davon zählt nach dem zehnten Einsatz
-          mehr als ein besonderes Ventil.
+          Schiebeverschluss über die ganze Breite, auf links drehbar zum Reinigen, flach genug für
+          schmale Fächer, in drei Größen zu haben. Nichts davon ist aufregend, aber alles davon
+          zählt nach dem zehnten Einsatz mehr als ein besonderes Ventil. Gebaut von HydraPak.
         </p>
         <p className="mt-2 text-muted">
           Wenn deine letzte Blase verschimmelt ist, nimm stattdessen die{" "}

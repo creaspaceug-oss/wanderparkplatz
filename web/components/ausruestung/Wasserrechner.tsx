@@ -32,10 +32,19 @@ export default function Wasserrechner({
   jeStunde,
   ohneEinkehr,
   gesamt,
+  angebotName,
+  angebote,
 }: {
   jeStunde: Record<Wetter, number>;
   ohneEinkehr: number;
   gesamt: number;
+  /**
+   * Die Empfehlung in der Größe, die der Rechner ausgibt. Wer "2 Liter"
+   * liest, soll nicht die 3-Liter-Ausführung suchen müssen. Preise kommen
+   * mit Zeitpunkt vom Server, wie Amazon es verlangt.
+   */
+  angebotName?: string;
+  angebote?: Record<string, { url: string; anzeige: string | null; zeit: string | null }>;
 }) {
   const id = useId();
   const [stunden, setStunden] = useState(5);
@@ -100,6 +109,26 @@ export default function Wasserrechner({
               ? `Eine ${liter(passend)}-Liter-Blase reicht${passend > bedarf + 0.6 ? " — sie wird aber nicht voll, die kleinere trägt sich leichter" : ""}.`
               : "Mehr, als eine Blase fasst. Nimm 3 Liter und plane, wo du nachfüllst."}
           </p>
+          {angebote && angebotName && (() => {
+            const a = angebote[String(passend ?? 3)];
+            if (!a) return null;
+            return (
+              <p className="mt-3 border-t border-line pt-3 text-sm">
+                <a
+                  href={a.url}
+                  rel="sponsored nofollow noopener"
+                  target="_blank"
+                  className="font-semibold text-accent underline hover:no-underline"
+                >
+                  {angebotName} in {liter(passend ?? 3)} Litern
+                  {a.anzeige ? ` — ${a.anzeige} bei Amazon` : " bei Amazon"} →
+                </a>
+                <span className="block text-xs text-muted">
+                  Anzeige{a.zeit ? ` · Preis und Verfügbarkeit: Stand ${a.zeit} Uhr` : ""}
+                </span>
+              </p>
+            );
+          })()}
         </div>
         <p className="mt-3 text-xs leading-relaxed text-muted">
           Annahme: {genau(jeStunde.kuehl)} / {genau(jeStunde.mild)} / {genau(jeStunde.heiss)} Liter

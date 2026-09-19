@@ -36,6 +36,8 @@ export interface Trinkblase {
   dafuer: string[];
   dagegen: string[];
   nichtFuer: string;
+  /** Dieselbe Blase in anderen Größen — nur, wo es sie bei Amazon gibt. */
+  groessen?: { liter: number; asin: string; hinweis?: string }[];
 }
 
 export const TRINKBLASEN: Trinkblase[] = [
@@ -44,28 +46,34 @@ export const TRINKBLASEN: Trinkblase[] = [
     name: "Streamer II 2.0",
     marke: "Deuter",
     abzeichen: "Unsere erste Wahl",
-    rolle: "Die unaufgeregte Wahl: leicht zu füllen, leicht zu reinigen, hält Frost aus.",
+    rolle: "Die unaufgeregte Wahl: leicht zu füllen, leicht zu reinigen, flach im Rucksack.",
     einordnung:
-      "Ein Schiebeverschluss über die ganze Breite und eine Blase, die sich zum Reinigen auf links drehen lässt — das sind die beiden Eigenschaften, an denen sich im Alltag entscheidet, ob man eine Trinkblase gern benutzt. Dazu nennt Deuter als einziger Hersteller in den Angaben hier ausdrücklich, wie heiß sie werden darf.",
+      "Ein Schiebeverschluss über die ganze Breite und eine Blase, die sich zum Reinigen auf links drehen lässt — das sind die beiden Eigenschaften, an denen sich im Alltag entscheidet, ob man eine Trinkblase gern benutzt. Gebaut wird sie übrigens nicht von Deuter: Auf der eigenen Produktseite heißt sie „HydraPak Streamer II“, entwickelt für Deuter-Rucksäcke.",
     liter: 2,
     oeffnung: "Schiebeverschluss",
     oeffnungDetail: "Schiebe-Clip über die ganze Breite",
-    gramm: 130,
-    masse: "33 × 17 × 5 cm",
+    gramm: null,
+    masse: "35 × 17 × 2 cm",
     absperrung: "selbstschließendes Beißventil",
-    besonderheit: "wendbar, frostbeständig, bis 40 °C",
+    besonderheit: "wendbar, TPU, passt an 28-mm-Filter",
     dafuer: [
       "Lässt sich auf links drehen. Keine Ecke, in die die Bürste nicht kommt.",
       "Schiebeverschluss statt Schraubdeckel: öffnet über die ganze Breite, zum Füllen wie zum Reinigen.",
-      "Frostbeständig und bis 40 °C belastbar — die einzige Blase hier mit einer ausdrücklichen Temperaturangabe. Das ist die Grenze fürs Reinigungswasser.",
-      "130 g bei 2 Litern.",
+      "Flach: 35 × 17 × 2 cm laut Hersteller. Passt auch in schmale Trinkblasenfächer.",
+      "Laut Deuter mit einem 28-mm-Wasserfilter kombinierbar — wer aus Bächen nachfüllt, hat damit eine Option.",
     ],
     dagegen: [
+      "Deuter nennt auf der eigenen Seite kein Gewicht. Der Händlertext bei Amazon nennt 130 g, aber für alle drei Größen dieselben — darauf verlassen wir uns nicht.",
       "Kein Absperrhahn am Schlauch. Das Beißventil schließt selbst, aber wer die Blase im Auto liegen lässt, will manchmal doppelt sicher sein.",
       "Keine Angabe zu einer antibakteriellen Beschichtung. Sauber halten musst du sie selbst.",
     ],
     nichtFuer:
       "Wer mit Handschuhen trinken will und eine Absperrung mit einer Hand bedienen möchte. Dafür ist die CamelBak gebaut.",
+    groessen: [
+      { liter: 1.5, asin: "B0D5R68X2W" },
+      { liter: 2, asin: "B0D5R98FL3" },
+      { liter: 3, asin: "B0D5R7HDFD", hinweis: "40 × 20 × 2 cm" },
+    ],
   },
   {
     asin: "B0BWLZP54Y",
@@ -83,16 +91,21 @@ export const TRINKBLASEN: Trinkblase[] = [
     absperrung: "Helix-Beißventil",
     besonderheit: "Schnellkupplung am Schlauch",
     dafuer: [
-      "108 g — leichter als jede andere Blase hier, für die ein Gewicht genannt ist.",
+      "108 g — leichter als jede andere Blase hier, für die ein verlässliches Gewicht genannt ist.",
       "Die weite Öffnung lässt eine Hand hinein. Reinigen ohne Spezialbürste.",
       "Schnellkupplung: Schlauch ab, Blase raus, Schlauch bleibt im Rucksack.",
     ],
     dagegen: [
-      "9,1 cm tief, fast doppelt so viel wie die Deuter. In schmalen Trinkblasenfächern kann es eng werden.",
+      "9,1 cm Profil laut Hersteller. In schmalen Trinkblasenfächern kann es gefüllt eng werden.",
       "Die Herkunft aus dem Armeebedarf ist ein Verkaufsargument, keine Prüfung. Über die Haltbarkeit dieser Ausführung sagt sie nichts.",
     ],
     nichtFuer:
       "Wer einen sehr flachen Laufrucksack oder eine Weste nutzt. Dort passt ein schlankes Profil besser.",
+    groessen: [
+      { liter: 1.5, asin: "B0BWM1HJF9" },
+      { liter: 2, asin: "B0BWLZP54Y", hinweis: "108 g" },
+      { liter: 3, asin: "B0BWLXDBKL" },
+    ],
   },
   {
     asin: "B07MR7SS8X",
@@ -120,6 +133,11 @@ export const TRINKBLASEN: Trinkblase[] = [
     ],
     nichtFuer:
       "Wer auf jedes Gramm achtet und die Blase zu Hause ohnehin gründlich trocknet.",
+    groessen: [
+      { liter: 1.5, asin: "B07M68J5GK", hinweis: "160 g" },
+      { liter: 2, asin: "B07MR7SS8X", hinweis: "171 g" },
+      { liter: 3, asin: "B002OYDFFW", hinweis: "184 g" },
+    ],
   },
   {
     asin: "B07KWDYZJT",
@@ -155,7 +173,7 @@ export const TRINKBLASEN: Trinkblase[] = [
     abzeichen: "Bleibt flach",
     rolle: "Die flache Blase für schmale Rucksäcke — mit lebenslanger Garantie.",
     einordnung:
-      "Die Contour ist darauf gebaut, dass sie im Rucksack nicht zur Wurst wird: Innenwände halten sie flach, ein fester Boden gibt ihr Form. Dazu gibt HydraPak eine Garantie auf Material- und Verarbeitungsfehler für die ganze Lebensdauer.",
+      "Die Contour ist darauf gebaut, dass sie im Rucksack nicht zur Wurst wird: Innenwände halten sie flach, ein fester Boden gibt ihr Form. Dazu gibt HydraPak eine Garantie auf Material- und Verarbeitungsfehler für die ganze Lebensdauer. HydraPak baut übrigens auch die Deuter-Blase.",
     liter: 2,
     oeffnung: "Schiebeverschluss",
     oeffnungDetail: "Slide-Seal-Verschluss",
@@ -223,6 +241,22 @@ export function alsProdukt(t: Trinkblase): Produkt {
   };
 }
 
+/**
+ * Ersatzteile je Blase — Mundstück oder Schlauch vom selben Hersteller.
+ *
+ * Die Kupplungen sind oft herstellereigen. Deshalb hier nur Originalteile,
+ * die zur jeweiligen Blase gehören, und keine "universellen" Mundstücke vom
+ * Marktplatz, deren Passform niemand zusagt.
+ */
+export const ERSATZTEILE: { zu: string; teil: string; asin: string }[] = [
+  { zu: "Deuter Streamer II", teil: "Ersatz-Beißventil", asin: "B0DFC5RY79" },
+  { zu: "Deuter Streamer II", teil: "Schlauch mit Ventil", asin: "B0DFC4WY4R" },
+  { zu: "Source Widepac (2023)", teil: "Helix-Schlauchset mit Kupplung", asin: "B0BWLYLYMM" },
+  { zu: "CamelBak Crux", teil: "Big-Bite-Ventil", asin: "B0019DCVTA" },
+  { zu: "HydraPak Contour", teil: "Comet-Beißventil", asin: "B0BRBRC8GM" },
+  { zu: "Platypus Big Zip EVO", teil: "Schlauchset", asin: "B07N84M5FG" },
+];
+
 /** Zubehör — eigene Suchthemen, eigene Abschnitte. */
 export const ZUBEHOER = {
   isolierung: {
@@ -272,7 +306,7 @@ export const FRAGEN: { frage: string; antwort: string }[] = [
   {
     frage: "Wie reinige ich eine Trinkblase?",
     antwort:
-      "Nach jeder Tour ausspülen, alle paar Touren gründlich: warmes Wasser mit etwas Spülmittel oder Natron, Blase, Schlauch und Ventil mit Bürsten reinigen, gründlich klar spülen und offen trocknen lassen. Nicht heißer als der Hersteller erlaubt — bei Deuter 40 Grad.",
+      "Nach jeder Tour ausspülen, alle paar Touren gründlich: warmes Wasser mit etwas Spülmittel oder Natron, Blase, Schlauch und Ventil mit Bürsten reinigen, gründlich klar spülen und offen trocknen lassen. Nicht heißer als der Hersteller erlaubt; steht nichts dabei, handwarm.",
   },
   {
     frage: "Wie bekomme ich den Plastikgeschmack aus einer neuen Trinkblase?",
@@ -292,7 +326,17 @@ export const FRAGEN: { frage: string; antwort: string }[] = [
   {
     frage: "Passt jede Trinkblase in jeden Rucksack?",
     antwort:
-      "Nein. Der Rucksack braucht ein Fach, in dem die Blase aufrecht hängt, und eine Öffnung für den Schlauch. Vergleiche die Maße: Die Deuter misst 33 × 17 cm, die Source 35,5 × 19,2 cm — das Fach sollte etwas größer sein.",
+      "Nein. Der Rucksack braucht ein Fach, in dem die Blase aufrecht hängt, und eine Öffnung für den Schlauch. Vergleiche die Maße: Die Deuter misst laut Hersteller 35 × 17 cm, in der 3-Liter-Ausführung 40 × 20 cm, die Source 35,5 × 19,2 cm — das Fach sollte etwas größer sein.",
+  },
+  {
+    frage: "Darf Mineralwasser mit Kohlensäure in die Trinkblase?",
+    antwort:
+      "Besser nicht. In den Angaben der Hersteller hier findet sich keine Freigabe dafür. Kohlensäure baut in der geschlossenen Blase Druck auf, sie bläht sich, und beim ersten Biss schießt es aus dem Ventil. Still oder nur leicht sprudelnd, und dann halb gefüllt, ist das Äußerste.",
+  },
+  {
+    frage: "Kann man ein Loch in der Trinkblase reparieren?",
+    antwort:
+      "Ein kleines Loch in der Fläche ja: Stelle trocknen, mit Alkohol reinigen, von außen einen Reparaturflicken für Kunststofffolien aufkleben — für TPU die Ausführung, die nicht für PVC gedacht ist, bei Tear-Aid heißt sie Typ A. An Nähten, am Verschluss oder am Anschluss hält ein Flicken selten dauerhaft. Dort ist eine neue Blase die ehrlichere Lösung.",
   },
   {
     frage: "Hat die Stiftung Warentest Trinkblasen getestet?",
