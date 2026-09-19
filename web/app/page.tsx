@@ -354,6 +354,12 @@ export default async function Startseite() {
               marke: "Wasserberater · 8 Lösungen",
             },
             {
+              pfad: "/ausruestung/regenhose",
+              titel: "Regenhose zum Wandern",
+              text: "Wie dicht sie sein muss und welcher Reißverschluss über den Stiefel passt.",
+              marke: "Druckrechner · 6 Hosen",
+            },
+            {
               pfad: "/ausruestung/schuhe-impraegnieren",
               titel: "Schuhe imprägnieren",
               text: "Wachs oder Spray, was Gore-Tex-Schuhe brauchen und was der Test empfiehlt.",

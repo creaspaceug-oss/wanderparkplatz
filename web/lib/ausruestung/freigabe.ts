@@ -14,6 +14,7 @@
  */
 export const FREIGABE: Record<string, string> = {
   "/ausruestung/wasserfilter": "2026-09-23T09:00:00+02:00",
+  "/ausruestung/regenhose": "2026-09-25T09:00:00+02:00",
   "/ausruestung/wandersocken": "2026-09-26T09:00:00+02:00",
   "/ausruestung/schuhe-impraegnieren": "2026-09-28T09:00:00+02:00",
 };

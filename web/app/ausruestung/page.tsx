@@ -24,6 +24,11 @@ export const metadata: Metadata = {
  */
 const SEITEN = [
   {
+    pfad: "/ausruestung/regenhose",
+    titel: "Regenhose",
+    text: "Wie viel Wassersäule wirklich nötig ist, warum Knien mehr Druck macht als Regen, Seitenreißverschluss, Pflege, und sechs Hosen für Damen und Herren.",
+  },
+  {
     pfad: "/ausruestung/schuhe-impraegnieren",
     titel: "Schuhe imprägnieren",
     text: "Wachs oder Spray je nach Leder, was Gore-Tex-Schuhe brauchen, was die Stiftung Warentest fand, sicher sprühen, und sieben Mittel.",
