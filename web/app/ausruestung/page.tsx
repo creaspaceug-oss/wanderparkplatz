@@ -24,6 +24,11 @@ export const metadata: Metadata = {
  */
 const SEITEN = [
   {
+    pfad: "/ausruestung/regenjacke",
+    titel: "Regenjacke",
+    text: "Was der Saldo-Test über dichte Nähte und das Waschen zeigte, Wassersäule, Belüftung, Größe, PFC-frei, und sechs Jacken für Damen und Herren.",
+  },
+  {
     pfad: "/ausruestung/regenhose",
     titel: "Regenhose",
     text: "Wie viel Wassersäule wirklich nötig ist, warum Knien mehr Druck macht als Regen, Seitenreißverschluss, Pflege, und sechs Hosen für Damen und Herren.",

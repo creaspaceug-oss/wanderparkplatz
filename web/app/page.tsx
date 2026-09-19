@@ -354,6 +354,12 @@ export default async function Startseite() {
               marke: "Wasserberater · 8 Lösungen",
             },
             {
+              pfad: "/ausruestung/regenjacke",
+              titel: "Regenjacke zum Wandern",
+              text: "Was der Test über Nähte und Waschen zeigt — und welche Jacke zu deinen Touren passt.",
+              marke: "Jackenberater · 6 Jacken",
+            },
+            {
               pfad: "/ausruestung/regenhose",
               titel: "Regenhose zum Wandern",
               text: "Wie dicht sie sein muss und welcher Reißverschluss über den Stiefel passt.",
