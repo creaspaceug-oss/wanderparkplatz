@@ -341,6 +341,12 @@ export default async function Startseite() {
               marke: "Dunkelheits-Rechner · 7 Lampen",
             },
             {
+              pfad: "/ausruestung/gamaschen",
+              titel: "Gamaschen zum Wandern",
+              text: "Welche Höhe, dicht oder atmungsaktiv, und was sie gegen Zecken bringen.",
+              marke: "Berater · 6 Gamaschen",
+            },
+            {
               pfad: "/ausruestung/wanderrucksack",
               titel: "Wanderrucksack im Vergleich",
               text: "Wie viel Liter, wie du die Rückenlänge misst und was Damenmodelle anders machen.",

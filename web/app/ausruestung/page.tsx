@@ -20,6 +20,11 @@ export const metadata: Metadata = {
  */
 const SEITEN = [
   {
+    pfad: "/ausruestung/gamaschen",
+    titel: "Gamaschen",
+    text: "Kurz, wadenlang oder lang, dicht oder atmungsaktiv, die richtige Größe, was das RKI zu Zecken sagt, und sechs Gamaschen.",
+  },
+  {
     pfad: "/ausruestung/stirnlampe",
     titel: "Stirnlampe",
     text: "Was Lumen, Leuchtweite und Leuchtdauer wirklich bedeuten, wann es auf deiner Tour dunkel wird, und sieben Stirnlampen von Petzl bis Ledlenser.",

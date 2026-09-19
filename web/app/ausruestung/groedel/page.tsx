@@ -761,8 +761,8 @@ export default async function Groedel() {
             <p className="text-sm text-muted">Im Winter eine Größenklasse mehr.</p>
           </li>
           <li>
-            <Link href="/region/zugspitzregion" className="font-medium hover:text-accent">Wanderparkplätze in der Zugspitzregion</Link>
-            <p className="text-sm text-muted">Ausgangspunkte unter Alpspitze, Kramerspitz und Waxenstein.</p>
+            <Link href="/ausruestung/gamaschen" className="font-medium hover:text-accent">Gamaschen im Vergleich</Link>
+            <p className="text-sm text-muted">Damit der Schnee nicht in den Schuh kommt.</p>
           </li>
         </ul>
       </aside>
