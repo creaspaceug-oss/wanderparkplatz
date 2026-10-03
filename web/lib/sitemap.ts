@@ -1,5 +1,5 @@
 import { q } from "./db";
-import { sichtbar } from "./ausruestung/freigabe";
+import { FREIGABE, sichtbar } from "./ausruestung/freigabe";
 import { SITE } from "./site";
 import { MIN_AUSSAGEN } from "./inhalt";
 import { WANDERREGIONEN } from "./wanderregionen";
@@ -41,6 +41,32 @@ export type SitemapTyp = (typeof SITEMAP_TYPEN)[number];
  * deren Stand rückt nur bei echter inhaltlicher Änderung vor. Das jüngste
  * dieser Daten ist damit ein ehrliches lastmod.
  */
+/**
+ * Letzter inhaltlicher Stand der redaktionellen Seiten.
+ *
+ * Die Verzeichnisseiten führen ihr lastmod über den Änderungsstand ihrer
+ * Parkplätze; redaktionelle Seiten haben keine solche Quelle. Hier steht es
+ * deshalb von Hand — beim nächsten echten Eingriff an einer Seite mitziehen.
+ * Nicht mitziehen, wenn sich nur Preise oder Bilder von Amazon ändern: Das
+ * ist kein inhaltlicher Stand, und ein täglich neues Datum entwertet das
+ * Signal. Für zeitgesteuerte Seiten gilt ohnehin der Freigabezeitpunkt, denn
+ * vorher gab es für Suchmaschinen nichts zu sehen.
+ */
+const STAND: Record<string, string> = {
+  "/ueber-uns": "2026-09-19T08:51:07+02:00",
+  "/toilette-am-wanderparkplatz": "2026-09-19T09:00:23+02:00",
+  "/wandern-ohne-auto": "2026-09-19T09:07:57+02:00",
+  "/ausruestung": "2026-09-19T21:46:45+02:00",
+  "/ausruestung/wanderstoecke": "2026-09-19T18:11:37+02:00",
+  "/ausruestung/wanderrucksack": "2026-09-19T18:11:37+02:00",
+  "/ausruestung/huettenschlafsack": "2026-09-19T18:11:37+02:00",
+  "/ausruestung/erste-hilfe-set": "2026-09-19T18:28:41+02:00",
+  "/ausruestung/stirnlampe": "2026-09-19T18:28:41+02:00",
+  "/ausruestung/gamaschen": "2026-09-19T18:40:28+02:00",
+  "/ausruestung/groedel": "2026-09-19T18:40:28+02:00",
+  "/ausruestung/trinkblase": "2026-09-19T18:57:52+02:00",
+};
+
 export async function eintraege(typ: SitemapTyp): Promise<SitemapEintrag[]> {
   const einfach = (
     rows: { slug: string; aktualisiert?: Date }[],
@@ -78,7 +104,13 @@ export async function eintraege(typ: SitemapTyp): Promise<SitemapEintrag[]> {
     );
 
   switch (typ) {
-    case "seiten":
+    case "seiten": {
+      // Startseite und Übersichten ändern sich mit den Daten, nicht mit dem
+      // Code: Ihr lastmod ist der jüngste Parkplatz-Stand.
+      const [daten] = await q<{ stand: Date | null }>(
+        "SELECT max(aktualisiert) AS stand FROM parkplatz WHERE aktiv",
+      );
+      const DATENSEITEN = new Set(["/", "/regionen", "/wanderwege", "/ziele", "/bundeslaender"]);
       return [
         { pfad: "/", frequenz: "weekly", gewicht: "1.0" },
         { pfad: "/regionen", frequenz: "monthly", gewicht: "0.8" },
@@ -102,7 +134,17 @@ export async function eintraege(typ: SitemapTyp): Promise<SitemapEintrag[]> {
         { pfad: "/ausruestung/schuhe-impraegnieren", frequenz: "weekly", gewicht: "0.8" },
         { pfad: "/ausruestung/regenhose", frequenz: "weekly", gewicht: "0.8" },
         { pfad: "/ausruestung/regenjacke", frequenz: "weekly", gewicht: "0.8" },
-      ].filter((e) => sichtbar(e.pfad));
+      ]
+        .filter((e) => sichtbar(e.pfad))
+        // Freigegebene Seiten tragen den Freigabezeitpunkt, alle anderen ihren
+        // handgepflegten Stand; wo beides fehlt, bleibt lastmod weg.
+        .map((e) => {
+          const datum = FREIGABE[e.pfad] ?? STAND[e.pfad];
+          if (datum) return { ...e, geaendert: new Date(datum) };
+          if (DATENSEITEN.has(e.pfad) && daten?.stand) return { ...e, geaendert: daten.stand };
+          return e;
+        });
+    }
     case "regionen": {
       const bestaende = await regionBestaende(WANDERREGIONEN);
       const mitBestand = new Set(bestaende.filter((b) => b.n > 0).map((b) => b.slug));
