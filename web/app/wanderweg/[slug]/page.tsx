@@ -17,6 +17,7 @@ import Block from "@/components/Block";
 import Faktenkarte from "@/components/Faktenkarte";
 import RegionListe from "@/components/RegionListe";
 import { wegtext } from "@/lib/detailtext";
+import { istIndexierbar, wegAussagen } from "@/lib/inhalt";
 
 export const revalidate = 604800;
 export const dynamicParams = true;
@@ -43,17 +44,28 @@ export async function generateMetadata({
   const t = await trailBySlug(slug);
   if (!t) return { title: "Wanderweg nicht gefunden" };
   const punkte = `${nf.format(t.parkplatz_count)} ${t.parkplatz_count === 1 ? "Ausgangspunkt" : "Ausgangspunkte"}`;
+  // Rundwege tragen ihre Gattung schon im Namen. "Wanderparkplatz Walberla
+  // Rundwanderweg" liest sich doppelt gemoppelt und trifft die Suche schlechter
+  // als der Name selbst, nach dem gesucht wird.
+  const rund = /rundweg|rundwanderweg/i.test(t.name);
+  const laenge = km(t.laenge_km);
   return {
+    ...(istIndexierbar(wegAussagen(t)) ? {} : { robots: { index: false, follow: true } }),
     // Gesucht wird "Wanderparkplatz <Wegname>" — der Wegname allein vorn
     // ließ die Seite bei dieser Formulierung auf Position 21 stehen.
     //
     // Passt der volle Titel nicht, fällt zuerst die Zahl der Ausgangspunkte
     // weg und der Name bekommt den ganzen Platz. Gekürzt wird dann in der
     // Mitte: Bei Etappen und Teilstücken steht die Unterscheidung hinten.
-    title: titelVariante(
-      `Wanderparkplatz ${t.name} – ${punkte}`,
-      `Wanderparkplatz ${kuerzeMitte(t.name, 60 - "Wanderparkplatz ".length)}`,
-    ),
+    title: rund
+      ? titelVariante(
+          `${t.name}: Parkplatz${laenge ? `, ${laenge}` : ""} und Anfahrt`,
+          kuerzeMitte(t.name, 60),
+        )
+      : titelVariante(
+          `Wanderparkplatz ${t.name} – ${punkte}`,
+          `Wanderparkplatz ${kuerzeMitte(t.name, 60 - "Wanderparkplatz ".length)}`,
+        ),
     description: beschreibung(
       `${nf.format(t.parkplatz_count)} ${t.parkplatz_count === 1 ? "Wanderparkplatz" : "Wanderparkplätze"} am ${t.name}` +
         `${km(t.laenge_km) ? `, ${km(t.laenge_km)} lang` : ""}` +
@@ -87,7 +99,7 @@ export default async function WanderwegSeite({ params }: PageProps<"/wanderweg/[
         dangerouslySetInnerHTML={jsonLd({
           "@context": "https://schema.org",
           "@type": "CollectionPage",
-          name: `Wanderparkplätze am ${t.name}`,
+          name: `${t.parkplatz_count === 1 ? "Wanderparkplatz" : "Wanderparkplätze"} am ${t.name}`,
           url: `${SITE}/wanderweg/${t.slug}`,
           about: {
             "@type": "Place",
@@ -114,7 +126,7 @@ export default async function WanderwegSeite({ params }: PageProps<"/wanderweg/[
       />
 
       <h1 className="mt-3 text-3xl font-bold tracking-tight">
-        Wanderparkplätze am {t.name}
+        {t.parkplatz_count === 1 ? "Wanderparkplatz" : "Wanderparkplätze"} am {t.name}
       </h1>
 
       {/* Keine Karte: Ein Punktmarker für einen Weg über 180 Kilometer sagt

@@ -92,13 +92,13 @@ export async function eintraege(typ: SitemapTyp): Promise<SitemapEintrag[]> {
     );
 
   /** Jüngster Stand der Parkplätze an einem Weg oder Ziel. */
-  const verknuepft = (tabelle: string, brueckentabelle: string, spalte: string) =>
+  const verknuepft = (tabelle: string, brueckentabelle: string, spalte: string, zusatz = "") =>
     q<{ slug: string; aktualisiert: Date }>(
       `SELECT e.slug, max(p.aktualisiert) AS aktualisiert
          FROM ${tabelle} e
          JOIN ${brueckentabelle} v ON v.${spalte} = e.id
          JOIN parkplatz p ON p.id = v.parkplatz_id AND p.aktiv
-        WHERE e.eigene_seite
+        WHERE e.eigene_seite${zusatz}
         GROUP BY e.id, e.slug, e.parkplatz_count
         ORDER BY e.parkplatz_count DESC`,
     );
@@ -162,7 +162,18 @@ export async function eintraege(typ: SitemapTyp): Promise<SitemapEintrag[]> {
       return einfach(await region("ort", "ort_id"), "/ort", "weekly", "0.6");
     case "wanderwege":
       return einfach(
-        await verknuepft("trail", "parkplatz_trail", "trail_id"),
+        // Nur Wege, die auch indexiert werden: dieselbe Schwelle wie in
+        // generateMetadata der Wegeseite (siehe lib/inhalt.ts).
+        await verknuepft(
+          "trail",
+          "parkplatz_trail",
+          "trail_id",
+          ` AND (CASE WHEN e.laenge_km IS NOT NULL THEN 1 ELSE 0 END
+               + CASE WHEN e.markierung IS NOT NULL THEN 1 ELSE 0 END
+               + CASE WHEN e.netz IS NOT NULL THEN 1 ELSE 0 END
+               + CASE WHEN e.ref IS NOT NULL THEN 1 ELSE 0 END
+               + CASE WHEN e.parkplatz_count >= 2 THEN 1 ELSE 0 END) >= ${MIN_AUSSAGEN}`,
+        ),
         "/wanderweg",
         "monthly",
         "0.6",

@@ -480,10 +480,14 @@ await insertMany(
 /*
  * Wanderwege: Zahl der Parkplätze und ob eine eigene Seite gerechtfertigt ist.
  *
- * Ein Weg mit nur einem Parkplatz ergäbe eine Seite mit einem Listeneintrag —
- * 5.330 der 7.441 Wege fallen darunter. Zwei Parkplätze genügen, sofern die
- * Seite darüber hinaus etwas zu sagen hat: eine Netzstufe oberhalb "örtlich"
- * oder eine bekannte Weglänge.
+ * Ein Parkplatz genügt, sofern der Weg darüber hinaus etwas vorzuweisen hat:
+ * eine Netzstufe oberhalb "örtlich" oder eine bekannte Weglänge. Vorher waren
+ * zwei Parkplätze verlangt; das schloss 3.048 Wege aus, darunter 946 benannte
+ * Rundwege — und genau danach wird gesucht ("rundwanderweg in der nähe",
+ * 2.900 Suchen im Monat, dazu Hunderte benannte Runden). Gegen dünne Seiten
+ * schützt nicht mehr diese Schwelle, sondern die Aussagenzählung in
+ * web/lib/inhalt.ts: Wege mit weniger als drei Angaben bleiben erreichbar und
+ * verlinkt, aber außerhalb des Index.
  */
 await client.query(`
   UPDATE trail t SET
@@ -491,7 +495,7 @@ await client.query(`
     -- COALESCE ist nötig: bei netz = NULL liefert IN (...) weder wahr noch
     -- falsch, sondern NULL, und "true AND NULL" ist NULL.
     eigene_seite = COALESCE(
-      c.n >= 2 AND (t.netz IN ('iwn','nwn','rwn') OR t.laenge_km IS NOT NULL),
+      c.n >= 1 AND (t.netz IN ('iwn','nwn','rwn') OR t.laenge_km IS NOT NULL),
       false)
   FROM (SELECT trail_id, count(*)::int AS n FROM parkplatz_trail GROUP BY trail_id) c
   WHERE c.trail_id = t.id`);
