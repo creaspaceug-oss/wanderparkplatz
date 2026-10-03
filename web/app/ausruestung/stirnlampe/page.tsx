@@ -18,6 +18,7 @@ import {
 import { preise, partnerUrl, PREISHINWEIS, HERKUNFT, PARTNER } from "@/lib/amazon";
 import { STIRNLAMPEN, NOTFALL, FRAGEN, QUELLEN, alsProdukt } from "@/lib/ausruestung/stirnlampen";
 import { beleuchtung } from "@/lib/db";
+import { stand as seitenstand } from "@/lib/stand";
 import { jsonLd, nf } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
@@ -65,6 +66,7 @@ const FUER: Record<string, string> = {
 };
 
 export default async function Stirnlampe() {
+  const datum = seitenstand("/ausruestung/stirnlampe");
   const [p, licht] = await Promise.all([preise([...STIRNLAMPEN.map((s) => s.asin), NOTFALL.asin]), beleuchtung()]);
   const PRODUKTE = STIRNLAMPEN.map(alsProdukt);
   const erste = PRODUKTE[0];
@@ -103,7 +105,8 @@ export default async function Stirnlampe() {
             headline: TITEL,
             url: `${SITE}/ausruestung/stirnlampe`,
             inLanguage: "de-DE",
-            dateModified: new Date().toISOString(),
+            ...(datum.veroeffentlicht ? { datePublished: datum.veroeffentlicht } : {}),
+            ...(datum.geaendert ? { dateModified: datum.geaendert } : {}),
             isAccessibleForFree: true,
             author: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },
             publisher: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },

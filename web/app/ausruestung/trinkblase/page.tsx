@@ -27,6 +27,7 @@ import {
   alsProdukt,
 } from "@/lib/ausruestung/trinkblasen";
 import { einkehrLuecke } from "@/lib/db";
+import { stand as seitenstand } from "@/lib/stand";
 import { jsonLd, nf } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
@@ -76,6 +77,7 @@ const FUER: Record<string, string> = {
 };
 
 export default async function Trinkblase() {
+  const datum = seitenstand("/ausruestung/trinkblase");
   const [p, einkehr] = await Promise.all([
     preise([
       ...new Set([
@@ -124,7 +126,8 @@ export default async function Trinkblase() {
             headline: TITEL,
             url: `${SITE}/ausruestung/trinkblase`,
             inLanguage: "de-DE",
-            dateModified: new Date().toISOString(),
+            ...(datum.veroeffentlicht ? { datePublished: datum.veroeffentlicht } : {}),
+            ...(datum.geaendert ? { dateModified: datum.geaendert } : {}),
             isAccessibleForFree: true,
             author: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },
             publisher: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },

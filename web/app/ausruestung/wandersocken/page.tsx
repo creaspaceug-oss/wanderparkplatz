@@ -17,6 +17,7 @@ import {
 import { preise, partnerUrl, PREISHINWEIS, HERKUNFT, PARTNER } from "@/lib/amazon";
 import { SOCKEN, FRAGEN, QUELLEN, alsProdukt, standardGroesse } from "@/lib/ausruestung/wandersocken";
 import { sichtbar } from "@/lib/ausruestung/freigabe";
+import { stand as seitenstand } from "@/lib/stand";
 import { jsonLd } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
@@ -73,6 +74,7 @@ const FINDER: Record<string, string> = {
 };
 
 export default async function Wandersocken() {
+  const datum = seitenstand("/ausruestung/wandersocken");
   // Erscheint erst zum Freigabezeitpunkt, bis dahin 404 (siehe lib/ausruestung/freigabe.ts).
   if (!sichtbar("/ausruestung/wandersocken")) notFound();
 
@@ -128,7 +130,8 @@ export default async function Wandersocken() {
             headline: TITEL,
             url: `${SITE}/ausruestung/wandersocken`,
             inLanguage: "de-DE",
-            dateModified: new Date().toISOString(),
+            ...(datum.veroeffentlicht ? { datePublished: datum.veroeffentlicht } : {}),
+            ...(datum.geaendert ? { dateModified: datum.geaendert } : {}),
             isAccessibleForFree: true,
             author: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },
             publisher: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },

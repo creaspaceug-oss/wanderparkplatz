@@ -15,6 +15,7 @@ import {
 } from "@/components/ausruestung/Bausteine";
 import { preise, partnerUrl, PREISHINWEIS, HERKUNFT, PARTNER } from "@/lib/amazon";
 import { GAMASCHEN, FRAGEN, QUELLEN, alsProdukt, standardGroesse } from "@/lib/ausruestung/gamaschen";
+import { stand as seitenstand } from "@/lib/stand";
 import { jsonLd } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
@@ -71,6 +72,7 @@ const BERATER: Record<string, string> = {
 };
 
 export default async function Gamaschen() {
+  const datum = seitenstand("/ausruestung/gamaschen");
   const p = await preise(GAMASCHEN.flatMap((g) => g.groessen.map((x) => x.asin)));
   const PRODUKTE = GAMASCHEN.map(alsProdukt);
   const erste = PRODUKTE[0];
@@ -122,7 +124,8 @@ export default async function Gamaschen() {
             headline: TITEL,
             url: `${SITE}/ausruestung/gamaschen`,
             inLanguage: "de-DE",
-            dateModified: new Date().toISOString(),
+            ...(datum.veroeffentlicht ? { datePublished: datum.veroeffentlicht } : {}),
+            ...(datum.geaendert ? { dateModified: datum.geaendert } : {}),
             isAccessibleForFree: true,
             author: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },
             publisher: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },

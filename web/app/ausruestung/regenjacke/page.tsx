@@ -17,6 +17,7 @@ import {
 import { preise, partnerUrl, PREISHINWEIS, HERKUNFT, PARTNER } from "@/lib/amazon";
 import { JACKEN, FRAGEN, QUELLEN, alsProdukt, hauptAsin } from "@/lib/ausruestung/regenjacken";
 import { sichtbar } from "@/lib/ausruestung/freigabe";
+import { stand as seitenstand } from "@/lib/stand";
 import { jsonLd } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
@@ -64,6 +65,7 @@ const FUER: Record<string, string> = {
 const extern = "underline hover:text-accent";
 
 export default async function Regenjacke() {
+  const datum = seitenstand("/ausruestung/regenjacke");
   // Erscheint erst zum Freigabezeitpunkt, bis dahin 404 (siehe lib/ausruestung/freigabe.ts).
   if (!sichtbar(PFAD)) notFound();
 
@@ -110,7 +112,8 @@ export default async function Regenjacke() {
             headline: TITEL,
             url: `${SITE}${PFAD}`,
             inLanguage: "de-DE",
-            dateModified: new Date().toISOString(),
+            ...(datum.veroeffentlicht ? { datePublished: datum.veroeffentlicht } : {}),
+            ...(datum.geaendert ? { dateModified: datum.geaendert } : {}),
             isAccessibleForFree: true,
             author: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },
             publisher: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },

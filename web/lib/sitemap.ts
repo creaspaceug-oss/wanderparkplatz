@@ -1,5 +1,6 @@
 import { q } from "./db";
 import { FREIGABE, sichtbar } from "./ausruestung/freigabe";
+import { STAND } from "./stand";
 import { SITE } from "./site";
 import { MIN_AUSSAGEN } from "./inhalt";
 import { WANDERREGIONEN } from "./wanderregionen";
@@ -41,34 +42,6 @@ export type SitemapTyp = (typeof SITEMAP_TYPEN)[number];
  * deren Stand rückt nur bei echter inhaltlicher Änderung vor. Das jüngste
  * dieser Daten ist damit ein ehrliches lastmod.
  */
-/**
- * Letzter inhaltlicher Stand der redaktionellen Seiten.
- *
- * Die Verzeichnisseiten führen ihr lastmod über den Änderungsstand ihrer
- * Parkplätze; redaktionelle Seiten haben keine solche Quelle. Hier steht es
- * deshalb von Hand — beim nächsten echten Eingriff an einer Seite mitziehen.
- * Nicht mitziehen, wenn sich nur Preise oder Bilder von Amazon ändern: Das
- * ist kein inhaltlicher Stand, und ein täglich neues Datum entwertet das
- * Signal. Für zeitgesteuerte Seiten gilt ohnehin der Freigabezeitpunkt, denn
- * vorher gab es für Suchmaschinen nichts zu sehen.
- */
-const STAND: Record<string, string> = {
-  "/ueber-uns": "2026-09-19T08:51:07+02:00",
-  "/toilette-am-wanderparkplatz": "2026-09-19T09:00:23+02:00",
-  "/wandern-ohne-auto": "2026-09-19T09:07:57+02:00",
-  "/ausruestung": "2026-10-03T12:00:00+02:00",
-  "/ausruestung/wanderschuhe": "2026-10-03T12:00:00+02:00",
-  "/ausruestung/huettentour": "2026-10-03T14:00:00+02:00",
-  "/ausruestung/winterwandern": "2026-10-03T14:00:00+02:00",
-  "/ausruestung/wanderstoecke": "2026-09-19T18:11:37+02:00",
-  "/ausruestung/wanderrucksack": "2026-09-19T18:11:37+02:00",
-  "/ausruestung/huettenschlafsack": "2026-09-19T18:11:37+02:00",
-  "/ausruestung/erste-hilfe-set": "2026-09-19T18:28:41+02:00",
-  "/ausruestung/stirnlampe": "2026-09-19T18:28:41+02:00",
-  "/ausruestung/gamaschen": "2026-09-19T18:40:28+02:00",
-  "/ausruestung/groedel": "2026-09-19T18:40:28+02:00",
-  "/ausruestung/trinkblase": "2026-09-19T18:57:52+02:00",
-};
 
 export async function eintraege(typ: SitemapTyp): Promise<SitemapEintrag[]> {
   const einfach = (

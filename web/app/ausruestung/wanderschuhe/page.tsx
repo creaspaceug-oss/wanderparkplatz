@@ -17,6 +17,7 @@ import {
 import { preise, partnerUrl, PREISHINWEIS, HERKUNFT, PARTNER } from "@/lib/amazon";
 import { SCHUHE, KATEGORIE_TEXT, FRAGEN, QUELLEN, alsProdukt, hauptAsin } from "@/lib/ausruestung/wanderschuhe";
 import { sichtbar } from "@/lib/ausruestung/freigabe";
+import { stand as seitenstand } from "@/lib/stand";
 import { jsonLd } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
@@ -65,6 +66,7 @@ const FUER: Record<string, string> = {
 const extern = "underline hover:text-accent";
 
 export default async function Wanderschuhe() {
+  const datum = seitenstand("/ausruestung/wanderschuhe");
   if (!sichtbar(PFAD)) notFound();
 
   const asins = SCHUHE.flatMap((s) => [s.herren, s.damen].filter((x): x is string => Boolean(x)));
@@ -113,7 +115,8 @@ export default async function Wanderschuhe() {
             headline: TITEL,
             url: `${SITE}${PFAD}`,
             inLanguage: "de-DE",
-            dateModified: new Date().toISOString(),
+            ...(datum.veroeffentlicht ? { datePublished: datum.veroeffentlicht } : {}),
+            ...(datum.geaendert ? { dateModified: datum.geaendert } : {}),
             isAccessibleForFree: true,
             author: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },
             publisher: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },

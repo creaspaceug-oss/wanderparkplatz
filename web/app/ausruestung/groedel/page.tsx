@@ -27,6 +27,7 @@ import {
   standardGroesse,
 } from "@/lib/ausruestung/groedel";
 import { hoheGipfel } from "@/lib/db";
+import { stand as seitenstand } from "@/lib/stand";
 import { jsonLd, nf } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
@@ -74,6 +75,7 @@ const FUER: Record<string, string> = {
 };
 
 export default async function Groedel() {
+  const datum = seitenstand("/ausruestung/groedel");
   const alleAsins = [
     ...GROEDEL.flatMap((g) => g.groessen.map((x) => x.asin)),
     ...CITY.groessen.map((x) => x.asin),
@@ -140,7 +142,8 @@ export default async function Groedel() {
             headline: TITEL,
             url: `${SITE}/ausruestung/groedel`,
             inLanguage: "de-DE",
-            dateModified: new Date().toISOString(),
+            ...(datum.veroeffentlicht ? { datePublished: datum.veroeffentlicht } : {}),
+            ...(datum.geaendert ? { dateModified: datum.geaendert } : {}),
             isAccessibleForFree: true,
             author: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },
             publisher: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },

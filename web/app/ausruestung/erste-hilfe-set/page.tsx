@@ -28,6 +28,7 @@ import {
   alsProdukt,
   abdeckung,
 } from "@/lib/ausruestung/erstehilfe";
+import { stand as seitenstand } from "@/lib/stand";
 import { jsonLd } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
@@ -74,6 +75,7 @@ const FUER: Record<string, string> = {
 };
 
 export default async function ErsteHilfeSet() {
+  const datum = seitenstand("/ausruestung/erste-hilfe-set");
   const p = await preise([
     ...SETS.map((s) => s.asin),
     ...Object.values(NACHKAUF).map((n) => n!.asin),
@@ -111,7 +113,8 @@ export default async function ErsteHilfeSet() {
             headline: TITEL,
             url: `${SITE}/ausruestung/erste-hilfe-set`,
             inLanguage: "de-DE",
-            dateModified: new Date().toISOString(),
+            ...(datum.veroeffentlicht ? { datePublished: datum.veroeffentlicht } : {}),
+            ...(datum.geaendert ? { dateModified: datum.geaendert } : {}),
             isAccessibleForFree: true,
             author: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },
             publisher: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },

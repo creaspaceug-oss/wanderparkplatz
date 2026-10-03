@@ -28,6 +28,7 @@ import {
   alsProdukt,
 } from "@/lib/ausruestung/wanderstoecke";
 import { gipfelReichweite } from "@/lib/db";
+import { stand as seitenstand } from "@/lib/stand";
 import { jsonLd, nf } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
@@ -77,6 +78,7 @@ function bereich(laenge: string): [number, number] | null {
 }
 
 export default async function Wanderstoecke() {
+  const datum = seitenstand("/ausruestung/wanderstoecke");
   const [p, gipfel] = await Promise.all([
     preise([...STOECKE.map((s) => s.asin), HOLZSTOCK.asin]),
     gipfelReichweite(),
@@ -117,7 +119,8 @@ export default async function Wanderstoecke() {
             headline: TITEL,
             url: `${SITE}/ausruestung/wanderstoecke`,
             inLanguage: "de-DE",
-            dateModified: new Date().toISOString(),
+            ...(datum.veroeffentlicht ? { datePublished: datum.veroeffentlicht } : {}),
+            ...(datum.geaendert ? { dateModified: datum.geaendert } : {}),
             isAccessibleForFree: true,
             author: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },
             publisher: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },

@@ -18,6 +18,7 @@ import {
 import { preise, partnerUrl, PREISHINWEIS, HERKUNFT, PARTNER } from "@/lib/amazon";
 import { FILTER, FRAGEN, QUELLEN, alsProdukt } from "@/lib/ausruestung/wasserfilter";
 import { einkehrLuecke } from "@/lib/db";
+import { stand as seitenstand } from "@/lib/stand";
 import { jsonLd, nf } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
@@ -67,6 +68,7 @@ const FUER: Record<string, string> = {
 };
 
 export default async function Wasserfilter() {
+  const datum = seitenstand("/ausruestung/wasserfilter");
   // Erscheint erst zum Freigabezeitpunkt, bis dahin 404 (siehe lib/ausruestung/freigabe.ts).
   if (!sichtbar("/ausruestung/wasserfilter")) notFound();
   const [p, einkehr] = await Promise.all([preise(FILTER.map((f) => f.asin)), einkehrLuecke()]);
@@ -106,7 +108,8 @@ export default async function Wasserfilter() {
             headline: TITEL,
             url: `${SITE}/ausruestung/wasserfilter`,
             inLanguage: "de-DE",
-            dateModified: new Date().toISOString(),
+            ...(datum.veroeffentlicht ? { datePublished: datum.veroeffentlicht } : {}),
+            ...(datum.geaendert ? { dateModified: datum.geaendert } : {}),
             isAccessibleForFree: true,
             author: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },
             publisher: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },

@@ -29,6 +29,7 @@ import {
   alsProdukt,
 } from "@/lib/ausruestung/rucksaecke";
 import { einkehrLuecke } from "@/lib/db";
+import { stand as seitenstand } from "@/lib/stand";
 import { jsonLd, nf } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
@@ -82,6 +83,7 @@ const ja = (x: boolean | null) =>
   x === null ? <span className="text-muted">k. A.</span> : x ? "ja" : "nein";
 
 export default async function Wanderrucksack() {
+  const datum = seitenstand("/ausruestung/wanderrucksack");
   const [p, einkehr] = await Promise.all([
     preise([
       ...RUCKSAECKE.flatMap((r) => [r.asin, ...(r.damen ? [r.damen.asin] : [])]),
@@ -154,7 +156,8 @@ export default async function Wanderrucksack() {
             headline: TITEL,
             url: `${SITE}/ausruestung/wanderrucksack`,
             inLanguage: "de-DE",
-            dateModified: new Date().toISOString(),
+            ...(datum.veroeffentlicht ? { datePublished: datum.veroeffentlicht } : {}),
+            ...(datum.geaendert ? { dateModified: datum.geaendert } : {}),
             isAccessibleForFree: true,
             author: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },
             publisher: { "@type": "Organization", name: "wanderparkplatz.info", url: SITE },
