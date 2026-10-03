@@ -61,9 +61,12 @@ export interface Kennzahlen {
  * Kennzahlen des Gesamtbestands. Bewusst mit den Nennern: "2.855 kostenfrei"
  * ist ohne "von 2.935 mit Gebuehrenangabe" eine irrefuehrende Zahl.
  */
-export const kennzahlen = async (): Promise<Kennzahlen> =>
-  (
-    await q<Kennzahlen>(
+// cache: Startseite und ihre Metadaten fragen dieselben Zahlen ab — pro
+// Anfrage genügt eine Abfrage.
+export const kennzahlen = cache(
+  async (): Promise<Kennzahlen> =>
+    (
+      await q<Kennzahlen>(
       `SELECT (SELECT count(*) FROM parkplatz WHERE aktiv)::int AS gesamt,
               (SELECT count(*) FROM parkplatz WHERE aktiv AND gebuehr = false)::int AS kostenfrei,
               (SELECT count(*) FROM parkplatz WHERE aktiv AND gebuehr IS NOT NULL)::int AS mit_gebuehrenangabe,
@@ -78,8 +81,9 @@ export const kennzahlen = async (): Promise<Kennzahlen> =>
               (SELECT count(*) FROM ort   WHERE poi_count > 0)::int AS orte,
               (SELECT count(*) FROM kreis WHERE poi_count > 0)::int AS kreise,
               (SELECT count(*) FROM bundesland WHERE poi_count > 0)::int AS laender`,
-    )
-  )[0];
+      )
+    )[0],
+);
 
 export interface Region {
   id: number;

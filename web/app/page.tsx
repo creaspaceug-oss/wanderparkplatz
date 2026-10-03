@@ -9,18 +9,31 @@ import { oepnvGesamt } from "@/lib/db";
 import { regionBestaende, groessteParkplaetze, vorzeigeMitBild } from "@/lib/db";
 import { WANDERREGIONEN } from "@/lib/wanderregionen";
 import { jsonLd, nf } from "@/lib/format";
+import { beschreibung } from "@/lib/meta";
 import { SITE, SITE_NAME } from "@/lib/site";
 import { BETREIBER } from "@/lib/betreiber";
 import { sichtbar } from "@/lib/ausruestung/freigabe";
 
 export const revalidate = 86400;
 
-export const metadata: Metadata = {
-  title: "Wanderparkplatz in meiner Nähe – Verzeichnis für Deutschland",
-  description:
-    "Wanderparkplatz oder Waldparkplatz in der Nähe finden: Ort oder Postleitzahl eingeben oder Standort freigeben — mit Wanderwegen, Stellplätzen und Gebühren.",
-  alternates: { canonical: "/" },
-};
+/*
+ * Titel und Beschreibung tragen die echte Zahl aus der Datenbank: Sie wächst
+ * mit jedem Import, und eine Zahl im Suchergebnis ist der einzige Teil des
+ * Snippets, den Wettbewerber nicht auch schreiben. "in der Nähe" statt "in
+ * meiner Nähe", weil die Search Console für die erste Fassung rund fünfzehnmal
+ * so viele Impressionen zeigt.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const zahlen = await kennzahlen();
+  const n = nf.format(zahlen.gesamt);
+  return {
+    title: `Wanderparkplatz in der Nähe: ${n} Plätze in Deutschland`,
+    description: beschreibung(
+      `Standort freigeben oder Ort eingeben: ${n} Wander- und Waldparkplätze mit den Wanderwegen ab dem Platz, Stellplätzen, Gebühren und Anfahrt.`,
+    ),
+    alternates: { canonical: "/" },
+  };
+}
 
 const FAQ = [
   {

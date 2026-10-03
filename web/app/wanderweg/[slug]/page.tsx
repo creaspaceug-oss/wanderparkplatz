@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import PacklisteHinweis from "@/components/PacklisteHinweis";
 import ParkplatzListe from "@/components/ParkplatzListe";
 import Brotkrumen from "@/components/Brotkrumen";
 import {
@@ -146,6 +147,8 @@ export default async function WanderwegSeite({ params }: PageProps<"/wanderweg/[
               />
             </Block>
           )}
+
+          <PacklisteHinweis />
         </aside>
 
         <div className="order-2 space-y-6 lg:order-1">
