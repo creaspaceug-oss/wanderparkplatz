@@ -28,7 +28,7 @@ import {
   alsProdukt,
 } from "@/lib/ausruestung/wanderstoecke";
 import { gipfelReichweite } from "@/lib/db";
-import { stand as seitenstand } from "@/lib/stand";
+import { stand as seitenstand, standMonat } from "@/lib/stand";
 import { jsonLd, nf } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
@@ -101,7 +101,10 @@ export default async function Wanderstoecke() {
       })
     : null;
 
-  const stand = new Date().toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+  // Der sichtbare Stand ist der inhaltliche, nicht der Tag des Abrufs:
+  // "Stand Oktober" auf einem Text vom September wäre eine Frische, die
+  // es nicht gibt. Preise tragen ihren eigenen Zeitpunkt.
+  const stand = standMonat("/ausruestung/wanderstoecke");
   const verstellbar = STOECKE.flatMap((s) => {
     const b = bereich(s.laenge);
     return b ? [{ name: `${s.marke} ${s.name}`, min: b[0], max: b[1], anker: s.asin }] : [];

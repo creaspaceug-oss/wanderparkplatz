@@ -56,3 +56,11 @@ export function stand(pfad: string): { veroeffentlicht?: string; geaendert?: str
     frei && bearbeitet && new Date(bearbeitet) > new Date(frei) ? bearbeitet : veroeffentlicht;
   return { veroeffentlicht, geaendert };
 }
+
+/** Der sichtbare Stand einer Seite: "Oktober 2026". */
+export function standMonat(pfad: string): string {
+  const { geaendert } = stand(pfad);
+  return geaendert
+    ? new Date(geaendert).toLocaleDateString("de-DE", { month: "long", year: "numeric" })
+    : "";
+}

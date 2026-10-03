@@ -27,7 +27,7 @@ import {
   alsProdukt,
 } from "@/lib/ausruestung/trinkblasen";
 import { einkehrLuecke } from "@/lib/db";
-import { stand as seitenstand } from "@/lib/stand";
+import { stand as seitenstand, standMonat } from "@/lib/stand";
 import { jsonLd, nf } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
@@ -97,7 +97,10 @@ export default async function Trinkblase() {
         day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin",
       })
     : null;
-  const stand = new Date().toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+  // Der sichtbare Stand ist der inhaltliche, nicht der Tag des Abrufs:
+  // "Stand Oktober" auf einem Text vom September wäre eine Frische, die
+  // es nicht gibt. Preise tragen ihren eigenen Zeitpunkt.
+  const stand = standMonat("/ausruestung/trinkblase");
   const preisVon = (asin: string) => p.get(asin)?.anzeige ?? "—";
   const zeitVon = (asin: string) => {
     const a = p.get(asin)?.abgerufen;

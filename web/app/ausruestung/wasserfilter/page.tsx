@@ -18,7 +18,7 @@ import {
 import { preise, partnerUrl, PREISHINWEIS, HERKUNFT, PARTNER } from "@/lib/amazon";
 import { FILTER, FRAGEN, QUELLEN, alsProdukt } from "@/lib/ausruestung/wasserfilter";
 import { einkehrLuecke } from "@/lib/db";
-import { stand as seitenstand } from "@/lib/stand";
+import { stand as seitenstand, standMonat } from "@/lib/stand";
 import { jsonLd, nf } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
@@ -83,7 +83,10 @@ export default async function Wasserfilter() {
         })
       : null;
   };
-  const stand = new Date().toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+  // Der sichtbare Stand ist der inhaltliche, nicht der Tag des Abrufs:
+  // "Stand Oktober" auf einem Text vom September wäre eine Frische, die
+  // es nicht gibt. Preise tragen ihren eigenen Zeitpunkt.
+  const stand = standMonat("/ausruestung/wasserfilter");
   const preisVon = (asin: string) => p.get(asin)?.anzeige ?? "—";
   const urlVon = (asin: string) => p.get(asin)?.url ?? partnerUrl(asin);
 

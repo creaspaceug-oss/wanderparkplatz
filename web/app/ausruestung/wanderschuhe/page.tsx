@@ -17,7 +17,7 @@ import {
 import { preise, partnerUrl, PREISHINWEIS, HERKUNFT, PARTNER } from "@/lib/amazon";
 import { SCHUHE, KATEGORIE_TEXT, FRAGEN, QUELLEN, alsProdukt, hauptAsin } from "@/lib/ausruestung/wanderschuhe";
 import { sichtbar } from "@/lib/ausruestung/freigabe";
-import { stand as seitenstand } from "@/lib/stand";
+import { stand as seitenstand, standMonat } from "@/lib/stand";
 import { jsonLd } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
@@ -82,7 +82,10 @@ export default async function Wanderschuhe() {
         })
       : null;
   };
-  const stand = new Date().toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+  // Der sichtbare Stand ist der inhaltliche, nicht der Tag des Abrufs:
+  // "Stand Oktober" auf einem Text vom September wäre eine Frische, die
+  // es nicht gibt. Preise tragen ihren eigenen Zeitpunkt.
+  const stand = standMonat("/ausruestung/wanderschuhe");
   const preisVon = (asin: string) => p.get(asin)?.anzeige ?? "—";
   const urlVon = (asin: string) => p.get(asin)?.url ?? partnerUrl(asin);
   const angebot = (asin?: string) => (asin ? { url: urlVon(asin), anzeige: p.get(asin)?.anzeige ?? null } : null);

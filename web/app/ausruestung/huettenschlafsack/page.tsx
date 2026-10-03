@@ -16,7 +16,7 @@ import {
 } from "@/components/ausruestung/Bausteine";
 import { preise, partnerUrl, PREISHINWEIS, HERKUNFT, PARTNER } from "@/lib/amazon";
 import { HUETTENSCHLAFSAECKE, FRAGEN, QUELLEN, alsProdukt } from "@/lib/ausruestung/huettenschlafsaecke";
-import { stand as seitenstand } from "@/lib/stand";
+import { stand as seitenstand, standMonat } from "@/lib/stand";
 import { jsonLd } from "@/lib/format";
 import { titel, beschreibung } from "@/lib/meta";
 import { SITE } from "@/lib/site";
@@ -78,7 +78,10 @@ export default async function Huettenschlafsack() {
         })
       : null;
   };
-  const stand = new Date().toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+  // Der sichtbare Stand ist der inhaltliche, nicht der Tag des Abrufs:
+  // "Stand Oktober" auf einem Text vom September wäre eine Frische, die
+  // es nicht gibt. Preise tragen ihren eigenen Zeitpunkt.
+  const stand = standMonat("/ausruestung/huettenschlafsack");
   const preisVon = (asin: string) => p.get(asin)?.anzeige ?? "—";
   const urlVon = (asin: string) => p.get(asin)?.url ?? partnerUrl(asin);
 
