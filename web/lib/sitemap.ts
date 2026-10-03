@@ -57,6 +57,7 @@ const STAND: Record<string, string> = {
   "/toilette-am-wanderparkplatz": "2026-09-19T09:00:23+02:00",
   "/wandern-ohne-auto": "2026-09-19T09:07:57+02:00",
   "/ausruestung": "2026-10-03T12:00:00+02:00",
+  "/ausruestung/wanderschuhe": "2026-10-03T12:00:00+02:00",
   "/ausruestung/wanderstoecke": "2026-09-19T18:11:37+02:00",
   "/ausruestung/wanderrucksack": "2026-09-19T18:11:37+02:00",
   "/ausruestung/huettenschlafsack": "2026-09-19T18:11:37+02:00",
@@ -134,6 +135,7 @@ export async function eintraege(typ: SitemapTyp): Promise<SitemapEintrag[]> {
         { pfad: "/ausruestung/schuhe-impraegnieren", frequenz: "weekly", gewicht: "0.8" },
         { pfad: "/ausruestung/regenhose", frequenz: "weekly", gewicht: "0.8" },
         { pfad: "/ausruestung/regenjacke", frequenz: "weekly", gewicht: "0.8" },
+        { pfad: "/ausruestung/wanderschuhe", frequenz: "weekly", gewicht: "0.8" },
       ]
         .filter((e) => sichtbar(e.pfad))
         // Freigegebene Seiten tragen den Freigabezeitpunkt, alle anderen ihren

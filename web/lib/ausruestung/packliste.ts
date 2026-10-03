@@ -64,7 +64,7 @@ export const PACKLISTE: Gruppe[] = [
   {
     titel: "Am Körper",
     posten: [
-      { name: "Hohe Bergschuhe", hinweis: "Regelmäßig nachimprägnieren, am besten ohne Fluorkarbone", pfad: "/ausruestung/schuhe-impraegnieren", touren: ["tag", "huette", "winter"] },
+      { name: "Hohe Bergschuhe", hinweis: "Die Kategorie folgt dem Gelände", pfad: "/ausruestung/wanderschuhe", touren: ["tag", "huette", "winter"] },
       { name: "Wandersocken", pfad: "/ausruestung/wandersocken", touren: ["tag", "huette", "winter"] },
       { name: "Ersatzsocken", hinweis: "Nasse Füße sind anfälliger für Blasen", pfad: "/ausruestung/wandersocken", touren: ["huette", "winter"], ergaenzt: true },
       { name: "T-Shirt", touren: ["tag", "huette", "winter"] },

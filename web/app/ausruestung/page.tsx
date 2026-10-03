@@ -28,6 +28,11 @@ export const metadata: Metadata = {
  */
 const SEITEN = [
   {
+    pfad: "/ausruestung/wanderschuhe",
+    titel: "Wanderschuhe",
+    text: "Welche Kategorie zu deinem Gelände passt, was zwei Tests über die Dichtigkeit zeigen, Anprobe, breite Füße, PFAS, und sechs Schuhe für Damen und Herren.",
+  },
+  {
     pfad: "/ausruestung/regenjacke",
     titel: "Regenjacke",
     text: "Was der Saldo-Test über dichte Nähte und das Waschen zeigte, Wassersäule, Belüftung, Größe, PFC-frei, und sechs Jacken für Damen und Herren.",
@@ -103,7 +108,7 @@ const GRUPPEN: { titel: string; text: string; pfade: string[] }[] = [
   {
     titel: "Füße",
     text: "Der häufigste Grund, eine Tour abzubrechen, sitzt im Schuh.",
-    pfade: ["/ausruestung/wandersocken", "/ausruestung/schuhe-impraegnieren", "/ausruestung/groedel"],
+    pfade: ["/ausruestung/wanderschuhe", "/ausruestung/wandersocken", "/ausruestung/schuhe-impraegnieren", "/ausruestung/groedel"],
   },
   {
     titel: "Tragen und trinken",

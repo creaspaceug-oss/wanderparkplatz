@@ -367,6 +367,12 @@ export default async function Startseite() {
               marke: "Wasserberater · 8 Lösungen",
             },
             {
+              pfad: "/ausruestung/wanderschuhe",
+              titel: "Wanderschuhe im Vergleich",
+              text: "Welche Kategorie dein Gelände verlangt — und was die Tests über Dichtigkeit sagen.",
+              marke: "Kategorie-Berater · 6 Schuhe",
+            },
+            {
               pfad: "/ausruestung/regenjacke",
               titel: "Regenjacke zum Wandern",
               text: "Was der Test über Nähte und Waschen zeigt — und welche Jacke zu deinen Touren passt.",
