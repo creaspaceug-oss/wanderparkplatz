@@ -56,7 +56,7 @@ const STAND: Record<string, string> = {
   "/ueber-uns": "2026-09-19T08:51:07+02:00",
   "/toilette-am-wanderparkplatz": "2026-09-19T09:00:23+02:00",
   "/wandern-ohne-auto": "2026-09-19T09:07:57+02:00",
-  "/ausruestung": "2026-09-19T21:46:45+02:00",
+  "/ausruestung": "2026-10-03T12:00:00+02:00",
   "/ausruestung/wanderstoecke": "2026-09-19T18:11:37+02:00",
   "/ausruestung/wanderrucksack": "2026-09-19T18:11:37+02:00",
   "/ausruestung/huettenschlafsack": "2026-09-19T18:11:37+02:00",
