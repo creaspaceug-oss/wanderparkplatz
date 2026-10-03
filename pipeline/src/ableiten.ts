@@ -29,20 +29,23 @@ const zaehle = async () => {
 };
 
 const vorher = await zaehle();
-console.log("vorher: ", vorher);
-
-if (probe) {
-  console.log("\nProbelauf — nichts geschrieben.");
-  await client.end();
-  process.exit(0);
-}
 
 // Eine Transaktion: Eine halb berechnete Datenbank wäre schlimmer als eine
-// veraltete, weil Seiten und Sitemap dann auseinanderlaufen.
+// veraltete, weil Seiten und Sitemap dann auseinanderlaufen. Der Probelauf
+// rechnet in derselben Transaktion und rollt sie zurück — nur so zeigt er,
+// was sich tatsächlich ändern würde, statt bloß den Ist-Stand.
 await client.query("BEGIN");
 for (const sql of [WEGESEITEN, ZIELSEITEN, AUSSAGEN]) await client.query(sql);
-await client.query("COMMIT");
-
 const nachher = await zaehle();
-console.log("nachher:", nachher);
+await client.query(probe ? "ROLLBACK" : "COMMIT");
+
+const zeile = (feld: keyof typeof vorher, name: string) => {
+  const diff = nachher[feld] - vorher[feld];
+  const pfeil = diff === 0 ? "unverändert" : `${diff > 0 ? "+" : ""}${diff}`;
+  console.log(`${name.padEnd(22)} ${String(vorher[feld]).padStart(6)} → ${String(nachher[feld]).padStart(6)}  (${pfeil})`);
+};
+zeile("wegeseiten", "Wegeseiten");
+zeile("zielseiten", "Zielseiten");
+zeile("indexierbar", "Parkplätze im Index");
+console.log(probe ? "\nProbelauf — zurückgerollt, nichts geschrieben." : "\nGeschrieben.");
 await client.end();
