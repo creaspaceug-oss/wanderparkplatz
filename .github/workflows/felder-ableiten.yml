@@ -1,0 +1,58 @@
+name: Abgeleitete Felder neu berechnen
+
+# Von Hand auszulösen: Actions → "Abgeleitete Felder neu berechnen" → Run
+# workflow. Nötig, wenn sich im Code eine Schwelle geändert hat — etwa wie
+# viele Parkplätze ein Weg für eine eigene Seite braucht. Die Daten bleiben
+# unberührt, gerechnet wird nur, was ohnehin aus dem Bestand folgt. Der
+# wöchentliche Import macht dasselbe am Ende jedes Laufs; dieser Lauf erspart
+# das Warten darauf.
+on:
+  workflow_dispatch:
+    inputs:
+      probe:
+        description: "Nur zeigen, was sich ändern würde (nichts schreiben)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  ableiten:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Geheimnis vorhanden?
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL fehlt — anzulegen unter Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Berechnen
+        run: npm run -w pipeline ableiten ${{ inputs.probe && '-- --probe' || '' }}
+
+      # Ohne Deployment zögen die Seiten erst mit ihrer nächsten Revalidierung
+      # nach — bei Parkplatzseiten bis zu sieben Tage.
+      - name: Neu ausliefern
+        if: ${{ !inputs.probe && env.VERCEL_DEPLOY_HOOK != '' }}
+        run: curl -fsS -X POST "$VERCEL_DEPLOY_HOOK"
+
+      - name: Hinweis ohne Deploy Hook
+        if: ${{ !inputs.probe && env.VERCEL_DEPLOY_HOOK == '' }}
+        run: echo "::warning::Kein Deploy Hook hinterlegt — die Felder sind berechnet, die Seiten ziehen mit ihrer nächsten Revalidierung nach."

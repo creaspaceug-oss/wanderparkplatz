@@ -4,6 +4,7 @@ import { datenbankUrl } from "./db-url.ts";
 import { out, raw } from "./paths.ts";
 import { suchform } from "./geo.ts";
 import { kennung } from "./ident.ts";
+import { WEGESEITEN, ZIELSEITEN, AUSSAGEN } from "./abgeleitet.ts";
 /*
  * Die Wanderregionen stehen nicht in der Datenbank, sondern als kuratierte
  * Liste in der Web-Anwendung: Sie sind Mittelpunkt und Radius, keine
@@ -379,13 +380,7 @@ if (ziele.length) {
    * zwei Parkplätzen im Fünf-Kilometer-Umkreis eine Seite — 16.731 Stück, die
    * das gerade behobene Thin-Content-Problem zurückgebracht hätten.
    */
-  await client.query(`
-    UPDATE ziel z SET
-      parkplatz_count = c.n,
-      eigene_seite = c.n >= 2
-        AND (z.bekannt OR z.art IN ('burg','wasserfall','hoehle','turm'))
-    FROM (SELECT ziel_id, count(*)::int AS n FROM parkplatz_ziel GROUP BY ziel_id) c
-    WHERE c.ziel_id = z.id`);
+  await client.query(ZIELSEITEN);
 }
 
 // --------------------------------------------------- Standortsuche
@@ -489,32 +484,14 @@ await insertMany(
  * web/lib/inhalt.ts: Wege mit weniger als drei Angaben bleiben erreichbar und
  * verlinkt, aber außerhalb des Index.
  */
-await client.query(`
-  UPDATE trail t SET
-    parkplatz_count = c.n,
-    -- COALESCE ist nötig: bei netz = NULL liefert IN (...) weder wahr noch
-    -- falsch, sondern NULL, und "true AND NULL" ist NULL.
-    eigene_seite = COALESCE(
-      c.n >= 1 AND (t.netz IN ('iwn','nwn','rwn') OR t.laenge_km IS NOT NULL),
-      false)
-  FROM (SELECT trail_id, count(*)::int AS n FROM parkplatz_trail GROUP BY trail_id) c
-  WHERE c.trail_id = t.id`);
+await client.query(WEGESEITEN);
 
 /*
  * Inhaltsumfang neu berechnen — erst hier, wenn Wege und Umfeld geladen sind.
  * Er steuert, welche Seiten indexiert werden; daten_score allein wäre dafür
  * seit der Anreicherung ein falscher Maßstab.
  */
-await client.query(`
-  UPDATE parkplatz p SET aussagen =
-      (p.stellplaetze IS NOT NULL)::int + (p.gebuehr IS NOT NULL)::int
-    + (p.oberflaeche IS NOT NULL)::int + (p.zugang IS NOT NULL)::int
-    + (p.oeffnungszeiten IS NOT NULL)::int + (p.beleuchtet IS NOT NULL)::int
-    + (p.barrierefrei IS NOT NULL)::int + (p.max_hoehe_m IS NOT NULL)::int
-    + (p.wohnmobil IS NOT NULL)::int + (p.wc IS NOT NULL)::int
-    + (p.betreiber IS NOT NULL)::int + (p.hoehe_m IS NOT NULL)::int
-    + (SELECT count(*) FROM parkplatz_trail t  WHERE t.parkplatz_id = p.id)
-    + (SELECT count(*) FROM parkplatz_nearby n WHERE n.parkplatz_id = p.id)`);
+await client.query(AUSSAGEN);
 
 /*
  * Abgleichzeitpunkt festhalten — in derselben Transaktion wie die Daten.
