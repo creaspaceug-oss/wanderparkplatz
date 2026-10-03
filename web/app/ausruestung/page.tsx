@@ -28,6 +28,16 @@ export const metadata: Metadata = {
  */
 const SEITEN = [
   {
+    pfad: "/ausruestung/huettentour",
+    titel: "Hüttentour",
+    text: "Die Packliste des Alpenvereins für die Hüttenübernachtung zum Abhaken — vom Hüttenschlafsack über Ohrstöpsel bis zum Bargeld.",
+  },
+  {
+    pfad: "/ausruestung/winterwandern",
+    titel: "Winterwandern",
+    text: "Was sich im Winter ändert: Grödel gegen Vereisung, Gamaschen gegen Schnee, Zeitpuffer bis zur Dunkelheit — nach dem Alpenverein.",
+  },
+  {
     pfad: "/ausruestung/wanderschuhe",
     titel: "Wanderschuhe",
     text: "Welche Kategorie zu deinem Gelände passt, was zwei Tests über die Dichtigkeit zeigen, Anprobe, breite Füße, PFAS, und sechs Schuhe für Damen und Herren.",
@@ -100,6 +110,11 @@ const SEITEN = [
 ];
 
 const GRUPPEN: { titel: string; text: string; pfade: string[] }[] = [
+  {
+    titel: "Für die ganze Tour",
+    text: "Zwei Zusammenstellungen, die mehrere Vergleiche bündeln.",
+    pfade: ["/ausruestung/huettentour", "/ausruestung/winterwandern"],
+  },
   {
     titel: "Regen und Wetter",
     text: "Was dich trocken hält — und was die Tests darüber sagen.",

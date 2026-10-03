@@ -9,7 +9,7 @@ import { beschreibung, metaBeschreibung } from "@/lib/beschreibung";
 import { jsonLd, km, gebuehrText } from "@/lib/format";
 import { titelVariante } from "@/lib/meta";
 import CommonsBild from "@/components/CommonsBild";
-import PacklisteHinweis from "@/components/PacklisteHinweis";
+import AusruestungHinweis from "@/components/AusruestungHinweis";
 import Karte from "@/components/Karte";
 import Merkmale from "@/components/Merkmale";
 import Block from "@/components/Block";
@@ -283,7 +283,7 @@ export default async function Detailseite({ params }: PageProps<"/wanderparkplat
             )}
           </section>
 
-          <PacklisteHinweis />
+          <AusruestungHinweis />
 
         </aside>
 

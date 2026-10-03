@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import PacklisteHinweis from "@/components/PacklisteHinweis";
+import AusruestungHinweis from "@/components/AusruestungHinweis";
 import ParkplatzListe from "@/components/ParkplatzListe";
 import Brotkrumen from "@/components/Brotkrumen";
 import {
@@ -160,7 +160,16 @@ export default async function WanderwegSeite({ params }: PageProps<"/wanderweg/[
             </Block>
           )}
 
-          <PacklisteHinweis />
+          {t.netz === "iwn" || t.netz === "nwn" ? (
+            <AusruestungHinweis
+              titel="Mehrtägig unterwegs"
+              text="Auf einem Fernwanderweg stellt sich die Frage nach der Hüttenübernachtung. Unsere Packliste für die Hüttentour folgt der des Alpenvereins — vom Hüttenschlafsack bis zum Bargeld."
+              href="/ausruestung/huettentour"
+              verweis="Zur Hüttentour-Packliste"
+            />
+          ) : (
+            <AusruestungHinweis />
+          )}
         </aside>
 
         <div className="order-2 space-y-6 lg:order-1">

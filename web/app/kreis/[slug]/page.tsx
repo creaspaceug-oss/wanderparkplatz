@@ -9,9 +9,11 @@ import ZieleListe from "@/components/ZieleListe";
 import Umfeld from "@/components/Umfeld";
 import Block from "@/components/Block";
 import Brotkrumen from "@/components/Brotkrumen";
+import AusruestungHinweis from "@/components/AusruestungHinweis";
 import SammlungLd from "@/components/SammlungLd";
 import {
   parkplaetzeIn, alleSlugs, wanderwegeImKreis, zieleImKreis, umfeldImKreis, oepnvFuerRegion,
+  hoheGipfel,
 } from "@/lib/db";
 import { kreisBySlug, orteIn, nachbarKreise } from "@/lib/queries";
 import { nf } from "@/lib/format";
@@ -56,6 +58,10 @@ export default async function KreisSeite({ params }: PageProps<"/kreis/[slug]">)
     umfeldImKreis(k.id),
     oepnvFuerRegion("kreis_id", k.id),
   ]);
+
+  // Landkreise mit Gipfeln über 1.300 Metern bekommen den Winterhinweis: Dort
+  // liegt im Winter Schnee, und dort hilft die Winterausrüstung wirklich.
+  const hoch = (await hoheGipfel()).kreise.find((x) => x.slug === slug);
 
   const kostenfrei = plaetze.filter((p) => p.gebuehr === false).length;
 
@@ -117,6 +123,17 @@ export default async function KreisSeite({ params }: PageProps<"/kreis/[slug]">)
               ["Bundesland", k.bl_name ?? null],
             ]}
           />
+
+          {hoch ? (
+            <AusruestungHinweis
+              titel="Im Winter"
+              text={`Hier reicht es hinauf: Der ${hoch.gipfel} misst ${nf.format(hoch.hoehe_m)} Meter. Was sich im Winter ändert — Grödel, Gamaschen, Zeitpuffer bis zur Dunkelheit —, steht in unserer Winterausrüstung.`}
+              href="/ausruestung/winterwandern"
+              verweis="Zum Winterwandern"
+            />
+          ) : (
+            <AusruestungHinweis />
+          )}
 
           {nachbarn.length > 0 && (
             <Block titel={`Weitere Landkreise in ${k.bl_name}`}>

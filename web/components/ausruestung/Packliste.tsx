@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useState } from "react";
 import Link from "next/link";
-import { PACKLISTE, TOUR_NAME, type Tour } from "@/lib/ausruestung/packliste";
+import { PACKLISTE, TOUR_NAME, type Gruppe, type Tour } from "@/lib/ausruestung/packliste";
 
 /**
  * Packliste zum Abhaken, nach Tourart gefiltert.
@@ -12,7 +12,16 @@ import { PACKLISTE, TOUR_NAME, type Tour } from "@/lib/ausruestung/packliste";
  * Eine Liste, die beim nächsten Mal noch halb abgehakt wäre, führt in die
  * Irre — gepackt wird jede Tour neu.
  */
-export default function Packliste({ sichtbare }: { sichtbare: string[] }) {
+export default function Packliste({
+  sichtbare,
+  liste,
+  ueberschrift,
+}: {
+  sichtbare: string[];
+  /** Eigene Liste statt der Tourenliste — dann entfällt der Umschalter. */
+  liste?: Gruppe[];
+  ueberschrift?: string;
+}) {
   const id = useId();
   // Funktionen lassen sich nicht an Client-Komponenten übergeben: Welche
   // Vergleichsseiten schon freigegeben sind, entscheidet der Server.
@@ -22,10 +31,11 @@ export default function Packliste({ sichtbare }: { sichtbare: string[] }) {
 
   const gruppen = useMemo(
     () =>
+      liste ??
       PACKLISTE.map((g) => ({ ...g, posten: g.posten.filter((p) => p.touren.includes(tour)) })).filter(
         (g) => g.posten.length > 0,
       ),
-    [tour],
+    [tour, liste],
   );
   const gesamt = gruppen.reduce((n, g) => n + g.posten.length, 0);
   const erledigt = gruppen.reduce((n, g) => n + g.posten.filter((p) => fertig.has(p.name)).length, 0);
@@ -40,6 +50,7 @@ export default function Packliste({ sichtbare }: { sichtbare: string[] }) {
 
   return (
     <div className="rounded-2xl border border-line bg-sand p-5 sm:p-7">
+      {!liste && (
       <fieldset>
         <legend className="text-sm font-medium text-muted">Was für eine Tour?</legend>
         <div className="mt-2 grid gap-2 sm:grid-cols-3">
@@ -62,10 +73,11 @@ export default function Packliste({ sichtbare }: { sichtbare: string[] }) {
           ))}
         </div>
       </fieldset>
+      )}
 
       <p className="mt-5 flex items-baseline justify-between text-sm text-muted">
         <span>
-          {gesamt} Punkte für die {TOUR_NAME[tour]}
+          {gesamt} Punkte {ueberschrift ?? `für die ${TOUR_NAME[tour]}`}
         </span>
         <span className="tabular-nums">
           {erledigt} von {gesamt} gepackt
@@ -117,9 +129,9 @@ export default function Packliste({ sichtbare }: { sichtbare: string[] }) {
       </div>
 
       <p className="mt-4 text-xs leading-relaxed text-muted">
-        Grundlage ist die Packliste des Deutschen Alpenvereins für Frühjahrstouren, ergänzt um
-        Punkte für Hütten- und Wintertouren; die sind als Ergänzung markiert. Abgehakte Punkte
-        merkt sich nur dieser Besuch.
+        {liste
+          ? "Was nicht aus der Liste des Alpenvereins stammt, ist als Ergänzung markiert. Abgehakte Punkte merkt sich nur dieser Besuch."
+          : "Grundlage ist die Packliste des Deutschen Alpenvereins für Frühjahrstouren, ergänzt um Punkte für Hütten- und Wintertouren; die sind als Ergänzung markiert. Abgehakte Punkte merkt sich nur dieser Besuch."}
       </p>
     </div>
   );
