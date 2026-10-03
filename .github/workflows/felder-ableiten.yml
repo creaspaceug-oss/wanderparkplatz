@@ -44,6 +44,12 @@ jobs:
       - name: Abhängigkeiten installieren
         run: npm ci
 
+      # Gefahrlos wiederholbar: Die SQL-Dateien legen nur an, was fehlt, und
+      # lassen Nutzerdaten unangetastet. Steht hier, damit eine neue Tabelle
+      # nicht bis zum nächsten Import wartet.
+      - name: Schema abgleichen
+        run: npm run db:setup
+
       - name: Berechnen
         run: npm run -w pipeline ableiten ${{ inputs.probe && '-- --probe' || '' }}
 

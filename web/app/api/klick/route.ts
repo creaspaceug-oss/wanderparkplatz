@@ -32,10 +32,17 @@ export async function POST(request: Request) {
   const asin = String(body.asin ?? "");
   const platz = String(body.platz ?? "");
 
-  await q(
-    "INSERT INTO partnerklick (pfad, asin, platz) VALUES ($1, $2, $3)",
-    [pfad, ASIN.test(asin) ? asin : null, PLAETZE.has(platz) ? platz : "sonstiges"],
-  );
+  try {
+    await q(
+      "INSERT INTO partnerklick (pfad, asin, platz) VALUES ($1, $2, $3)",
+      [pfad, ASIN.test(asin) ? asin : null, PLAETZE.has(platz) ? platz : "sonstiges"],
+    );
+  } catch (fehler) {
+    // Eine verlorene Zählung ist kein Grund, einen Fehler an den Browser zu
+    // melden: Der Nutzer ist längst bei Amazon, und die Statistik ist kein
+    // Teil der Zusage an ihn. Im Protokoll steht es trotzdem.
+    console.error("Partnerklick nicht gespeichert:", fehler);
+  }
 
   // 204: Der Browser verwirft die Antwort ohnehin, der Nutzer ist längst
   // unterwegs zu Amazon.
