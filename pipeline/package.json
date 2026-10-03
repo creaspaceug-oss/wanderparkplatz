@@ -12,7 +12,8 @@
     "bilder": "node --experimental-strip-types src/bilder.ts",
     "sicherung": "node --experimental-strip-types src/sicherung.ts",
     "indexnow": "node --experimental-strip-types src/indexnow.ts",
-    "ableiten": "node --experimental-strip-types src/ableiten.ts"
+    "ableiten": "node --experimental-strip-types src/ableiten.ts",
+    "klicks": "node --experimental-strip-types src/klicks.ts"
   },
   "dependencies": {
     "pg": "^8.13.1"

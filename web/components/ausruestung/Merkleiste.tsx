@@ -76,6 +76,7 @@ export default function Merkleiste({
 
   return (
     <div
+      data-platz="leiste"
       aria-hidden={!sichtbar}
       className={`fixed inset-x-0 bottom-0 z-40 px-3 pb-3 transition duration-300 motion-reduce:transition-none sm:px-4 sm:pb-4 ${
         sichtbar ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-full opacity-0"

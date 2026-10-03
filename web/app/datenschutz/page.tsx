@@ -139,6 +139,14 @@ export default function Datenschutz() {
           Erst wenn du einen solchen Verweis anklickst, gelangst du zu Amazon, wo dann deren
           Datenschutzbestimmungen gelten.
         </p>
+        <p>
+          Beim Klick auf einen solchen Verweis halten wir auf unserem eigenen Server fest, auf
+          welcher Seite, in welchem Abschnitt und zu welchem Produkt geklickt wurde — ohne
+          IP-Adresse, ohne Kennung, ohne Cookie und ohne Bezug zu deinem Besuch. Gezählt wird
+          das Ereignis, nicht die Person; ein Rückschluss auf dich ist daraus nicht möglich.
+          Diese Zählung dient allein der Frage, welche Inhalte wir weiterverfolgen.
+          Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO.
+        </p>
       </Abschnitt>
 
       <Abschnitt titel="Cookies und Dienste Dritter">
@@ -201,7 +209,7 @@ export default function Datenschutz() {
       </Abschnitt>
 
       <Abschnitt titel="Stand">
-        <p>Diese Datenschutzerklärung gilt ab August 2026.</p>
+        <p>Diese Datenschutzerklärung gilt ab Oktober 2026.</p>
       </Abschnitt>
     </div>
   );

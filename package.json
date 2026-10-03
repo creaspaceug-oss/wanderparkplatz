@@ -17,6 +17,7 @@
     "backup": "npm run -w pipeline sicherung",
     "indexnow": "npm run -w pipeline indexnow --",
     "data:aktualisieren": "npm run backup && npm run -w pipeline fetch admin pois places plz trails ziele umfeld wasserfaelle && npm run data:build && npm run data:load && npm run data:bilder",
-    "data:ableiten": "npm run -w pipeline ableiten"
+    "data:ableiten": "npm run -w pipeline ableiten",
+    "data:klicks": "npm run -w pipeline klicks --"
   }
 }

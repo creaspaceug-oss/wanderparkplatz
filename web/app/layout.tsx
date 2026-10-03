@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Klickzaehler from "@/components/Klickzaehler";
 import { Geist } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
@@ -63,6 +64,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             scrollbaren Rahmen drückten dadurch die ganze Seite breiter, statt
             selbst zu scrollen — auf dem Handy zoomte der Browser heraus. */}
         <main className="min-w-0 flex-1">{children}</main>
+        <Klickzaehler />
 
         {/* Beide cookielos — kein Einwilligungsbanner nötig, damit auch kein
             Layoutsprung, der die Web Vitals verschlechtert. */}
