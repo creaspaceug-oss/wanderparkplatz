@@ -1,0 +1,44 @@
+name: Klickzahlen anzeigen
+
+# Von Hand auszulösen: Actions → "Klickzahlen anzeigen" → Run workflow.
+# Zeigt, welche Seite, welcher Abschnitt und welches Produkt Klicks auf
+# Partnerverweise ausgelöst haben. Liest nur, schreibt nichts.
+on:
+  workflow_dispatch:
+    inputs:
+      tage:
+        description: "Zeitraum in Tagen"
+        type: string
+        default: "30"
+
+permissions:
+  contents: read
+
+jobs:
+  klicks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Geheimnis vorhanden?
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL fehlt — anzulegen unter Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Zählen
+        run: npm run -w pipeline klicks -- --tage ${{ inputs.tage }}
