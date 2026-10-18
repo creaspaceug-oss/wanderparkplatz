@@ -44,7 +44,24 @@ Routenmitgliedschaften und läuft entsprechend lange.
 Abgebrochene Läufe lassen sich gefahrlos wiederholen — fertige Kacheln liegen
 im Cache und werden übersprungen.
 
+## Verwaltung im Browser
+
+Unter `/admin` liegt ein Bereich mit Passwortschutz: offene Bewertungen
+freigeben oder ablehnen, Partnerklicks der letzten 30 Tage, Datenstand des
+letzten Imports.
+
+Das Passwort steht in `ADMIN_PASSWORT` — in Vercel unter Settings →
+Environment Variables, lokal in `web/.env.local`. Ohne gesetztes Passwort
+bleibt der Bereich geschlossen; es gibt keinen Zugang ohne Schloss. Die
+Sitzung hält zwölf Stunden und steckt in einem signierten, httpOnly-Keks, der
+nur auf `/admin` mitgeschickt wird. Nach fünf Fehlversuchen sperrt der
+Prozess die Anmeldung eine Minute lang — gegen verteilte Versuche hilft das
+nicht, gegen das naheliegende Durchprobieren schon. `/admin` steht auf
+`noindex` und in der robots.txt auf `Disallow`.
+
 ## Bewertungen moderieren
+
+Im Browser unter `/admin`, oder auf der Kommandozeile:
 
 ```bash
 npm run -w pipeline moderieren                # offene anzeigen
